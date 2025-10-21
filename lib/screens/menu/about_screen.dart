@@ -14,9 +14,6 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLandscape =
-        MediaQuery.of(context).orientation == Orientation.landscape;
-
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -62,22 +59,13 @@ class AboutScreen extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
-          child: isLandscape
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: _buildAppInfoCard()),
-                    const SizedBox(width: 20),
-                    Expanded(child: _buildSocialLinksCard(context)),
-                  ],
-                )
-              : Column(
-                  children: [
-                    _buildAppInfoCard(),
-                    const SizedBox(height: 20),
-                    _buildSocialLinksCard(context),
-                  ],
-                ),
+          child: Column(
+            children: [
+              _buildAppInfoCard(),
+              const SizedBox(height: 20),
+              _buildSocialLinksCard(context),
+            ],
+          ),
         ),
       ),
     );
@@ -85,8 +73,8 @@ class AboutScreen extends StatelessWidget {
 
   Widget _buildAppInfoCard() {
     return Card(
-      color: const Color(0xFF1C1C1E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: const Color.fromARGB(255, 15, 15, 15),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 4,
       child: const Padding(
         padding: EdgeInsets.all(20.0),
@@ -96,7 +84,7 @@ class AboutScreen extends StatelessWidget {
             Text(
               "EduMate ",
               style: TextStyle(
-                fontSize: 30,
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: CupertinoColors.activeBlue,
               ),
@@ -120,8 +108,8 @@ class AboutScreen extends StatelessWidget {
 
   Widget _buildSocialLinksCard(BuildContext context) {
     return Card(
-      color: const Color(0xFF1C1C1E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: const Color.fromARGB(255, 15, 15, 15),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 4,
       child: Column(
         children: [
@@ -163,7 +151,7 @@ class AboutScreen extends StatelessWidget {
       ),
       trailing: const Icon(
         CupertinoIcons.chevron_forward,
-        size: 18,
+        size: 25,
         color: CupertinoColors.activeBlue,
       ),
       onTap: onTap,
