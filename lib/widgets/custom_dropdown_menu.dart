@@ -18,7 +18,7 @@ class CustomDropdownMenu extends StatelessWidget {
       transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, animation, secondaryAnimation) => screen,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0); 
+        const begin = Offset(0.0, 1.0);
         const end = Offset.zero;
         const curve = Curves.easeOutCubic;
 
@@ -55,7 +55,6 @@ class CustomDropdownMenu extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Column(
             children: [
-              
               FadeTransition(
                 opacity: CurvedAnimation(
                   parent: menuItemsController,
@@ -86,6 +85,7 @@ class CustomDropdownMenu extends StatelessWidget {
                   contentPadding: const EdgeInsets.only(left: 40, right: 20),
                   title: const Text(
                     'About',
+                    style: TextStyle(color: Colors.white, fontSize: 20),
                   ),
                   onTap: () {
                     onClose();
