@@ -27,24 +27,32 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        AnimatedBuilder(
-          animation: arrowAnimation,
-          builder: (context, child) {
-            return IconButton(
-              onPressed: onMenuPressed,
-              icon: Transform(
-                alignment: Alignment.center,
-                transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.001)
-                  ..rotateX(pi * arrowAnimation.value),
-                child: const Icon(
-                  CupertinoIcons.chevron_down,
-                  color: CupertinoColors.activeBlue,
-                  size: 24,
+        Padding(
+          padding: const EdgeInsets.only(right: 12.0),
+          child: AnimatedBuilder(
+            animation: arrowAnimation,
+            builder: (context, child) {
+              final curvedValue = CurvedAnimation(
+                parent: arrowAnimation,
+                curve: Curves.easeInOut,
+              ).value;
+
+              return IconButton(
+                onPressed: onMenuPressed,
+                icon: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.001)
+                    ..rotateX(pi * curvedValue),
+                  child: const Icon(
+                    CupertinoIcons.chevron_down,
+                    color: CupertinoColors.activeBlue,
+                    size: 24,
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ],
     );

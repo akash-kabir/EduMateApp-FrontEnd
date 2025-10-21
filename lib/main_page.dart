@@ -33,13 +33,15 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
     _arrowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+
     _menuItemsController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 800), // adjust fade speed
     );
   }
 
@@ -51,24 +53,34 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
   }
 
   void _toggleMenu() {
-    setState(() {
-      _isMenuOpen = !_isMenuOpen;
-      if (_isMenuOpen) {
-        _arrowController.forward();
-        _menuItemsController.forward(from: 0.0);
-      } else {
-        _arrowController.reverse();
-        _menuItemsController.reverse();
-      }
-    });
+    if (!_isMenuOpen) {
+      setState(() {
+        _isMenuOpen = true;
+      });
+      _arrowController.forward();
+      _menuItemsController.forward(from: 0.0);
+    } else {
+      _arrowController.reverse();
+      _menuItemsController.reverse().then((_) {
+        // After reverse completes, remove the menu
+        if (mounted) {
+          setState(() {
+            _isMenuOpen = false;
+          });
+        }
+      });
+    }
   }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      _isMenuOpen = false;
-      _arrowController.reverse();
-      _menuItemsController.reverse();
+      if (_isMenuOpen) {
+        _arrowController.reverse();
+        _menuItemsController.reverse().then((_) {
+          if (mounted) _isMenuOpen = false;
+        });
+      }
     });
   }
 

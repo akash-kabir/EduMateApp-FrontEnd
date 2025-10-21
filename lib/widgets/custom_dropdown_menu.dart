@@ -26,7 +26,6 @@ class CustomDropdownMenu extends StatelessWidget {
           begin: begin,
           end: end,
         ).chain(CurveTween(curve: curve));
-
         final opacityTween = Tween<double>(
           begin: 0.0,
           end: 1.0,
@@ -45,58 +44,64 @@ class CustomDropdownMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 15, 15, 15).withOpacity(0.85),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Column(
-            children: [
-              FadeTransition(
-                opacity: CurvedAnimation(
-                  parent: menuItemsController,
-                  curve: const Interval(0.35, 0.65, curve: Curves.easeOut),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.only(left: 40, right: 20),
-                  title: const Text(
-                    'Settings',
-                    style: TextStyle(color: Colors.white, fontSize: 20),
+    return FadeTransition(
+      opacity: CurvedAnimation(
+        parent: menuItemsController,
+        curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+      ),
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 15, 15, 15).withOpacity(0.85),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Column(
+              children: [
+                FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: menuItemsController,
+                    curve: const Interval(0.35, 0.65, curve: Curves.easeOut),
                   ),
-                  onTap: () {
-                    onClose();
-                    Navigator.push(
-                      context,
-                      _createSlideUpRoute(const SettingsScreen()),
-                    );
-                  },
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.only(left: 40, right: 20),
+                    title: const Text(
+                      'Settings',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                    onTap: () {
+                      onClose();
+                      Navigator.push(
+                        context,
+                        _createSlideUpRoute(const SettingsScreen()),
+                      );
+                    },
+                  ),
                 ),
-              ),
 
-              FadeTransition(
-                opacity: CurvedAnimation(
-                  parent: menuItemsController,
-                  curve: const Interval(0.65, 1.0, curve: Curves.easeOut),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.only(left: 40, right: 20),
-                  title: const Text(
-                    'About',
-                    style: TextStyle(color: Colors.white, fontSize: 20),
+                FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: menuItemsController,
+                    curve: const Interval(0.65, 1.0, curve: Curves.easeOut),
                   ),
-                  onTap: () {
-                    onClose();
-                    Navigator.push(
-                      context,
-                      _createSlideUpRoute(const AboutScreen()),
-                    );
-                  },
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.only(left: 40, right: 20),
+                    title: const Text(
+                      'About',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                    onTap: () {
+                      onClose();
+                      Navigator.push(
+                        context,
+                        _createSlideUpRoute(const AboutScreen()),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
