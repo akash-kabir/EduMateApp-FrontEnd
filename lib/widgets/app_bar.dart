@@ -1,33 +1,50 @@
+import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
-  const AppBarWidget({super.key});
+  final VoidCallback onMenuPressed;
+  final AnimationController arrowAnimation;
+
+  const AppBarWidget({
+    super.key,
+    required this.onMenuPressed,
+    required this.arrowAnimation,
+  });
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.black.withOpacity(0.8),
       elevation: 0,
-      titleSpacing: 20,
+      titleSpacing: 16,
       title: const Text(
         'EduMate',
         style: TextStyle(
-          fontSize: 22,
+          fontSize: 28,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
       ),
-      centerTitle: false,
-      actions: const [
-        Padding(
-          padding: EdgeInsets.only(right: 20),
-          child: Icon(
-            CupertinoIcons.chevron_down,
-            color: Color(0xFF007AFF),
-            size: 24,
-          ),
+      actions: [
+        AnimatedBuilder(
+          animation: arrowAnimation,
+          builder: (context, child) {
+            return IconButton(
+              onPressed: onMenuPressed,
+              icon: Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.identity()
+                  ..setEntry(3, 2, 0.001)
+                  ..rotateX(pi * arrowAnimation.value),
+                child: const Icon(
+                  CupertinoIcons.chevron_down,
+                  color: CupertinoColors.activeBlue,
+                  size: 24,
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
