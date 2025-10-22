@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ThemeProvider extends ChangeNotifier with WidgetsBindingObserver {
-  bool _isDarkMode = true; // default dark
+  bool _isDarkMode = true; 
   bool _followSystemTheme = false;
 
   ThemeProvider() {

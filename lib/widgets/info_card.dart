@@ -22,7 +22,7 @@ class _InfoCardState extends State<InfoCard> {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // Left aligned
+          crossAxisAlignment: CrossAxisAlignment.start, 
           children: [
             InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
@@ -32,7 +32,7 @@ class _InfoCardState extends State<InfoCard> {
                   Text(
                     "Info",
                     style: TextStyle(
-                      fontSize: 20, // ✅ Matched with Appearance title
+                      fontSize: 20, 
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : Colors.black,
                     ),
@@ -51,7 +51,7 @@ class _InfoCardState extends State<InfoCard> {
               Divider(
                 thickness: 1,
                 color: isDark ? Colors.white24 : Colors.black26,
-              ), // ✅ Divider appears when expanded
+              ), 
               const SizedBox(height: 10),
               Text(
                 "Version: 1.0.0",

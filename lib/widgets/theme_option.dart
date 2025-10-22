@@ -45,11 +45,11 @@ class ThemeOption extends StatelessWidget {
             style: TextStyle(
               color: selected
                   ? CupertinoColors
-                        .activeBlue // active color
+                        .activeBlue 
                   : (Theme.of(context).brightness == Brightness.light
                         ? Colors
-                              .black // inactive in light mode
-                        : Colors.grey), // inactive in dark mode
+                              .black 
+                        : Colors.grey), 
               fontSize: 14,
               fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
             ),

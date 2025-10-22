@@ -73,7 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onThemeSelected: _onThemeSelected,
               ),
               const SizedBox(height: 16),
-              const InfoCard(), // 👈 Added InfoCard here
+              const InfoCard(), 
             ],
           ),
         ),
