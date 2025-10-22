@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../main_page.dart'; 
+import 'package:provider/provider.dart';
+import '../main_page.dart';
+import '../theme/theme_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -27,16 +29,17 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.black,
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
+    return Scaffold(
+      backgroundColor: themeProvider.isDarkMode ? Colors.black : Colors.white,
       body: Center(
         child: Text(
           'EduMate',
           style: TextStyle(
-            color: Colors.white,
+            color: themeProvider.isDarkMode ? Colors.white : Colors.black,
             fontSize: 42,
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
           ),
         ),
       ),

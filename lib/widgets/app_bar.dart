@@ -14,16 +14,18 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AppBar(
-      backgroundColor: Colors.black.withOpacity(0.8),
+      backgroundColor: (isDark ? Colors.black : Colors.white).withOpacity(0.8),
       elevation: 0,
       titleSpacing: 16,
-      title: const Text(
+      title: Text(
         'EduMate',
         style: TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: isDark ? Colors.white : Colors.black,
         ),
       ),
       actions: [
@@ -61,3 +63,4 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
+

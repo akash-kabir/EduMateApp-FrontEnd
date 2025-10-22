@@ -47,6 +47,7 @@ class AppTheme {
     colorScheme: const ColorScheme.light(
       primary: Color(0xFF007AFF),
       secondary: Colors.grey,
+      surface: Colors.white,
     ),
     iconTheme: const IconThemeData(color: Colors.black),
   );

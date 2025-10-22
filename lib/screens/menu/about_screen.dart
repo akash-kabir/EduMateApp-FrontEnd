@@ -14,30 +14,33 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black.withOpacity(0.9),
+        backgroundColor: (isDark ? Colors.black : Colors.white).withOpacity(
+          0.9,
+        ),
         centerTitle: true,
-        title: const Text(
+        title: Text(
           "About",
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 22,
             fontFamily: 'Poppins',
-            color: Colors.white,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             CupertinoIcons.chevron_back,
-            color: CupertinoColors.systemGrey2,
+            color: isDark ? CupertinoColors.systemGrey2 : Colors.black54,
             size: 28,
           ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-
       bottomNavigationBar: BottomAppBar(
         color: Colors.transparent,
         elevation: 0,
@@ -55,15 +58,14 @@ class AboutScreen extends StatelessWidget {
           ),
         ),
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              _buildAppInfoCard(),
+              _buildAppInfoCard(isDark),
               const SizedBox(height: 20),
-              _buildSocialLinksCard(context),
+              _buildSocialLinksCard(context, isDark),
             ],
           ),
         ),
@@ -71,83 +73,97 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAppInfoCard() {
-    return Card(
-      color: const Color.fromARGB(255, 15, 15, 15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      elevation: 4,
-      child: const Padding(
-        padding: EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "EduMate ",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: CupertinoColors.activeBlue,
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              "EduMate is your personal campus companion — keeping you updated "
-              "with events, schedules, and campus life in one place.\n\n"
-              "Built with Flutter for a seamless, modern experience.",
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
+  Widget _buildAppInfoCard(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color.fromARGB(255, 15, 15, 15)
+            : Colors.grey[200],
+        borderRadius: BorderRadius.circular(24),
       ),
-    );
-  }
-
-  Widget _buildSocialLinksCard(BuildContext context) {
-    return Card(
-      color: const Color.fromARGB(255, 15, 15, 15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      elevation: 4,
+      padding: const EdgeInsets.all(20.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLinkButton(
-            title: "LinkedIn",
-            iconPath: "assets/linkedin.png",
-            onTap: () => _launchUrl("https://linkedin.com"),
+          const Text(
+            "EduMate",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: CupertinoColors.activeBlue,
+            ),
           ),
-          _divider(),
-          _buildLinkButton(
-            title: "GitHub",
-            iconPath: "assets/github.png",
-            onTap: () => _launchUrl("https://github.com/akash-kabir"),
-          ),
-          _divider(),
-          _buildLinkButton(
-            title: "Gmail",
-            iconPath: "assets/gmail.png",
-            onTap: () => _launchUrl("mailto:2405359@kiit.ac.in"),
+          const SizedBox(height: 10),
+          Text(
+            "EduMate is your personal campus companion — keeping you updated "
+            "with events, schedules, and campus life in one place.\n\n"
+            "Built with Flutter for a seamless, modern experience.",
+            style: TextStyle(
+              fontSize: 16,
+              color: isDark ? Colors.white70 : Colors.black87,
+              height: 1.4,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _divider() =>
-      const Divider(height: 5, thickness: 0.5, color: Colors.white12);
+  Widget _buildSocialLinksCard(BuildContext context, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color.fromARGB(255, 15, 15, 15)
+            : Colors.grey[200],
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          _buildLinkButton(
+            title: "LinkedIn",
+            iconPath: "assets/linkedin.png",
+            onTap: () => _launchUrl("https://linkedin.com"),
+            isDark: isDark,
+          ),
+          _divider(isDark),
+          _buildLinkButton(
+            title: "GitHub",
+            iconPath: "assets/github.png",
+            onTap: () => _launchUrl("https://github.com/akash-kabir"),
+            isDark: isDark,
+          ),
+          _divider(isDark),
+          _buildLinkButton(
+            title: "Gmail",
+            iconPath: "assets/gmail.png",
+            onTap: () => _launchUrl("mailto:2405359@kiit.ac.in"),
+            isDark: isDark,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _divider(bool isDark) => Divider(
+    height: 5,
+    thickness: 0.5,
+    color: isDark ? Colors.white12 : Colors.black12,
+  );
 
   Widget _buildLinkButton({
     required String title,
     required String iconPath,
     required VoidCallback onTap,
+    required bool isDark,
   }) {
     return ListTile(
       leading: Image.asset(iconPath, width: 28, height: 28),
       title: Text(
         title,
-        style: const TextStyle(fontSize: 16, color: Colors.white),
+        style: TextStyle(
+          fontSize: 16,
+          color: isDark ? Colors.white : Colors.black87,
+        ),
       ),
       trailing: const Icon(
         CupertinoIcons.chevron_forward,

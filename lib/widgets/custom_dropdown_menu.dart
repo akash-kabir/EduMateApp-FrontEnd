@@ -1,16 +1,19 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../theme/theme_provider.dart';
 import '../screens/menu/settings_screen.dart';
 import '../screens/menu/about_screen.dart';
 
 class CustomDropdownMenu extends StatelessWidget {
   final AnimationController menuItemsController;
   final VoidCallback onClose;
+  final ThemeProvider themeProvider;
 
   const CustomDropdownMenu({
     super.key,
     required this.menuItemsController,
     required this.onClose,
+    required this.themeProvider,
   });
 
   Route _createSlideUpRoute(Widget screen) {
@@ -18,25 +21,19 @@ class CustomDropdownMenu extends StatelessWidget {
       transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, animation, secondaryAnimation) => screen,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0);
-        const end = Offset.zero;
-        const curve = Curves.easeOutCubic;
+        final offsetAnimation =
+            Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            );
 
-        final tween = Tween(
-          begin: begin,
-          end: end,
-        ).chain(CurveTween(curve: curve));
-        final opacityTween = Tween<double>(
-          begin: 0.0,
-          end: 1.0,
-        ).chain(CurveTween(curve: Curves.easeIn));
+        final opacityAnimation = Tween<double>(
+          begin: 0,
+          end: 1,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeIn));
 
         return SlideTransition(
-          position: animation.drive(tween),
-          child: FadeTransition(
-            opacity: animation.drive(opacityTween),
-            child: child,
-          ),
+          position: offsetAnimation,
+          child: FadeTransition(opacity: opacityAnimation, child: child),
         );
       },
     );
@@ -44,6 +41,8 @@ class CustomDropdownMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return FadeTransition(
       opacity: CurvedAnimation(
         parent: menuItemsController,
@@ -54,7 +53,8 @@ class CustomDropdownMenu extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 15, 15, 15).withOpacity(0.85),
+              color: (isDark ? const Color(0xFF0F0F0F) : Colors.grey[200])!
+                  .withOpacity(0.95),
             ),
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Column(
@@ -66,20 +66,24 @@ class CustomDropdownMenu extends StatelessWidget {
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.only(left: 40, right: 20),
-                    title: const Text(
+                    title: Text(
                       'Settings',
-                      style: TextStyle(color: Colors.white, fontSize: 20),
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black,
+                        fontSize: 20,
+                      ),
                     ),
                     onTap: () {
                       onClose();
                       Navigator.push(
                         context,
-                        _createSlideUpRoute(const SettingsScreen()),
+                        _createSlideUpRoute(
+                          SettingsScreen(themeProvider: themeProvider),
+                        ),
                       );
                     },
                   ),
                 ),
-
                 FadeTransition(
                   opacity: CurvedAnimation(
                     parent: menuItemsController,
@@ -87,9 +91,12 @@ class CustomDropdownMenu extends StatelessWidget {
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.only(left: 40, right: 20),
-                    title: const Text(
+                    title: Text(
                       'About',
-                      style: TextStyle(color: Colors.white, fontSize: 20),
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black,
+                        fontSize: 20,
+                      ),
                     ),
                     onTap: () {
                       onClose();

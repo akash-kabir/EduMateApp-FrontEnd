@@ -1,13 +1,15 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
-import 'screens/events_screen.dart';
-import 'screens/campus_nav_screen.dart';
-import 'screens/profile_screen.dart';
+import 'package:provider/provider.dart';
+import '../theme/theme_provider.dart';
+import '../widgets/bottom_nav_pill.dart';
+import '../widgets/app_bar.dart';
+import '../widgets/custom_dropdown_menu.dart';
 import 'screens/calender_screen.dart';
-import 'widgets/bottom_nav_pill.dart';
-import 'widgets/app_bar.dart';
-import 'widgets/custom_dropdown_menu.dart';
+import 'screens/campus_nav_screen.dart';
+import 'screens/events_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/profile_screen.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -24,7 +26,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
 
   final List<Widget> _pages = const [
     HomeScreen(),
-    CalendarScreen(),
+    CalenderScreen(),
     EventsScreen(),
     CampusNavScreen(),
     ProfileScreen(),
@@ -33,15 +35,13 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-
     _arrowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-
     _menuItemsController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800), // adjust fade speed
+      duration: const Duration(milliseconds: 800),
     );
   }
 
@@ -54,20 +54,13 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
 
   void _toggleMenu() {
     if (!_isMenuOpen) {
-      setState(() {
-        _isMenuOpen = true;
-      });
+      setState(() => _isMenuOpen = true);
       _arrowController.forward();
       _menuItemsController.forward(from: 0.0);
     } else {
       _arrowController.reverse();
       _menuItemsController.reverse().then((_) {
-        // After reverse completes, remove the menu
-        if (mounted) {
-          setState(() {
-            _isMenuOpen = false;
-          });
-        }
+        if (mounted) setState(() => _isMenuOpen = false);
       });
     }
   }
@@ -86,23 +79,28 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     return Scaffold(
       extendBody: true,
       body: Stack(
         children: [
           _pages[_selectedIndex],
-
           if (_isMenuOpen)
             Positioned.fill(
               child: GestureDetector(
                 onTap: _toggleMenu,
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(color: Colors.black.withOpacity(0.4)),
+                  child: Container(
+                    color: (isDark ? Colors.black : Colors.white).withOpacity(
+                      0.4,
+                    ),
+                  ),
                 ),
               ),
             ),
-
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -110,11 +108,11 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
                 onMenuPressed: _toggleMenu,
                 arrowAnimation: _arrowController,
               ),
-
               if (_isMenuOpen)
                 CustomDropdownMenu(
                   menuItemsController: _menuItemsController,
                   onClose: _toggleMenu,
+                  themeProvider: themeProvider,
                 ),
             ],
           ),
