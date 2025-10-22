@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../screens/menu/settings_screen.dart';
+import '../../screens/menu/settings_screen.dart';
 
 class ThemeOption extends StatelessWidget {
   final AppThemeMode mode;

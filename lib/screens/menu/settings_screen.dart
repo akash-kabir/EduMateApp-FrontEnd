@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../theme/theme_provider.dart';
-import '../../widgets/appearance_card.dart';
-import '../../widgets/info_card.dart';
+import '../../widgets/settings_cards/appearance_card.dart';
+import '../../widgets/settings_cards/info_card.dart';
 
 enum AppThemeMode { light, dark }
 

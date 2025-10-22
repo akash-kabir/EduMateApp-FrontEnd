@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../theme/theme_provider.dart';
-import '../screens/menu/settings_screen.dart';
-import '../screens/menu/about_screen.dart';
+import '../../theme/theme_provider.dart';
+import '../../screens/menu/settings_screen.dart';
+import '../../screens/menu/about_screen.dart';
 
 class CustomDropdownMenu extends StatelessWidget {
   final AnimationController menuItemsController;
