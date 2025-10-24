@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../navigation/buttons/animated_chevron_down.dart';
 
 class InfoCard extends StatefulWidget {
   const InfoCard({super.key});
@@ -22,7 +22,7 @@ class _InfoCardState extends State<InfoCard> {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, 
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
@@ -32,17 +32,12 @@ class _InfoCardState extends State<InfoCard> {
                   Text(
                     "Info",
                     style: TextStyle(
-                      fontSize: 20, 
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
-                  Icon(
-                    _isExpanded
-                        ? CupertinoIcons.chevron_up
-                        : CupertinoIcons.chevron_down,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                  AnimatedChevronDown(isExpanded: _isExpanded),
                 ],
               ),
             ),
@@ -51,7 +46,7 @@ class _InfoCardState extends State<InfoCard> {
               Divider(
                 thickness: 1,
                 color: isDark ? Colors.white24 : Colors.black26,
-              ), 
+              ),
               const SizedBox(height: 10),
               Text(
                 "Version: 1.0.0",
