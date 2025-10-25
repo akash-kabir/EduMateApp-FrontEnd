@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'signup_screen.dart';
+import 'signup_screen1.dart';
 import '../../main_page.dart';
 import '../../config.dart';
 
@@ -14,11 +14,22 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _loginController =
+      TextEditingController(); 
   final TextEditingController _passwordController = TextEditingController();
   bool _loading = false;
 
   Future<void> _loginUser() async {
+    final usernameOrEmail = _loginController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (usernameOrEmail.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
+    }
+
     setState(() => _loading = true);
 
     try {
@@ -27,8 +38,8 @@ class _LoginScreenState extends State<LoginScreen> {
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text.trim(),
+          'usernameOrEmail': usernameOrEmail, 
+          'password': password,
         }),
       );
 
@@ -39,7 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token);
-        await prefs.setString('userName', user['name']);
+        await prefs.setString('userFirstName', user['firstName']);
+        await prefs.setString('userLastName', user['lastName']);
+        await prefs.setString('userName', user['username']);
         await prefs.setString('userEmail', user['email']);
         await prefs.setString('userRole', user['role']);
 
@@ -49,14 +62,12 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } else {
         final error = jsonDecode(response.body)['message'];
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error)));
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -72,8 +83,10 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
+                controller: _loginController,
+                decoration: const InputDecoration(
+                  labelText: 'Username or Email',
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -93,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onTap: () {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const SignupScreen()),
+                    MaterialPageRoute(builder: (_) => const SignupScreen1()),
                   );
                 },
                 child: const Text(

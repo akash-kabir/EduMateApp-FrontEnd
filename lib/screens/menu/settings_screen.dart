@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/theme_provider.dart';
 import '../../widgets/settings_cards/appearance_card.dart';
 import '../../widgets/settings_cards/info_card.dart';
+import '../../widgets/settings_cards/logout_button.dart';
 
 enum AppThemeMode { light, dark }
 
@@ -73,7 +74,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onThemeSelected: _onThemeSelected,
               ),
               const SizedBox(height: 16),
-              const InfoCard(), 
+              const InfoCard(),
+              const SizedBox(height: 16),
+
+              Card(
+                color: isDark ? const Color(0xFF1C1C1E) : Colors.grey[200],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+                child: const LogoutButton(),
+              ),
             ],
           ),
         ),

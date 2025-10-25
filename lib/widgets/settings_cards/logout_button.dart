@@ -8,22 +8,21 @@ class LogoutButton extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Clear all stored user data
+    await prefs.clear(); 
 
-    // Navigate back to Getting Started screen
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
-      (route) => false, // Remove all previous routes
+      (route) => false, 
     );
   }
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.3), // translucent dark overlay
+      barrierColor: Colors.black.withOpacity(0.3), 
       builder: (_) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3), // slight blur
+        filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3), 
         child: AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -31,7 +30,7 @@ class LogoutButton extends StatelessWidget {
           title: const Text('Confirm Logout'),
           content: const Text('Are you sure you want to log out?'),
           actionsAlignment:
-              MainAxisAlignment.spaceBetween, // cancel left, logout right
+              MainAxisAlignment.spaceBetween, 
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -39,8 +38,8 @@ class LogoutButton extends StatelessWidget {
             ),
             GestureDetector(
               onTap: () {
-                Navigator.pop(context); // Close dialog
-                _logout(context); // Perform logout
+                Navigator.pop(context); 
+                _logout(context); 
               },
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

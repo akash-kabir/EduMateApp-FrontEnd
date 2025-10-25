@@ -6,15 +6,18 @@ import 'login_screen.dart';
 import '../../main_page.dart';
 import '../../config.dart';
 
-class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+class SignupScreen2 extends StatefulWidget {
+  final String firstName;
+  final String lastName;
+
+  const SignupScreen2({super.key, required this.firstName, required this.lastName});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  State<SignupScreen2> createState() => _SignupScreen2State();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
-  final TextEditingController _nameController = TextEditingController();
+class _SignupScreen2State extends State<SignupScreen2> {
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _loading = false;
@@ -28,7 +31,9 @@ class _SignupScreenState extends State<SignupScreen> {
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'name': _nameController.text.trim(),
+          'firstName': widget.firstName,
+          'lastName': widget.lastName,
+          'username': _usernameController.text.trim(),
           'email': _emailController.text.trim(),
           'password': _passwordController.text.trim(),
         }),
@@ -41,7 +46,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token);
-        await prefs.setString('userName', user['name']);
+        await prefs.setString('userFirstName', user['firstName']);
+        await prefs.setString('userLastName', user['lastName']);
+        await prefs.setString('userName', user['username']);
         await prefs.setString('userEmail', user['email']);
         await prefs.setString('userRole', user['role']);
 
@@ -54,8 +61,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -70,9 +76,15 @@ class _SignupScreenState extends State<SignupScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Name')),
+              TextField(
+                controller: _usernameController,
+                decoration: const InputDecoration(labelText: 'Username'),
+              ),
               const SizedBox(height: 16),
-              TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
@@ -82,16 +94,23 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 24),
               _loading
                   ? const CircularProgressIndicator()
-                  : ElevatedButton(onPressed: _signupUser, child: const Text('Sign Up')),
+                  : ElevatedButton(
+                      onPressed: _signupUser,
+                      child: const Text('Sign Up'),
+                    ),
               const SizedBox(height: 16),
               GestureDetector(
                 onTap: () {
                   Navigator.pushReplacement(
-                      context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
                 },
                 child: const Text(
                   'Already have an account? Login',
-                  style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                  style: TextStyle(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline),
                 ),
               ),
             ],
