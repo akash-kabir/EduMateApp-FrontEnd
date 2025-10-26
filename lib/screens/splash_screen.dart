@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../main_page.dart';
 import '../theme/theme_provider.dart';
+import 'accounts/getting_started_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,15 +16,25 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigateToMain();
+    _checkAuthAndNavigate();
   }
 
-  Future<void> _navigateToMain() async {
+  Future<void> _checkAuthAndNavigate() async {
     await Future.delayed(const Duration(seconds: 2));
+    
     if (mounted) {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      
+      // If token exists, user is logged in -> go to MainPage
+      // If no token, user is not logged in -> go to GettingStartedScreen
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
+        MaterialPageRoute(
+          builder: (context) => token != null && token.isNotEmpty
+              ? const MainPage()
+              : const GettingStartedScreen(),
+        ),
       );
     }
   }
