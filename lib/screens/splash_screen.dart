@@ -25,9 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (mounted) {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      
-      // If token exists, user is logged in -> go to MainPage
-      // If no token, user is not logged in -> go to GettingStartedScreen
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(

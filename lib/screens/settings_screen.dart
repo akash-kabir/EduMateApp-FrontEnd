@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../theme/theme_provider.dart';
-import '../../widgets/settings_cards/appearance_card.dart';
-import '../../widgets/settings_cards/info_card.dart';
-import '../../widgets/settings_cards/logout_button.dart';
+import '../theme/theme_provider.dart';
+import '../widgets/settings_cards/appearance_card.dart';
+import '../widgets/settings_cards/info_card.dart';
+import '../widgets/settings_cards/logout_button.dart';
 
 enum AppThemeMode { light, dark }
 
@@ -38,30 +38,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final followSystem = widget.themeProvider.followSystemTheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: (isDark ? Colors.black : Colors.white).withOpacity(0.9),
-        centerTitle: true,
-        title: Text(
-          "Settings",
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 22,
-            fontFamily: 'Poppins',
-            color: isDark ? Colors.white : Colors.black,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(
-            CupertinoIcons.chevron_back,
-            color: isDark ? CupertinoColors.systemGrey2 : Colors.black54,
-            size: 28,
-          ),
+    return CupertinoPageScaffold(
+      backgroundColor: isDark ? Colors.black : CupertinoColors.white,
+      navigationBar: CupertinoNavigationBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: isDark
+            ? CupertinoColors.black.withOpacity(0.9)
+            : CupertinoColors.white.withOpacity(0.9),
+        middle: const Text('Settings'),
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
           onPressed: () => Navigator.pop(context),
+          child: const Icon(CupertinoIcons.chevron_back),
         ),
       ),
-      body: SafeArea(
+      child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(

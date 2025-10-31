@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../screens/menu/settings_screen.dart';
+import '../../screens/settings_screen.dart';
 import 'theme_option.dart';
 
 class AppearanceCard extends StatelessWidget {

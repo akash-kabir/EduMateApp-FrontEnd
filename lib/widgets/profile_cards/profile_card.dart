@@ -74,7 +74,6 @@ class ProfileCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    // Email
                     Text(
                       email,
                       style: TextStyle(color: textColor, fontSize: 14),

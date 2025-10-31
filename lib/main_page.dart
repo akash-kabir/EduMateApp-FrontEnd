@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'widgets/navigation/bottom_nav_pill.dart';
+import 'widgets/navigation/cupertino_bottom_tab_bar.dart';
 import 'screens/calender_screen.dart';
 import 'screens/campus_nav_screen.dart';
 import 'screens/events_screen.dart';
@@ -35,7 +35,7 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       extendBody: true,
       body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavPill(
+      bottomNavigationBar: CupertinoBottomTabBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
       ),

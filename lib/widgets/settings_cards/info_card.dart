@@ -49,7 +49,7 @@ class _InfoCardState extends State<InfoCard> {
               ),
               const SizedBox(height: 10),
               Text(
-                "Version: 1.0.0",
+                "Version: MVP build 1.0.3",
                 style: TextStyle(
                   fontSize: 16,
                   color: isDark ? Colors.white70 : Colors.black87,

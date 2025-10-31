@@ -7,10 +7,10 @@ class GettingStartedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const buttonWidth = 220.0; // symmetrical width for both buttons
+    const buttonWidth = 220.0; 
 
     return Scaffold(
-      backgroundColor: Colors.black, // always dark mode
+      backgroundColor: Colors.black, 
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -34,7 +34,6 @@ class GettingStartedScreen extends StatelessWidget {
               ),
               const SizedBox(height: 48),
 
-              // Get Started button
               SizedBox(
                 width: buttonWidth,
                 child: ElevatedButton(
@@ -49,8 +48,8 @@ class GettingStartedScreen extends StatelessWidget {
                     backgroundColor: CupertinoColors.activeBlue,
                     foregroundColor: Colors.white,
                     textStyle: const TextStyle(
-                      fontSize: 20, // bigger text
-                      fontWeight: FontWeight.bold, // bold text
+                      fontSize: 20, 
+                      fontWeight: FontWeight.bold, 
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -62,7 +61,6 @@ class GettingStartedScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // Exit button (white background, red text)
               SizedBox(
                 width: buttonWidth,
                 child: ElevatedButton(
@@ -72,8 +70,8 @@ class GettingStartedScreen extends StatelessWidget {
                     backgroundColor: Colors.white,
                     foregroundColor: CupertinoColors.systemRed,
                     textStyle: const TextStyle(
-                      fontSize: 20, // bigger text
-                      fontWeight: FontWeight.bold, // bold text
+                      fontSize: 20, 
+                      fontWeight: FontWeight.bold, 
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

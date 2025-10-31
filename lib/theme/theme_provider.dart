@@ -76,6 +76,17 @@ class ThemeProvider extends ChangeNotifier with WidgetsBindingObserver {
     await prefs.setBool(_darkModeKey, _isDarkMode);
   }
 
+  Future<void> resetThemeToDefault() async {
+    _isDarkMode = true;
+    _followSystemTheme = false;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_darkModeKey, true);
+    await prefs.setBool(_followSystemKey, false);
+
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);

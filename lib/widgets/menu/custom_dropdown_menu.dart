@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../theme/theme_provider.dart';
-import '../../screens/menu/settings_screen.dart';
-import '../../screens/menu/about_screen.dart';
+import '../../screens/settings_screen.dart';
+import '../../screens/about_screen.dart';
 
 class CustomDropdownMenu extends StatelessWidget {
   final AnimationController menuItemsController;
@@ -54,7 +54,7 @@ class CustomDropdownMenu extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: (isDark ? const Color(0xFF0F0F0F) : Colors.grey[200])!
-                  .withOpacity(0.95),
+                  .withOpacity(0.1),
             ),
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Column(
