@@ -40,7 +40,7 @@ class CupertinoBottomTabBar extends StatelessWidget {
         BottomNavigationBarItem(
           icon: Padding(
             padding: const EdgeInsets.only(top: 16.0),
-            child: Icon(CupertinoIcons.doc_text),
+            child: Icon(CupertinoIcons.bell),
           ),
           label: '',
         ),
@@ -48,13 +48,6 @@ class CupertinoBottomTabBar extends StatelessWidget {
           icon: Padding(
             padding: const EdgeInsets.only(top: 16.0),
             child: Icon(CupertinoIcons.map),
-          ),
-          label: '',
-        ),
-        BottomNavigationBarItem(
-          icon: Padding(
-            padding: const EdgeInsets.only(top: 16.0),
-            child: Icon(CupertinoIcons.person),
           ),
           label: '',
         ),

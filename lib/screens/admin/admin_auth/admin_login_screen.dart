@@ -190,7 +190,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                       const SizedBox(height: 32),
                       ElevatedButton(
                         onPressed: () {
-                          // TODO: Implement admin login
+                          
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(

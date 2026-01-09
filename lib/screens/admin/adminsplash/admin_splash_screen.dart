@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../admin_auth/admin_login_screen.dart';
+import '../../../constants/app_constants.dart';
 
 class AdminSplashScreen extends StatefulWidget {
   const AdminSplashScreen({super.key});
@@ -65,7 +66,7 @@ class _AdminSplashScreenState extends State<AdminSplashScreen>
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFFF1744), // Vibrant red
+                      color: AppColors.adminPrimaryRed,
                     ),
                   ),
                 ],
@@ -76,7 +77,7 @@ class _AdminSplashScreenState extends State<AdminSplashScreen>
               width: 200,
               child: CustomSplashProgressBar(
                 animationController: _progressController,
-                color: const Color(0xFFFF1744), // Vibrant red
+                color: AppColors.adminPrimaryRed,
               ),
             ),
           ],

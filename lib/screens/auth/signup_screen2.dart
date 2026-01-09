@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
 import 'login_screen.dart';
-import '../../main_page.dart';
-import '../../config.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/cupertino.dart';
+import '../../widgets/auth_background_wrapper.dart';
 import '../../utils/validators.dart';
 import '../../services/api_service.dart';
-import '../../animated_background/animated_circle_gradient.dart';
-import '../../provider/animation_provider.dart';
+import '../splash/splash_screen_loading.dart';
 
 class SignupScreen2 extends StatefulWidget {
   final String firstName;
@@ -286,51 +281,59 @@ class _SignupScreen2State extends State<SignupScreen2>
     setState(() => _loading = true);
 
     try {
-      final url = Uri.parse('${Config.BASE_URL}/api/users/register');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'firstName': widget.firstName,
-          'lastName': widget.lastName,
-          'username': username,
-          'email': email,
-          'password': password,
-        }),
+      final result = await ApiService.register(
+        firstName: widget.firstName,
+        lastName: widget.lastName,
+        username: username,
+        email: email,
+        password: password,
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
+      if (result['success'] ?? false) {
+        final data = result['data'];
         final token = data['token'];
         final user = data['user'];
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token);
+        await prefs.setString('userId', user['id'] ?? user['_id'] ?? '');
         await prefs.setString('userFirstName', user['firstName']);
         await prefs.setString('userLastName', user['lastName']);
         await prefs.setString('userName', user['username']);
         await prefs.setString('userEmail', user['email']);
         await prefs.setString('userRole', user['role']);
+        await prefs.setBool(
+          'isProfileCompleted',
+          user['isProfileCompleted'] ?? false,
+        );
 
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const MainPage()),
+            MaterialPageRoute(
+              builder: (_) => const SplashScreenWithApiLoading(),
+            ),
           );
         }
       } else {
-        final error = jsonDecode(response.body)['message'];
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), duration: const Duration(seconds: 2)),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Registration failed'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -338,447 +341,429 @@ class _SignupScreen2State extends State<SignupScreen2>
 
   @override
   Widget build(BuildContext context) {
-    final animationProvider = Provider.of<AnimationProvider>(context);
-
     return Scaffold(
       backgroundColor: Colors.black,
       resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          // Animated background circles using provider's controller
-          AnimatedCircleGradient(
-            primaryColor: Colors.purple,
-            secondaryColor: Colors.blue,
-            externalController: animationProvider.backgroundCircleController,
-          ),
-          // Content
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 120),
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          const TextSpan(
-                            text: 'Welcome\n',
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+      body: AuthBackgroundWrapper(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 120),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: 'Welcome\n',
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                          TextSpan(
-                            text: '${widget.firstName} ${widget.lastName}',
-                            style: const TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
-                            ),
+                        ),
+                        TextSpan(
+                          text: '${widget.firstName} ${widget.lastName}',
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Let\'s create an account',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                      textAlign: TextAlign.left,
-                    ),
-                    const SizedBox(height: 24),
-                    Center(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  TextField(
-                                    controller: _usernameController,
-                                    style: const TextStyle(color: Colors.white),
-                                    onChanged: (value) {
-                                      if (value.trim().isNotEmpty) {
-                                        _checkUsernameAvailability(
-                                          value.trim(),
-                                        );
-                                      } else {
-                                        setState(() {
-                                          _isUsernameError = false;
-                                          _usernameErrorMsg = '';
-                                          _checkingUsername = false;
-                                        });
-                                      }
-                                    },
-                                    decoration: InputDecoration(
-                                      labelText: 'Username',
-                                      labelStyle: TextStyle(
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Let\'s create an account',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    textAlign: TextAlign.left,
+                  ),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                TextField(
+                                  controller: _usernameController,
+                                  style: const TextStyle(color: Colors.white),
+                                  onChanged: (value) {
+                                    if (value.trim().isNotEmpty) {
+                                      _checkUsernameAvailability(value.trim());
+                                    } else {
+                                      setState(() {
+                                        _isUsernameError = false;
+                                        _usernameErrorMsg = '';
+                                        _checkingUsername = false;
+                                      });
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    labelText: 'Username',
+                                    labelStyle: TextStyle(
+                                      color: _isUsernameError
+                                          ? CupertinoColors.systemRed
+                                          : Colors.grey,
+                                    ),
+                                    suffixIcon: _checkingUsername
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: Padding(
+                                              padding: EdgeInsets.all(12),
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          )
+                                        : _usernameAvailable &&
+                                              _usernameController
+                                                  .text
+                                                  .isNotEmpty &&
+                                              !_isUsernameError
+                                        ? const Icon(
+                                            Icons.check_circle,
+                                            color: CupertinoColors.systemGreen,
+                                          )
+                                        : null,
+                                    enabledBorder: UnderlineInputBorder(
+                                      borderSide: BorderSide(
                                         color: _isUsernameError
                                             ? CupertinoColors.systemRed
                                             : Colors.grey,
                                       ),
-                                      suffixIcon: _checkingUsername
-                                          ? const SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: Padding(
-                                                padding: EdgeInsets.all(12),
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              ),
-                                            )
-                                          : _usernameAvailable &&
-                                                _usernameController
-                                                    .text
-                                                    .isNotEmpty &&
-                                                !_isUsernameError
-                                          ? const Icon(
-                                              Icons.check_circle,
-                                              color:
-                                                  CupertinoColors.systemGreen,
-                                            )
-                                          : null,
-                                      enabledBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: _isUsernameError
-                                              ? CupertinoColors.systemRed
-                                              : Colors.grey,
-                                        ),
-                                      ),
-                                      focusedBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: _isUsernameError
-                                              ? CupertinoColors.systemRed
-                                              : Colors.blue,
-                                        ),
+                                    ),
+                                    focusedBorder: UnderlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: _isUsernameError
+                                            ? CupertinoColors.systemRed
+                                            : Colors.blue,
                                       ),
                                     ),
                                   ),
-                                  if (_isUsernameError)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        _usernameErrorMsg,
-                                        style: const TextStyle(
-                                          color: CupertinoColors.systemRed,
-                                          fontSize: 12,
-                                        ),
+                                ),
+                                if (_isUsernameError)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      _usernameErrorMsg,
+                                      style: const TextStyle(
+                                        color: CupertinoColors.systemRed,
+                                        fontSize: 12,
                                       ),
                                     ),
-                                ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  TextField(
-                                    controller: _emailController,
-                                    style: const TextStyle(color: Colors.white),
-                                    onChanged: (value) {
-                                      if (value.trim().isNotEmpty) {
-                                        _checkEmailAvailability(value.trim());
-                                      } else {
-                                        setState(() {
-                                          _isEmailError = false;
-                                          _emailErrorMsg = '';
-                                          _checkingEmail = false;
-                                        });
-                                      }
-                                    },
-                                    decoration: InputDecoration(
-                                      labelText: 'Email',
-                                      labelStyle: TextStyle(
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                TextField(
+                                  controller: _emailController,
+                                  style: const TextStyle(color: Colors.white),
+                                  onChanged: (value) {
+                                    if (value.trim().isNotEmpty) {
+                                      _checkEmailAvailability(value.trim());
+                                    } else {
+                                      setState(() {
+                                        _isEmailError = false;
+                                        _emailErrorMsg = '';
+                                        _checkingEmail = false;
+                                      });
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    labelText: 'Email',
+                                    labelStyle: TextStyle(
+                                      color: _isEmailError
+                                          ? CupertinoColors.systemRed
+                                          : Colors.grey,
+                                    ),
+                                    suffixIcon: _checkingEmail
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: Padding(
+                                              padding: EdgeInsets.all(12),
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          )
+                                        : _emailAvailable &&
+                                              _emailController
+                                                  .text
+                                                  .isNotEmpty &&
+                                              !_isEmailError
+                                        ? const Icon(
+                                            Icons.check_circle,
+                                            color: CupertinoColors.systemGreen,
+                                          )
+                                        : null,
+                                    enabledBorder: UnderlineInputBorder(
+                                      borderSide: BorderSide(
                                         color: _isEmailError
                                             ? CupertinoColors.systemRed
                                             : Colors.grey,
                                       ),
-                                      suffixIcon: _checkingEmail
-                                          ? const SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: Padding(
-                                                padding: EdgeInsets.all(12),
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              ),
-                                            )
-                                          : _emailAvailable &&
-                                                _emailController
-                                                    .text
-                                                    .isNotEmpty &&
-                                                !_isEmailError
-                                          ? const Icon(
-                                              Icons.check_circle,
-                                              color:
-                                                  CupertinoColors.systemGreen,
-                                            )
-                                          : null,
-                                      enabledBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: _isEmailError
-                                              ? CupertinoColors.systemRed
-                                              : Colors.grey,
-                                        ),
-                                      ),
-                                      focusedBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: _isEmailError
-                                              ? CupertinoColors.systemRed
-                                              : Colors.blue,
-                                        ),
+                                    ),
+                                    focusedBorder: UnderlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: _isEmailError
+                                            ? CupertinoColors.systemRed
+                                            : Colors.blue,
                                       ),
                                     ),
                                   ),
-                                  if (_isEmailError)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        _emailErrorMsg,
-                                        style: const TextStyle(
-                                          color: CupertinoColors.systemRed,
-                                          fontSize: 12,
-                                        ),
+                                ),
+                                if (_isEmailError)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      _emailErrorMsg,
+                                      style: const TextStyle(
+                                        color: CupertinoColors.systemRed,
+                                        fontSize: 12,
                                       ),
                                     ),
-                                ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  TextField(
-                                    controller: _passwordController,
-                                    obscureText: !_showPassword,
-                                    style: const TextStyle(color: Colors.white),
-                                    onChanged: (value) {
-                                      setState(() {});
-                                    },
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      labelStyle: TextStyle(
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                TextField(
+                                  controller: _passwordController,
+                                  obscureText: !_showPassword,
+                                  style: const TextStyle(color: Colors.white),
+                                  onChanged: (value) {
+                                    setState(() {});
+                                  },
+                                  decoration: InputDecoration(
+                                    labelText: 'Password',
+                                    labelStyle: TextStyle(
+                                      color: _isPasswordError
+                                          ? CupertinoColors.systemRed
+                                          : Colors.grey,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _showPassword
+                                            ? Icons.visibility
+                                            : Icons.visibility_off,
                                         color: _isPasswordError
                                             ? CupertinoColors.systemRed
                                             : Colors.grey,
                                       ),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _showPassword
-                                              ? Icons.visibility
-                                              : Icons.visibility_off,
-                                          color: _isPasswordError
-                                              ? CupertinoColors.systemRed
-                                              : Colors.grey,
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            _showPassword = !_showPassword;
-                                          });
-                                        },
+                                      onPressed: () {
+                                        setState(() {
+                                          _showPassword = !_showPassword;
+                                        });
+                                      },
+                                    ),
+                                    enabledBorder: UnderlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: _isPasswordError
+                                            ? CupertinoColors.systemRed
+                                            : Colors.grey,
                                       ),
-                                      enabledBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: _isPasswordError
-                                              ? CupertinoColors.systemRed
-                                              : Colors.grey,
-                                        ),
-                                      ),
-                                      focusedBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: _isPasswordError
-                                              ? CupertinoColors.systemRed
-                                              : Colors.blue,
-                                        ),
+                                    ),
+                                    focusedBorder: UnderlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: _isPasswordError
+                                            ? CupertinoColors.systemRed
+                                            : Colors.blue,
                                       ),
                                     ),
                                   ),
-                                  if (_passwordController.text.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: LinearProgressIndicator(
-                                            value: _getPasswordStrengthValue(),
-                                            backgroundColor: Colors.grey[300],
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  Validators.getPasswordStrengthColor(
-                                                    _passwordController.text,
-                                                  )['color'],
-                                                ),
+                                ),
+                                if (_passwordController.text.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: LinearProgressIndicator(
+                                          value: _getPasswordStrengthValue(),
+                                          backgroundColor: Colors.grey[300],
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            Validators.getPasswordStrengthColor(
+                                              _passwordController.text,
+                                            )['color'],
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          Validators.getPasswordStrengthColor(
-                                            _passwordController.text,
-                                          )['text'],
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color:
-                                                Validators.getPasswordStrengthColor(
-                                                  _passwordController.text,
-                                                )['color'],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    if (_isPasswordError)
-                                      Text(
-                                        _passwordErrorMsg,
-                                        style: const TextStyle(
-                                          color: CupertinoColors.systemRed,
-                                          fontSize: 12,
                                         ),
                                       ),
-                                    if (_passwordController.text.isNotEmpty &&
-                                        !_isPasswordError) ...[
-                                      const SizedBox(height: 12),
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          color: Colors.white.withOpacity(0.15),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const Text(
-                                              'Password Requirements:',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            _buildRequirementWidget(
-                                              'At least 8 characters',
-                                              _hasMinLength(),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            _buildRequirementWidget(
-                                              'Uppercase letter (A-Z)',
-                                              _hasUpperCase(),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            _buildRequirementWidget(
-                                              'Lowercase letter (a-z)',
-                                              _hasLowerCase(),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            _buildRequirementWidget(
-                                              'Number (0-9)',
-                                              _hasNumber(),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            _buildRequirementWidget(
-                                              'Special character (!@#\$%^&*)',
-                                              _hasSpecialChar(),
-                                            ),
-                                          ],
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        Validators.getPasswordStrengthColor(
+                                          _passwordController.text,
+                                        )['text'],
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color:
+                                              Validators.getPasswordStrengthColor(
+                                                _passwordController.text,
+                                              )['color'],
                                         ),
                                       ),
                                     ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if (_isPasswordError)
+                                    Text(
+                                      _passwordErrorMsg,
+                                      style: const TextStyle(
+                                        color: CupertinoColors.systemRed,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  if (_passwordController.text.isNotEmpty &&
+                                      !_isPasswordError) ...[
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            'Password Requirements:',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          _buildRequirementWidget(
+                                            'At least 8 characters',
+                                            _hasMinLength(),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          _buildRequirementWidget(
+                                            'Uppercase letter (A-Z)',
+                                            _hasUpperCase(),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          _buildRequirementWidget(
+                                            'Lowercase letter (a-z)',
+                                            _hasLowerCase(),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          _buildRequirementWidget(
+                                            'Number (0-9)',
+                                            _hasNumber(),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          _buildRequirementWidget(
+                                            'Special character (!@#\$%^&*)',
+                                            _hasSpecialChar(),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 24),
-                          _loading
-                              ? const CircularProgressIndicator()
-                              : ElevatedButton(
-                                  onPressed: _signupUser,
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 48,
-                                      vertical: 12,
-                                    ),
-                                  ),
-                                  child: const Text('Sign Up'),
-                                ),
-                          const SizedBox(height: 16),
-                          RichText(
-                            text: TextSpan(
-                              text: 'Already have an account? ',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: 'Login',
-                                  style: const TextStyle(
-                                    color: CupertinoColors.activeGreen,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        PageRouteBuilder(
-                                          pageBuilder:
-                                              (
-                                                context,
-                                                animation,
-                                                secondaryAnimation,
-                                              ) => const LoginScreen(),
-                                          transitionsBuilder:
-                                              (
-                                                context,
-                                                animation,
-                                                secondaryAnimation,
-                                                child,
-                                              ) {
-                                                return FadeTransition(
-                                                  opacity: animation,
-                                                  child: child,
-                                                );
-                                              },
-                                        ),
-                                      );
-                                    },
-                                ),
                               ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        _loading
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed: _signupUser,
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 48,
+                                    vertical: 12,
+                                  ),
+                                ),
+                                child: const Text('Sign Up'),
+                              ),
+                        const SizedBox(height: 16),
+                        RichText(
+                          text: TextSpan(
+                            text: 'Already have an account? ',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
                             ),
+                            children: [
+                              TextSpan(
+                                text: 'Login',
+                                style: const TextStyle(
+                                  color: CupertinoColors.activeGreen,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      PageRouteBuilder(
+                                        pageBuilder:
+                                            (
+                                              context,
+                                              animation,
+                                              secondaryAnimation,
+                                            ) => const LoginScreen(),
+                                        transitionsBuilder:
+                                            (
+                                              context,
+                                              animation,
+                                              secondaryAnimation,
+                                              child,
+                                            ) {
+                                              return FadeTransition(
+                                                opacity: animation,
+                                                child: child,
+                                              );
+                                            },
+                                      ),
+                                    );
+                                  },
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
