@@ -2,10 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../profile/profile_screen.dart';
-import 'dynamic_island/dynamic_island.dart';
-import 'dynamic_island/island_behavior.dart';
 import '../profile_setup/profile_setup_screen.dart';
 import '../auth/getting_started_screen.dart';
+import 'cgpa_calculator_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToEvent;
@@ -25,34 +24,18 @@ class _HomeScreenState extends State<HomeScreen> {
   String userFirstName = '';
   String? userId;
   String? token;
-  late DynamicIslandBehavior _islandBehavior;
   late SharedPreferences _prefs;
   late String _cachedGreeting;
-  bool _isProfileCompletedCached = true;
 
   @override
   void initState() {
     super.initState();
-    _islandBehavior = DynamicIslandBehavior(isProfileCompleted: true);
     _cachedGreeting = _calculateGreeting();
     _initializePreferences();
   }
 
   Future<void> _initializePreferences() async {
     _prefs = await SharedPreferences.getInstance();
-
-    final actualProfileCompleted =
-        _prefs.getBool('isProfileCompleted') ?? false;
-
-    if (actualProfileCompleted != _isProfileCompletedCached) {
-      setState(() {
-        _isProfileCompletedCached = actualProfileCompleted;
-        _islandBehavior = DynamicIslandBehavior(
-          isProfileCompleted: actualProfileCompleted,
-        );
-      });
-    }
-
     _loadUserData();
   }
 
@@ -124,75 +107,104 @@ class _HomeScreenState extends State<HomeScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              DynamicIsland(
-                greeting: _cachedGreeting,
-                userName: userFirstName,
-                isDark: isDark,
-                showProfileSetup: !_isProfileCompletedCached,
-                onProfileSetupComplete: () {
-                  setState(() {
-                    _islandBehavior.onProfileSetupComplete();
-                    _isProfileCompletedCached = true;
-                  });
-                  Navigator.of(context)
-                      .push(
-                        CupertinoPageRoute(
-                          builder: (context) => ProfileSetupScreen(
-                            userId: userId,
-                            token: token,
-                            onProfileSetupComplete: () {
-                              setState(() {
-                                _islandBehavior.onProfileSetupComplete();
-                                _isProfileCompletedCached = true;
-                              });
-                            },
-                          ),
-                        ),
-                      )
-                      .then((_) {
-                        _loadUserData();
-                      });
-                },
-                onProfileTap: () {
-                  Navigator.of(context).push(
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          const ProfileScreen(),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
-                            const begin = Offset(0.0, 1.0);
-                            const end = Offset.zero;
-                            const curve = Curves.easeInOut;
-                            var tween = Tween(
-                              begin: begin,
-                              end: end,
-                            ).chain(CurveTween(curve: curve));
-                            return SlideTransition(
-                              position: animation.drive(tween),
-                              child: child,
-                            );
-                          },
-                    ),
-                  );
-                },
-                onNavigateToEvent: widget.onNavigateToEvent,
-                onNavigateToSchedule: widget.onNavigateToSchedule,
-              ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                child: Column(
                   children: [
-                    CupertinoButton(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                    // CGPA Calculator Card
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const CGPACalculatorScreen(),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.blue.shade400,
+                                Colors.blue.shade600,
+                              ],
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 20,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.calculate,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'CGPA Calculator',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Calculate your GPA for any semester',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.white.withOpacity(0.7),
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      onPressed: _debugLogout,
-                      child: const Text(
-                        'Logout (Debug)',
-                        style: TextStyle(fontSize: 12, color: Colors.red),
-                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        CupertinoButton(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          onPressed: _debugLogout,
+                          child: const Text(
+                            'Logout (Debug)',
+                            style: TextStyle(fontSize: 12, color: Colors.red),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

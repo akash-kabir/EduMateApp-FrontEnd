@@ -15,4 +15,16 @@ class Config {
   // Posts endpoints
   static const String postsEndpoint = "$BASE_URL/api/posts";
   static const String createPostEndpoint = "$BASE_URL/api/posts";
+
+  // Curriculum endpoints
+  static const String curriculumUploadEndpoint =
+      "$BASE_URL/api/curriculum/upload";
+  static const String curriculumByBranchEndpoint =
+      "$BASE_URL/api/curriculum/branch";
+  static const String allCurriculumsEndpoint = "$BASE_URL/api/curriculum";
+
+  // Schedule endpoints
+  static const String scheduleUploadEndpoint = "$BASE_URL/api/schedule/upload";
+  static const String scheduleByClassEndpoint = "$BASE_URL/api/schedule/class";
+  static const String allSchedulesEndpoint = "$BASE_URL/api/schedule";
 }

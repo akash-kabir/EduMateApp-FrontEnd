@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../auth/getting_started_screen.dart';
+import '../../../services/api_service.dart';
+import '../admin_main_app.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -19,6 +22,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
   late AnimationController _animationController;
   bool _isUsernameError = false;
   bool _isPasswordError = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -45,6 +49,91 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loginAdmin() async {
+    final usernameOrEmail = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (usernameOrEmail.isEmpty || password.isEmpty) {
+      setState(() {
+        _isUsernameError = usernameOrEmail.isEmpty;
+        _isPasswordError = password.isEmpty;
+      });
+      _animationController.forward(from: 0);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await ApiService.login(
+        usernameOrEmail: usernameOrEmail,
+        password: password,
+      );
+
+      if (result['success'] ?? false) {
+        final user = result['data']['user'];
+        final role = user['role'];
+
+        // Check if user is society_head
+        if (role == 'society_head') {
+          final token = result['data']['token'];
+          final prefs = await SharedPreferences.getInstance();
+
+          // Save admin credentials (use 'authToken' to match upload screen)
+          await prefs.setString('authToken', token);
+          await prefs.setString(
+            'token',
+            token,
+          ); // Keep for backward compatibility
+          await prefs.setString('userId', user['id'] ?? user['_id'] ?? '');
+          await prefs.setString('userRole', role);
+          await prefs.setString('userName', user['username']);
+
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminMainApp()),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Access Denied: Only society heads can login as admin',
+                ),
+                duration: Duration(seconds: 2),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Login failed'),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -189,9 +278,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                       ),
                       const SizedBox(height: 32),
                       ElevatedButton(
-                        onPressed: () {
-                          
-                        },
+                        onPressed: _isLoading ? null : _loginAdmin,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 48,
@@ -200,7 +287,18 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                           backgroundColor: const Color(0xFFFF1744),
                           foregroundColor: Colors.white,
                         ),
-                        child: const Text('Login'),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Text('Login'),
                       ),
                       const SizedBox(height: 24),
                       RichText(
