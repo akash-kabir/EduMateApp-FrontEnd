@@ -4,8 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config.dart';
+import '../../../services/shared_preferences_service.dart';
 
 class AdminUploadScreen extends StatefulWidget {
   const AdminUploadScreen({super.key});
@@ -358,12 +358,8 @@ class _CurriculumUploadContentState extends State<_CurriculumUploadContent> {
     setState(() => _isLoading = true);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('authToken');
-      final userRole = prefs.getString('userRole');
-
-      print('DEBUG: Token = $token');
-      print('DEBUG: User Role = $userRole');
+      final token = await SharedPreferencesService.getToken();
+      final userRole = await SharedPreferencesService.getUserRole();
 
       if (token == null || token.isEmpty) {
         throw Exception(
@@ -748,12 +744,8 @@ class _ScheduleUploadContentState extends State<_ScheduleUploadContent> {
     setState(() => _isLoading = true);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('authToken');
-      final userRole = prefs.getString('userRole');
-
-      print('DEBUG: Token = $token');
-      print('DEBUG: User Role = $userRole');
+      final token = await SharedPreferencesService.getToken();
+      final userRole = await SharedPreferencesService.getUserRole();
 
       if (token == null || token.isEmpty) {
         throw Exception(

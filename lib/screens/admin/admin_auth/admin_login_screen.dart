@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../auth/getting_started_screen.dart';
 import '../../../services/api_service.dart';
+import '../../../services/shared_preferences_service.dart';
 import '../admin_main_app.dart';
 
 class AdminLoginScreen extends StatefulWidget {
@@ -79,17 +79,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
         // Check if user is society_head
         if (role == 'society_head') {
           final token = result['data']['token'];
-          final prefs = await SharedPreferences.getInstance();
 
-          // Save admin credentials (use 'authToken' to match upload screen)
-          await prefs.setString('authToken', token);
-          await prefs.setString(
-            'token',
-            token,
-          ); // Keep for backward compatibility
-          await prefs.setString('userId', user['id'] ?? user['_id'] ?? '');
-          await prefs.setString('userRole', role);
-          await prefs.setString('userName', user['username']);
+          // Save credentials via SharedPreferencesService (single source of truth)
+          await SharedPreferencesService.setToken(token);
+          await SharedPreferencesService.setIsLoggedIn(true);
+          await SharedPreferencesService.saveFullUserProfile(user);
 
           if (mounted) {
             Navigator.pushReplacement(

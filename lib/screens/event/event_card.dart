@@ -51,9 +51,40 @@ class _EventCardState extends State<EventCard>
     if (dateStr == null) return '';
     try {
       final date = DateTime.parse(dateStr);
-      return '${date.day}/${date.month}/${date.year}';
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${months[date.month - 1]} ${date.day}, ${date.year}';
     } catch (e) {
       return dateStr;
+    }
+  }
+
+  String _timeAgo(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      if (diff.inMinutes < 1) return 'Just now';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      if (diff.inDays < 7) return '${diff.inDays}d ago';
+      if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
+      return _formatDate(dateStr);
+    } catch (e) {
+      return '';
     }
   }
 
@@ -62,147 +93,300 @@ class _EventCardState extends State<EventCard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final postType = widget.post['postType'] as String? ?? 'news';
     final isEvent = postType == 'event';
+    final authorName = widget.post['authorUsername'] ?? 'Unknown';
+    final heading = widget.post['heading'] ?? '';
+    final body = widget.post['body'] ?? '';
+    final createdAt = widget.post['createdAt'] as String?;
+    final hasImage =
+        widget.post['imageUrl'] != null &&
+        (widget.post['imageUrl'] as String).isNotEmpty;
 
-    return GestureDetector(
-      onTap: _toggleExpanded,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    // Determine if there's expandable content
+    final locationText = widget.post['location'] != null
+        ? [
+            widget.post['location']['campus'],
+            widget.post['location']['floor'],
+            widget.post['location']['roomNo'],
+          ].where((e) => e != null && e.toString().isNotEmpty).join(', ')
+        : '';
+    final hasEventDetails = isEvent && widget.post['eventDetails'] != null;
+    final hasExpandableContent =
+        (hasImage && body.isNotEmpty) ||
+        locationText.isNotEmpty ||
+        hasEventDetails;
+
+    final typeColor = isEvent
+        ? CupertinoColors.systemPurple
+        : CupertinoColors.systemBlue;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: isDark
+                ? Colors.white.withOpacity(0.08)
+                : Colors.black.withOpacity(0.08),
+            width: 0.5,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isEvent
-                              ? CupertinoColors.systemPurple.withValues(
-                                  alpha: 0.2,
-                                )
-                              : CupertinoColors.systemBlue.withValues(
-                                  alpha: 0.2,
-                                ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          isEvent ? 'EVENT' : 'NEWS',
-                          style: TextStyle(
-                            color: isEvent
-                                ? CupertinoColors.systemPurple
-                                : CupertinoColors.systemBlue,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Instagram-style header: avatar + author + type badge + time ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Row(
+              children: [
+                // Author avatar with gradient ring
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: isEvent
+                          ? [const Color(0xFF833AB4), const Color(0xFFC13584)]
+                          : [const Color(0xFF007AFF), const Color(0xFF5AC8FA)],
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark ? Colors.black : Colors.white,
+                    ),
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: typeColor.withOpacity(0.15),
+                      child: Text(
+                        authorName.isNotEmpty
+                            ? authorName[0].toUpperCase()
+                            : '?',
+                        style: TextStyle(
+                          color: typeColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Author name + type
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        '@${widget.post['authorUsername'] ?? 'Unknown'}',
+                        authorName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        isEvent ? 'Event' : 'News',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? Colors.white60 : Colors.black54,
+                          color: typeColor,
+                          fontWeight: FontWeight.w500,
                         ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        isExpanded
-                            ? CupertinoIcons.chevron_up
-                            : CupertinoIcons.chevron_down,
-                        color: CupertinoColors.systemGrey,
-                        size: 20,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                ),
+                // Time ago
+                if (createdAt != null)
                   Text(
-                    widget.post['heading'] ?? '',
+                    _timeAgo(createdAt),
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+                      fontSize: 12,
+                      color: isDark ? Colors.white38 : Colors.black38,
                     ),
                   ),
-                ],
+              ],
+            ),
+          ),
+
+          // ── Post image (if any) ──
+          if (hasImage)
+            GestureDetector(
+              onTap: _toggleExpanded,
+              child: AspectRatio(
+                aspectRatio: 4 / 3,
+                child: Image.network(
+                  widget.post['imageUrl'],
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: isDark
+                          ? Colors.white10
+                          : Colors.black.withOpacity(0.04),
+                      child: const Center(child: CupertinoActivityIndicator()),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: isDark
+                          ? Colors.white10
+                          : Colors.black.withOpacity(0.04),
+                      child: Center(
+                        child: Icon(
+                          CupertinoIcons.photo,
+                          size: 40,
+                          color: isDark ? Colors.white24 : Colors.black26,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-            SizeTransition(
-              sizeFactor: _expandAnimation,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Divider(color: isDark ? Colors.white12 : Colors.black12),
-                    const SizedBox(height: 12),
+
+          // ── Content banner with gradient ──
+          GestureDetector(
+            onTap: _toggleExpanded,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isEvent
+                      ? [
+                          const Color(
+                            0xFF667EEA,
+                          ).withOpacity(isDark ? 0.4 : 0.15),
+                          const Color(
+                            0xFF764BA2,
+                          ).withOpacity(isDark ? 0.5 : 0.2),
+                        ]
+                      : [
+                          const Color(
+                            0xFF007AFF,
+                          ).withOpacity(isDark ? 0.3 : 0.1),
+                          const Color(
+                            0xFF00C6FB,
+                          ).withOpacity(isDark ? 0.4 : 0.15),
+                        ],
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    heading,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                      height: 1.3,
+                    ),
+                  ),
+                  // Show body below heading when there's no image
+                  if (!hasImage && body.isNotEmpty) ...[
+                    const SizedBox(height: 10),
                     Text(
-                      widget.post['body'] ?? '',
+                      body,
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.5,
-                        color: isDark ? Colors.white : Colors.black87,
+                        color: isDark ? Colors.white70 : Colors.black54,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Divider(color: isDark ? Colors.white12 : Colors.black12),
+                  ],
+                ],
+              ),
+            ),
+          ),
+
+          // ── Action row (only if there's expandable content) ──
+          if (hasExpandableContent)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              child: Row(
+                children: [
+                  // Expand / collapse
+                  GestureDetector(
+                    onTap: _toggleExpanded,
+                    child: Row(
+                      children: [
+                        Icon(
+                          isExpanded
+                              ? CupertinoIcons.chevron_up
+                              : CupertinoIcons.chevron_down,
+                          size: 18,
+                          color: isDark ? Colors.white54 : Colors.black45,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isExpanded ? 'Less' : 'More',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white54 : Colors.black45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
+
+          // ── Expanded details ──
+          if (hasExpandableContent)
+            SizeTransition(
+              sizeFactor: _expandAnimation,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Body text only in collapse when image is present
+                    if (hasImage && body.isNotEmpty) ...[
+                      Text(
+                        body,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: isDark ? Colors.white : Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     if (isEvent) ...[
-                      const SizedBox(height: 16),
-                      if (widget.post['location'] != null) ...[
-                        _buildDetailRow(
+                      const SizedBox(height: 8),
+                      if (locationText.isNotEmpty)
+                        _buildInfoChip(
                           icon: CupertinoIcons.location_solid,
-                          label: 'Location',
-                          value:
-                              [
-                                    widget.post['location']['campus'],
-                                    widget.post['location']['floor'],
-                                    widget.post['location']['roomNo'],
-                                  ]
-                                  .where(
-                                    (e) => e != null && e.toString().isNotEmpty,
-                                  )
-                                  .join(', '),
+                          text: locationText,
                           isDark: isDark,
                         ),
-                        const SizedBox(height: 12),
-                      ],
                       if (widget.post['eventDetails'] != null) ...[
-                        _buildDetailRow(
+                        const SizedBox(height: 8),
+                        _buildInfoChip(
                           icon: CupertinoIcons.calendar,
-                          label: 'Date',
-                          value:
+                          text:
                               widget.post['eventDetails']['isDateRange'] == true
-                              ? '${_formatDate(widget.post['eventDetails']['startDate'])} - ${_formatDate(widget.post['eventDetails']['endDate'])}'
+                              ? '${_formatDate(widget.post['eventDetails']['startDate'])} — ${_formatDate(widget.post['eventDetails']['endDate'])}'
                               : _formatDate(
                                   widget.post['eventDetails']['startDate'],
                                 ),
                           isDark: isDark,
                         ),
-                        const SizedBox(height: 12),
-                        _buildDetailRow(
+                        const SizedBox(height: 8),
+                        _buildInfoChip(
                           icon: CupertinoIcons.clock,
-                          label: 'Time',
-                          value:
+                          text:
                               widget.post['eventDetails']['isTimeRange'] == true
-                              ? '${widget.post['eventDetails']['startTime']} - ${widget.post['eventDetails']['endTime']}'
+                              ? '${widget.post['eventDetails']['startTime']} — ${widget.post['eventDetails']['endTime']}'
                               : widget.post['eventDetails']['startTime'] ?? '',
                           isDark: isDark,
                         ),
@@ -212,48 +396,42 @@ class _EventCardState extends State<EventCard>
                 ),
               ),
             ),
-          ],
-        ),
+          const SizedBox(height: 6),
+        ],
       ),
     );
   }
 
-  Widget _buildDetailRow({
+  Widget _buildInfoChip({
     required IconData icon,
-    required String label,
-    required String value,
+    required String text,
     required bool isDark,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: CupertinoColors.activeBlue),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.white60 : Colors.black54,
-                  fontWeight: FontWeight.w500,
-                ),
+    if (text.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withOpacity(0.06)
+            : Colors.black.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: CupertinoColors.systemBlue),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white70 : Colors.black87,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: isDark ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

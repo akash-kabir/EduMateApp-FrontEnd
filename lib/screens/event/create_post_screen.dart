@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import '../../config.dart';
 import '../../services/shared_preferences_service.dart';
@@ -33,6 +35,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   bool isTimeRange = false;
   bool isLoading = false;
 
+  XFile? _selectedImage;
+  bool _isUploadingImage = false;
+
   @override
   void dispose() {
     _headingController.dispose();
@@ -43,6 +48,105 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     _floorController.dispose();
     _roomController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 900,
+      imageQuality: 85,
+    );
+    if (image != null) {
+      setState(() => _selectedImage = image);
+    }
+  }
+
+  void _removeImage() {
+    setState(() => _selectedImage = null);
+  }
+
+  Future<String?> _uploadImage() async {
+    if (_selectedImage == null) return null;
+
+    setState(() => _isUploadingImage = true);
+
+    try {
+      final token = await SharedPreferencesService.getToken();
+
+      // Step 1: Get signed upload params from our backend
+      final sigResponse = await http.get(
+        Uri.parse(Config.uploadSignatureEndpoint),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (sigResponse.statusCode != 200) {
+        String errorMsg =
+            'Failed to get upload signature (${sigResponse.statusCode})';
+        try {
+          final body = jsonDecode(sigResponse.body);
+          errorMsg = body['message'] ?? errorMsg;
+        } catch (_) {}
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(errorMsg)));
+        }
+        return null;
+      }
+
+      final sigData = jsonDecode(sigResponse.body);
+      final cloudName = sigData['cloudName'];
+      final apiKey = sigData['apiKey'];
+      final signature = sigData['signature'];
+      final timestamp = sigData['timestamp'];
+      final folder = sigData['folder'];
+      final transformation = sigData['transformation'];
+
+      // Step 2: Upload directly to Cloudinary (bypasses Vercel size limits)
+      final uploadRequest = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload'),
+      );
+      uploadRequest.fields['signature'] = signature;
+      uploadRequest.fields['api_key'] = apiKey;
+      uploadRequest.fields['timestamp'] = timestamp.toString();
+      uploadRequest.fields['folder'] = folder;
+      uploadRequest.fields['transformation'] = transformation;
+      uploadRequest.files.add(
+        await http.MultipartFile.fromPath('file', _selectedImage!.path),
+      );
+
+      final streamedResponse = await uploadRequest.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['secure_url'];
+      } else {
+        String errorMsg = 'Upload failed (${response.statusCode})';
+        try {
+          final body = jsonDecode(response.body);
+          errorMsg = body['error']?['message'] ?? errorMsg;
+        } catch (_) {}
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Image upload failed: $errorMsg')),
+          );
+        }
+        return null;
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Image upload error: $e')));
+      }
+      return null;
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
   }
 
   void _selectDate(bool isStart) {
@@ -209,6 +313,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     setState(() => isLoading = true);
 
     try {
+      // Upload image first if selected
+      String? imageUrl;
+      if (_selectedImage != null) {
+        imageUrl = await _uploadImage();
+        if (imageUrl == null) {
+          // Upload failed, stop submission
+          setState(() => isLoading = false);
+          return;
+        }
+      }
+
       final token = await SharedPreferencesService.getToken();
 
       final body = {
@@ -225,6 +340,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           'roomNo': _roomController.text.trim(),
         },
       };
+
+      if (imageUrl != null) {
+        body['imageUrl'] = imageUrl;
+      }
 
       if (postType == 'event') {
         body['eventDetails'] = {
@@ -438,6 +557,112 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),
+                      const SizedBox(height: 24),
+
+                      // Image Section
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Text(
+                          'Image',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ),
+                      if (_selectedImage != null) ...[
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: AspectRatio(
+                                aspectRatio: 4 / 3,
+                                child: Image.file(
+                                  File(_selectedImage!.path),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: GestureDetector(
+                                onTap: _removeImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    CupertinoIcons.xmark,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Center(
+                          child: CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            onPressed: _pickImage,
+                            child: const Text('Change Image'),
+                          ),
+                        ),
+                      ] else ...[
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            height: 150,
+                            decoration: BoxDecoration(
+                              color: CupertinoColors.systemGrey6.resolveFrom(
+                                context,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: CupertinoColors.systemGrey4.resolveFrom(
+                                  context,
+                                ),
+                              ),
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.photo,
+                                    size: 40,
+                                    color: CupertinoColors.secondaryLabel
+                                        .resolveFrom(context),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Add Image (Optional)',
+                                    style: TextStyle(
+                                      color: CupertinoColors.secondaryLabel
+                                          .resolveFrom(context),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '4:3 ratio • Max 5MB',
+                                    style: TextStyle(
+                                      color: CupertinoColors.tertiaryLabel
+                                          .resolveFrom(context),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
 
                       // Links Section

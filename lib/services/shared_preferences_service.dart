@@ -316,28 +316,21 @@ class SharedPreferencesService {
     return prefs.clear();
   }
 
-  /// Clear user-specific data (called on logout)
+  /// Clear user-specific data (called on logout).
+  /// Preserves only theme preference, wipes everything else.
   static Future<void> clearUserData() async {
-    await removeToken();
-    await remove(_userIdKey);
-    await remove(_userRoleKey);
-    await remove(_userNameKey);
-    await remove(_userEmailKey);
-    await remove(_userFirstNameKey);
-    await remove(_userLastNameKey);
-    await remove(_branchKey);
-    await remove(_sectionKey);
-    await remove(_rollNoKey);
-    await remove(_yearKey);
-    await remove(_semesterKey);
-    await remove(_isProfileCompletedKey);
-    await remove(_profileSetupCompleteKey);
-    await remove(_neverAskProfileSetupKey);
-    await remove('selectedClass');
-    await remove('selectedBranch');
-    await remove('savePreference');
-    await remove('cgpa');
-    await setIsLoggedIn(false);
+    final prefs = await SharedPreferences.getInstance();
+
+    // Preserve theme preference across logout
+    final savedTheme = prefs.getString(_themeKey);
+
+    // Wipe everything
+    await prefs.clear();
+
+    // Restore theme
+    if (savedTheme != null) {
+      await prefs.setString(_themeKey, savedTheme);
+    }
   }
 
   // ==================== Full Profile Save/Load ====================
@@ -361,7 +354,7 @@ class SharedPreferencesService {
       await setUserEmail(user['email']);
     }
     if (user['role'] != null) {
-      await setUserRole(user['role']);
+      await setUserRole(user['role'].toString().toLowerCase());
     }
     if (user['rollNo'] != null) {
       await setString(_rollNoKey, user['rollNo']);

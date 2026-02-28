@@ -216,7 +216,7 @@ class _EventScreenState extends State<EventScreen> {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+              padding: const EdgeInsets.only(bottom: 100),
               sliver: SliverList.builder(
                 itemCount: posts.length,
                 itemBuilder: (context, index) {

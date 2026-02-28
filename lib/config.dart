@@ -16,6 +16,10 @@ class Config {
   static const String postsEndpoint = "$BASE_URL/api/posts";
   static const String createPostEndpoint = "$BASE_URL/api/posts";
 
+  // Upload endpoints
+  static const String uploadSignatureEndpoint =
+      "$BASE_URL/api/upload/signature";
+
   // Curriculum endpoints
   static const String curriculumUploadEndpoint =
       "$BASE_URL/api/curriculum/upload";

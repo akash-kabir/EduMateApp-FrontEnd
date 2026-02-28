@@ -547,9 +547,10 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
   }
 
   String _formatRole(String role) {
-    if (role == 'society_head') {
+    final r = role.toLowerCase();
+    if (r == 'society_head') {
       return 'Society Head';
-    } else if (role == 'admin') {
+    } else if (r == 'admin') {
       return 'Admin';
     } else {
       return 'Student';
