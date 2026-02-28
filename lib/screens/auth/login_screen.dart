@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_screen1.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/cupertino.dart';
 import '../../widgets/auth_background_wrapper.dart';
 import '../splash/splash_screen_loading.dart';
 import '../../services/api_service.dart';
+import '../../services/shared_preferences_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -91,18 +91,27 @@ class _LoginScreenState extends State<LoginScreen>
         final token = data['token'];
         final user = data['user'];
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', token);
-        await prefs.setString('userId', user['id'] ?? user['_id'] ?? '');
-        await prefs.setString('userFirstName', user['firstName']);
-        await prefs.setString('userLastName', user['lastName']);
-        await prefs.setString('userName', user['username']);
-        await prefs.setString('userEmail', user['email']);
-        await prefs.setString('userRole', user['role']);
-        await prefs.setBool(
-          'isProfileCompleted',
-          user['isProfileCompleted'] ?? false,
-        );
+        // Save token and login state
+        await SharedPreferencesService.setToken(token);
+        await SharedPreferencesService.setIsLoggedIn(true);
+
+        // Save full user profile to SharedPreferences
+        await SharedPreferencesService.saveFullUserProfile(user);
+
+        // If profile is completed, also save branch as selectedBranch for timesheet
+        if (user['isProfileCompleted'] == true && user['branch'] != null) {
+          await SharedPreferencesService.setString(
+            'selectedBranch',
+            user['branch'],
+          );
+          if (user['section'] != null) {
+            await SharedPreferencesService.setString(
+              'selectedClass',
+              user['section'],
+            );
+            await SharedPreferencesService.setBool('savePreference', true);
+          }
+        }
 
         if (mounted) {
           Navigator.pushReplacement(

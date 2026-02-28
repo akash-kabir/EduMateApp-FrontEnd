@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
+import '../../services/shared_preferences_service.dart';
 
 class SplashProgressBar extends StatefulWidget {
   final Function(double) onProgressUpdate;
@@ -39,10 +39,9 @@ class _SplashProgressBarState extends State<SplashProgressBar>
 
   Future<void> _startLoadingSequence() async {
     try {
-      // Get user data from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('userId');
-      final token = prefs.getString('token');
+      // Get user data from SharedPreferencesService
+      final userId = await SharedPreferencesService.getUserId();
+      final token = await SharedPreferencesService.getToken();
 
       if (userId == null || token == null) {
         _finishLoading();
@@ -64,8 +63,7 @@ class _SplashProgressBarState extends State<SplashProgressBar>
 
       if (!profileStatusResult['success']) {
         // New user - profile status check failed, jump to 100% and finish
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isProfileCompleted', false);
+        await SharedPreferencesService.setBool('isProfileCompleted', false);
 
         // Jump directly to 100%
         _updateProgress(1.0);
@@ -118,9 +116,11 @@ class _SplashProgressBarState extends State<SplashProgressBar>
       if (result['success'] ?? false) {
         final isProfileCompleted = result['isProfileCompleted'] ?? false;
 
-        // Save to SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isProfileCompleted', isProfileCompleted);
+        // Save to SharedPreferencesService
+        await SharedPreferencesService.setBool(
+          'isProfileCompleted',
+          isProfileCompleted,
+        );
 
         return {'success': true, 'isProfileCompleted': isProfileCompleted};
       }
@@ -136,12 +136,10 @@ class _SplashProgressBarState extends State<SplashProgressBar>
       final result = await ApiService.getUserProfile(token: token);
 
       if (result['success'] ?? false) {
-        final prefs = await SharedPreferences.getInstance();
-
-        // Save user profile data to SharedPreferences if needed
+        // Save user profile data to SharedPreferencesService if needed
         if (result['data'] != null) {
           final userData = result['data'];
-          await prefs.setString('userEmail', userData['email'] ?? '');
+          await SharedPreferencesService.setUserEmail(userData['email'] ?? '');
         }
       }
     } catch (e) {

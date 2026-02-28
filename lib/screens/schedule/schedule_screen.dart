@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' as ui;
 import '../../config.dart';
+import '../../services/shared_preferences_service.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -12,15 +14,19 @@ class ScheduleScreen extends StatefulWidget {
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
 
-class _ScheduleScreenState extends State<ScheduleScreen> {
+class _ScheduleScreenState extends State<ScheduleScreen>
+    with WidgetsBindingObserver {
   late DateTime selectedDate;
   late DateTime weekStartDate;
+  Timer? _refreshTimer;
   String selectedBranch = '';
   String selectedClass = '';
   bool savePreference = false;
   Map<String, dynamic>? scheduleData;
   bool isLoading = false;
   int _lastRequestId = 0;
+  bool _slideFromRight = true; // true = next day, false = prev day
+  double _dragOffset = 0.0; // tracks real-time drag distance
 
   final List<String> branches = ['CSCE', 'CSE', 'IT', 'CSSE'];
   final Map<String, List<String>> classesPerBranch = {
@@ -85,30 +91,77 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     selectedDate = DateTime.now();
     weekStartDate = selectedDate.subtract(
       Duration(days: selectedDate.weekday % 7),
     );
     _loadSavedPreferenceAndFetchSchedule();
+    _startRefreshTimer();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refresh UI when app comes back to foreground
+      setState(() {});
+      _startRefreshTimer();
+    } else if (state == AppLifecycleState.paused) {
+      _refreshTimer?.cancel();
+    }
+  }
+
+  void _startRefreshTimer() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _loadSavedPreferenceAndFetchSchedule() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedClass = prefs.getString('selectedClass');
-    final savedBranch = prefs.getString('selectedBranch');
-    final saved = prefs.getBool('savePreference') ?? false;
+    final savedClass = await SharedPreferencesService.getString(
+      'selectedClass',
+    );
+    final savedBranch = await SharedPreferencesService.getString(
+      'selectedBranch',
+    );
+    final saved = await SharedPreferencesService.getBool('savePreference');
 
-    if (saved && savedClass != null) {
+    if (saved && savedClass != null && savedClass.isNotEmpty) {
       setState(() {
         if (savedBranch != null) selectedBranch = savedBranch;
         selectedClass = savedClass;
         savePreference = true;
       });
-      // Fetch schedule for saved class
       _fetchScheduleFromBackend();
     } else {
-      // No saved preference, fetch default schedule
-      _fetchScheduleFromBackend();
+      // Fallback: check profile data (branch/section) from SharedPreferences
+      final profileBranch = await SharedPreferencesService.getBranch();
+      final profileSection = await SharedPreferencesService.getSection();
+
+      if (profileBranch != null &&
+          profileBranch.isNotEmpty &&
+          profileSection != null &&
+          profileSection.isNotEmpty) {
+        setState(() {
+          selectedBranch = profileBranch;
+          selectedClass = profileSection;
+          savePreference = true;
+        });
+        // Auto-save these as timesheet preferences too
+        await _savePreference(profileBranch, profileSection, true);
+        _fetchScheduleFromBackend();
+      } else {
+        // No saved preference at all
+        _fetchScheduleFromBackend();
+      }
     }
   }
 
@@ -117,21 +170,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     String classValue,
     bool shouldSave,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
     if (shouldSave) {
-      await prefs.setString('selectedBranch', branch);
-      await prefs.setString('selectedClass', classValue);
-      await prefs.setBool('savePreference', true);
+      await SharedPreferencesService.setString('selectedBranch', branch);
+      await SharedPreferencesService.setString('selectedClass', classValue);
+      await SharedPreferencesService.setBool('savePreference', true);
     } else {
-      await prefs.remove('selectedBranch');
-      await prefs.remove('selectedClass');
-      await prefs.setBool('savePreference', false);
+      await SharedPreferencesService.remove('selectedBranch');
+      await SharedPreferencesService.remove('selectedClass');
+      await SharedPreferencesService.setBool('savePreference', false);
     }
   }
 
   Future<bool> _isSavedPreferenceExists() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('savePreference') ?? false;
+    return await SharedPreferencesService.getBool('savePreference');
   }
 
   Future<void> _cacheScheduleData(
@@ -139,18 +190,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     String classValue,
     Map<String, dynamic> data,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
     final cacheKey = 'schedule_${branch}_$classValue';
-    await prefs.setString(cacheKey, jsonEncode(data));
+    await SharedPreferencesService.setString(cacheKey, jsonEncode(data));
   }
 
   Future<Map<String, dynamic>?> _getCachedScheduleData(
     String branch,
     String classValue,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
     final cacheKey = 'schedule_${branch}_$classValue';
-    final cachedData = prefs.getString(cacheKey);
+    final cachedData = await SharedPreferencesService.getString(cacheKey);
     if (cachedData != null) {
       try {
         return jsonDecode(cachedData) as Map<String, dynamic>?;
@@ -304,18 +353,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return List.generate(7, (i) => weekStartDate.add(Duration(days: i)));
   }
 
-  void _goToPreviousWeek() {
-    setState(() {
-      weekStartDate = weekStartDate.subtract(const Duration(days: 7));
-    });
-  }
-
-  void _goToNextWeek() {
-    setState(() {
-      weekStartDate = weekStartDate.add(const Duration(days: 7));
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -323,47 +360,129 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final now = DateTime.now();
 
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        automaticallyImplyLeading: false,
-        middle: const Text('Timesheet'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GestureDetector(
-              onTap: _showBranchPicker,
-              child: Text(
-                selectedBranch.isEmpty ? 'Select Branch' : selectedBranch,
-                style: const TextStyle(
-                  color: CupertinoColors.systemBlue,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+      child: GestureDetector(
+        onHorizontalDragStart: (_) {
+          setState(() {
+            _dragOffset = 0.0;
+          });
+        },
+        onHorizontalDragUpdate: (details) {
+          setState(() {
+            _dragOffset += details.delta.dx;
+          });
+        },
+        onHorizontalDragEnd: (details) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final swipeThreshold = screenWidth * 0.25;
+          final velocityThreshold = 200.0;
+          final velocity = details.primaryVelocity ?? 0;
+          final weekDatesLocal = getWeekDates();
+          final currentIndex = weekDatesLocal.indexWhere(
+            (date) =>
+                date.year == selectedDate.year &&
+                date.month == selectedDate.month &&
+                date.day == selectedDate.day,
+          );
+          bool didSwipe = false;
+          // Swipe left (negative drag or velocity) → next day
+          if (_dragOffset < -swipeThreshold || velocity < -velocityThreshold) {
+            // Mon(1)→Sat(6)
+            if (currentIndex < 6) {
+              final nextIndex = currentIndex + 1 <= 6
+                  ? currentIndex + 1
+                  : currentIndex;
+              setState(() {
+                _slideFromRight = true;
+                _dragOffset = 0.0;
+                selectedDate = weekDatesLocal[nextIndex];
+              });
+              didSwipe = true;
+            }
+          }
+          // Swipe right (positive drag or velocity) → previous day
+          else if (_dragOffset > swipeThreshold ||
+              velocity > velocityThreshold) {
+            if (currentIndex > 1) {
+              final prevIndex = currentIndex - 1 >= 1
+                  ? currentIndex - 1
+                  : currentIndex;
+              setState(() {
+                _slideFromRight = false;
+                _dragOffset = 0.0;
+                selectedDate = weekDatesLocal[prevIndex];
+              });
+              didSwipe = true;
+            }
+          }
+          if (!didSwipe) {
+            // Snap back
+            setState(() {
+              _dragOffset = 0.0;
+            });
+          }
+        },
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            CupertinoSliverNavigationBar(
+              automaticallyImplyLeading: false,
+              largeTitle: const Text('Timesheet'),
+              backgroundColor: isDark
+                  ? CupertinoColors.black.withOpacity(0.6)
+                  : CupertinoColors.white.withOpacity(0.6),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: _showBranchPicker,
+                    child: Text(
+                      selectedBranch.isEmpty ? 'Select Branch' : selectedBranch,
+                      style: const TextStyle(
+                        color: CupertinoColors.systemBlue,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: _showClassPicker,
+                    child: Text(
+                      selectedClass.isEmpty ? 'Select Section' : selectedClass,
+                      style: const TextStyle(
+                        color: CupertinoColors.systemGreen,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Day selector pinned below nav bar
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _DaySelectorHeaderDelegate(
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Container(
+                      color: isDark
+                          ? CupertinoColors.black.withOpacity(0.6)
+                          : CupertinoColors.white.withOpacity(0.6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: _buildWeekCalendarGrid(weekDates, isDark, now),
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: _showClassPicker,
-              child: Text(
-                selectedClass.isEmpty ? 'Select Section' : selectedClass,
-                style: const TextStyle(
-                  color: CupertinoColors.systemGreen,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: isDark
-            ? CupertinoColors.black.withOpacity(0.6)
-            : CupertinoColors.white.withOpacity(0.6),
-        previousPageTitle: 'Back',
-      ),
-      child: SafeArea(
-        child: Material(
-          color: isDark ? Colors.black : CupertinoColors.white,
-          child: selectedBranch.isEmpty || selectedClass.isEmpty
-              ? Center(
+            if (selectedBranch.isEmpty || selectedClass.isEmpty)
+              SliverFillRemaining(
+                child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -392,46 +511,116 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       ),
                     ],
                   ),
-                )
-              : ListView(
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 24),
-                          _buildWeekCalendarGrid(weekDates, isDark, now),
-                          const SizedBox(height: 24),
-                          _buildClassBlocksForSelectedDay(isDark),
-                          const SizedBox(height: 24),
-                        ],
+                ),
+              )
+            else if (isLoading)
+              SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CupertinoActivityIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Loading schedule for $selectedClass...',
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (scheduleData == null)
+              SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        CupertinoIcons.exclamationmark_circle,
+                        size: 40,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No schedule data available for $selectedClass',
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    Opacity(
+                      opacity: (1.0 - (_dragOffset.abs() / 400.0)).clamp(
+                        0.4,
+                        1.0,
+                      ),
+                      child: AnimatedContainer(
+                        duration: _dragOffset == 0.0
+                            ? const Duration(milliseconds: 200)
+                            : Duration.zero,
+                        curve: Curves.easeOut,
+                        transform: Matrix4.translationValues(
+                          _dragOffset.clamp(-200.0, 200.0),
+                          0,
+                          0,
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          switchInCurve: Curves.easeOut,
+                          switchOutCurve: Curves.easeIn,
+                          transitionBuilder: (child, animation) {
+                            // Determine if this is the incoming or outgoing child
+                            final isIncoming =
+                                child.key == ValueKey(selectedDate);
+                            final Offset offsetBegin;
+                            if (isIncoming) {
+                              // New content slides in from the swipe direction
+                              offsetBegin = _slideFromRight
+                                  ? const Offset(1.0, 0.0)
+                                  : const Offset(-1.0, 0.0);
+                            } else {
+                              // Old content slides out in the opposite direction
+                              offsetBegin = _slideFromRight
+                                  ? const Offset(-1.0, 0.0)
+                                  : const Offset(1.0, 0.0);
+                            }
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: offsetBegin,
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: KeyedSubtree(
+                            key: ValueKey(selectedDate),
+                            child: _buildClassBlocksForSelectedDay(isDark),
+                          ),
+                        ),
                       ),
                     ),
-                  ],
+                  ]),
                 ),
+              ),
+          ],
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${date.day} ${months[date.month - 1]}';
   }
 
   Widget _buildWeekCalendarGrid(
@@ -439,7 +628,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     bool isDark,
     DateTime now,
   ) {
-    final dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    // Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6 (skip Sun=0)
+    final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    final weekdayIndices = [1, 2, 3, 4, 5, 6]; // Mon-Sat in weekDates list
+
     final selectedIndex = weekDates.indexWhere(
       (date) =>
           date.year == selectedDate.year &&
@@ -447,25 +639,113 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           date.day == selectedDate.day,
     );
 
-    return CupertinoSlidingSegmentedControl<int>(
-      backgroundColor: CupertinoColors.systemGrey2,
-      thumbColor: CupertinoColors.systemBlue,
-      groupValue: selectedIndex >= 0 ? selectedIndex : 0,
-      onValueChanged: (int? value) {
-        if (value != null) {
-          setState(() {
-            selectedDate = weekDates[value];
-          });
-        }
-      },
-      children: {
-        for (int i = 0; i < 7; i++)
-          i: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(dayLabels[i]),
-          ),
-      },
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: CupertinoColors.systemBlue.withOpacity(0.4),
+          width: 1.5,
+        ),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(6, (i) {
+          final dateIndex = weekdayIndices[i];
+          final isSelected = dateIndex == selectedIndex;
+          final date = weekDates[dateIndex];
+          final isToday =
+              date.year == now.year &&
+              date.month == now.month &&
+              date.day == now.day;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _slideFromRight = dateIndex > selectedIndex;
+                selectedDate = weekDates[dateIndex];
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              width: 48,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? CupertinoColors.systemBlue
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isToday && !isSelected
+                      ? CupertinoColors.systemBlue.withOpacity(0.5)
+                      : Colors.transparent,
+                  width: 1.5,
+                ),
+              ),
+              child: Text(
+                dayLabels[i],
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
     );
+  }
+
+  /// Merge consecutive classes with the same name into a single card
+  List<Map<String, dynamic>> _mergeConsecutiveClasses(List<dynamic> classes) {
+    if (classes.isEmpty) return [];
+
+    List<Map<String, dynamic>> merged = [];
+    Map<String, dynamic>? currentGroup;
+
+    for (final classPeriod in classes) {
+      final cp = classPeriod as Map<String, dynamic>;
+
+      // Skip placeholder entries
+      if (cp['className'] == '—') continue;
+
+      if (currentGroup == null) {
+        // Start a new group
+        currentGroup = {
+          'className': cp['className'],
+          'startTime': cp['startTime'],
+          'endTime': cp['endTime'],
+          'room': cp['room'],
+          'count': 1, // Track how many periods this represents
+        };
+      } else if (currentGroup['className'] == cp['className']) {
+        // Same class name, extend the end time
+        currentGroup['endTime'] = cp['endTime'];
+        currentGroup['count'] = (currentGroup['count'] as int) + 1;
+      } else {
+        // Different class name, save current group and start new one
+        merged.add(currentGroup);
+        currentGroup = {
+          'className': cp['className'],
+          'startTime': cp['startTime'],
+          'endTime': cp['endTime'],
+          'room': cp['room'],
+          'count': 1,
+        };
+      }
+    }
+
+    // Don't forget to add the last group
+    if (currentGroup != null) {
+      merged.add(currentGroup);
+    }
+
+    return merged;
   }
 
   List<dynamic> _getClassesForDay(int dayOfWeek) {
@@ -522,6 +802,36 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     print('Fallback result: ${result.length} periods');
     print('=== GET CLASSES END ===\n');
     return result;
+  }
+
+  bool _isClassPassed(String endTime) {
+    final now = DateTime.now();
+    if (selectedDate.year != now.year ||
+        selectedDate.month != now.month ||
+        selectedDate.day != now.day) {
+      return false;
+    }
+    final endParts = endTime.split(':');
+    final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+    final nowMinutes = now.hour * 60 + now.minute;
+    return nowMinutes >= endMinutes;
+  }
+
+  bool _isClassOngoing(String startTime, String endTime) {
+    final now = DateTime.now();
+    // Only highlight if the selected day is today
+    if (selectedDate.year != now.year ||
+        selectedDate.month != now.month ||
+        selectedDate.day != now.day) {
+      return false;
+    }
+    final startParts = startTime.split(':');
+    final endParts = endTime.split(':');
+    final startMinutes =
+        int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+    final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+    final nowMinutes = now.hour * 60 + now.minute;
+    return nowMinutes >= startMinutes && nowMinutes < endMinutes;
   }
 
   Widget _buildClassBlocksForSelectedDay(bool isDark) {
@@ -591,85 +901,109 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       );
     }
 
+    // Merge consecutive classes with the same name
+    final mergedClasses = _mergeConsecutiveClasses(classes);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...List.generate(classes.length, (index) {
-          final classPeriod = classes[index] as Map<String, dynamic>;
+        ...List.generate(mergedClasses.length, (index) {
+          final classPeriod = mergedClasses[index];
 
-          if (classPeriod['className'] == '—') {
-            return const SizedBox.shrink();
+          final classCount = classPeriod['count'] as int;
+          final isOngoing = _isClassOngoing(
+            classPeriod['startTime'] as String,
+            classPeriod['endTime'] as String,
+          );
+          final isPassed = _isClassPassed(classPeriod['endTime'] as String);
+
+          final Color accentColor;
+          if (isOngoing) {
+            accentColor = CupertinoColors.systemGreen;
+          } else if (isPassed) {
+            accentColor = isDark ? Colors.grey[700]! : Colors.grey[400]!;
+          } else {
+            accentColor = CupertinoColors.systemBlue;
           }
 
-          final backgroundColor = isDark ? Colors.grey[850] : Colors.grey[300];
-          const primaryBlue = CupertinoColors.systemBlue;
+          final backgroundColor = isPassed
+              ? (isDark ? Colors.grey[900] : Colors.grey[200])
+              : (isDark ? Colors.grey[850] : Colors.grey[300]);
 
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${classPeriod['startTime']} - ${classPeriod['endTime']}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.black,
+          final double cardOpacity = isPassed ? 0.5 : 1.0;
+
+          return Opacity(
+            opacity: cardOpacity,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  border: Border(
+                    left: BorderSide(color: accentColor, width: 4),
                   ),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: backgroundColor,
-                    border: const Border(
-                      left: BorderSide(color: primaryBlue, width: 4),
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        classPeriod['className'],
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 20,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${classPeriod['startTime']} - ${classPeriod['endTime']}${classCount > 1 ? ' (${classCount}h)' : ''}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
                       ),
-                      const SizedBox(height: 4),
-                      if (classPeriod['room'] != null &&
-                          (classPeriod['room'] as String).isNotEmpty &&
-                          classPeriod['room'] != '—')
-                        Row(
-                          children: [
-                            Icon(
-                              CupertinoIcons.location,
-                              size: 12,
-                              color: isDark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            classPeriod['className'],
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : Colors.black,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              classPeriod['room'],
-                              style: TextStyle(
-                                fontSize: 12,
+                          ),
+                        ),
+                        if (classPeriod['room'] != null &&
+                            (classPeriod['room'] as String).isNotEmpty &&
+                            classPeriod['room'] != '—')
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                CupertinoIcons.location_solid,
+                                size: 14,
                                 color: isDark
                                     ? Colors.grey[400]
                                     : Colors.grey[600],
                               ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
+                              const SizedBox(width: 4),
+                              Text(
+                                classPeriod['room'],
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: isDark
+                                      ? Colors.grey[300]
+                                      : Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         }),
@@ -910,4 +1244,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       ),
     );
   }
+}
+
+class _DaySelectorHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  _DaySelectorHeaderDelegate({required this.child});
+
+  @override
+  double get minExtent => 60;
+
+  @override
+  double get maxExtent => 60;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant _DaySelectorHeaderDelegate oldDelegate) => true;
 }

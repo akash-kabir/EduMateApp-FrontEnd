@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/api_service.dart';
+import '../../../services/shared_preferences_service.dart';
 
 class SplashProgressBar extends StatefulWidget {
   final Function(double) onProgressUpdate;
@@ -39,10 +39,9 @@ class _SplashProgressBarState extends State<SplashProgressBar>
 
   Future<void> _startLoadingSequence() async {
     try {
-      // Get user data from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('userId');
-      final token = prefs.getString('token');
+      // Get user data from SharedPreferencesService
+      final userId = await SharedPreferencesService.getUserId();
+      final token = await SharedPreferencesService.getToken();
 
       if (userId == null || token == null) {
         _finishLoading();
@@ -53,41 +52,15 @@ class _SplashProgressBarState extends State<SplashProgressBar>
       _updateProgress(0.2);
       await Future.delayed(const Duration(milliseconds: 300));
 
-      // Step 2: Check profile status from backend (30% progress)
-      _updateProgress(0.3);
-      final profileStatusResult = await _checkProfileStatus(
-        userId: userId,
-        token: token,
-      );
+      // Step 2: Fetch full user profile from backend (50% progress)
+      _updateProgress(0.5);
+      await _getUserProfile(token: token);
 
-      bool isProfileCompleted = false;
-
-      if (!profileStatusResult['success']) {
-        // New user - profile status check failed, jump to 100% and finish
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isProfileCompleted', false);
-
-        // Jump directly to 100%
-        _updateProgress(1.0);
-        await Future.delayed(const Duration(milliseconds: 300));
-        _finishLoading();
-        return;
-      }
-
-      // Existing user - continue with normal progression
-      isProfileCompleted = profileStatusResult['isProfileCompleted'] ?? false;
-
-      // Step 3: Update progress to 60%
-      _updateProgress(0.6);
+      // Step 3: Update progress to 80%
+      _updateProgress(0.8);
       await Future.delayed(const Duration(milliseconds: 300));
 
-      // Step 4: If profile completed, fetch full user profile (80% progress)
-      if (isProfileCompleted) {
-        _updateProgress(0.8);
-        await _getUserProfile(token: token);
-      }
-
-      // Step 5: Complete progress (100%)
+      // Step 4: Complete progress (100%)
       _updateProgress(1.0);
       await Future.delayed(const Duration(milliseconds: 300));
 
@@ -105,43 +78,38 @@ class _SplashProgressBarState extends State<SplashProgressBar>
     widget.onProgressUpdate(newProgress);
   }
 
-  Future<Map<String, dynamic>> _checkProfileStatus({
-    required String userId,
-    required String token,
-  }) async {
-    try {
-      final result = await ApiService.checkProfileStatus(
-        userId: userId,
-        token: token,
-      );
-
-      if (result['success'] ?? false) {
-        final isProfileCompleted = result['isProfileCompleted'] ?? false;
-
-        // Save to SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isProfileCompleted', isProfileCompleted);
-
-        return {'success': true, 'isProfileCompleted': isProfileCompleted};
-      }
-
-      return {'success': false};
-    } catch (e) {
-      return {'success': false};
-    }
-  }
-
   Future<void> _getUserProfile({required String token}) async {
     try {
       final result = await ApiService.getUserProfile(token: token);
 
       if (result['success'] ?? false) {
-        final prefs = await SharedPreferences.getInstance();
-
-        // Save user profile data to SharedPreferences if needed
         if (result['data'] != null) {
-          final userData = result['data'];
-          await prefs.setString('userEmail', userData['email'] ?? '');
+          final data = result['data'];
+          // The getUserProfile response wraps user data in 'data' key
+          final userData =
+              data is Map<String, dynamic> && data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data as Map<String, dynamic>;
+
+          // Save full user profile to SharedPreferences
+          await SharedPreferencesService.saveFullUserProfile(userData);
+
+          // If profile is completed, also save branch/section for timesheet
+          if (userData['isProfileCompleted'] == true) {
+            if (userData['branch'] != null) {
+              await SharedPreferencesService.setString(
+                'selectedBranch',
+                userData['branch'],
+              );
+            }
+            if (userData['section'] != null) {
+              await SharedPreferencesService.setString(
+                'selectedClass',
+                userData['section'],
+              );
+              await SharedPreferencesService.setBool('savePreference', true);
+            }
+          }
         }
       }
     } catch (e) {

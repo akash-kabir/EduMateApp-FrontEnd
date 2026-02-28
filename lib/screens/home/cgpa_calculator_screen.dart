@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../config.dart';
+import '../../services/shared_preferences_service.dart';
 
 class CGPACalculatorScreen extends StatefulWidget {
   const CGPACalculatorScreen({super.key});
@@ -47,7 +48,47 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    _fetchBranches();
+    _fetchBranchesAndAutoSelect();
+  }
+
+  Future<void> _fetchBranchesAndAutoSelect() async {
+    await _fetchBranches();
+
+    // Auto-select branch from SharedPreferences if available
+    final savedBranch = await SharedPreferencesService.getBranch();
+    if (savedBranch != null &&
+        savedBranch.isNotEmpty &&
+        branches.contains(savedBranch)) {
+      setState(() {
+        selectedBranch = savedBranch;
+      });
+      await _fetchSemesters(savedBranch);
+
+      // Auto-select semester from SharedPreferences if available
+      final savedSemester = await SharedPreferencesService.getSemester();
+      if (savedSemester != null && savedSemester.isNotEmpty) {
+        // Parse semester number from "Semester 5" → 5
+        final parts = savedSemester.split(' ');
+        if (parts.length == 2) {
+          final semNum = int.tryParse(parts[1]);
+          if (semNum != null) {
+            final matchingSemester = semesters.where(
+              (s) => s['semesterNumber'] == semNum,
+            );
+            if (matchingSemester.isNotEmpty) {
+              setState(() {
+                selectedSemesterNumber = semNum;
+                subjects = List<Map<String, dynamic>>.from(
+                  matchingSemester.first['subjects'],
+                );
+                gradeMap = {};
+                calculatedCGPA = null;
+              });
+            }
+          }
+        }
+      }
+    }
   }
 
   Future<void> _fetchBranches() async {
@@ -197,20 +238,6 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
     });
   }
 
-  void _resetCalculator() {
-    setState(() {
-      selectedBranch = null;
-      selectedSemesterNumber = null;
-      subjects = [];
-      gradeMap.clear();
-      calculatedCGPA = null;
-      semesters = [];
-      branchController.clear();
-      semesterController.clear();
-      gradeControllers.forEach((key, controller) => controller.clear());
-    });
-  }
-
   void _resetGrades() {
     setState(() {
       gradeMap.clear();
@@ -291,8 +318,8 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
       navigationBar: CupertinoNavigationBar(
         middle: const Text('CGPA Calculator'),
         backgroundColor: isDark
-            ? CupertinoColors.black.withOpacity(0.95)
-            : CupertinoColors.white.withOpacity(0.95),
+            ? CupertinoColors.black.withOpacity(0.6)
+            : CupertinoColors.white.withOpacity(0.6),
         border: Border(
           bottom: BorderSide(color: CupertinoColors.separator, width: 0.5),
         ),

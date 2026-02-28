@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/shared_preferences_service.dart';
 import '../../main_page.dart';
 import '../auth/getting_started_screen.dart';
 
@@ -22,8 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 1));
 
     if (mounted) {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
+      final token = await SharedPreferencesService.getToken();
 
       Navigator.pushReplacement(
         context,
