@@ -53,6 +53,22 @@ EduMate is a production-ready Flutter application showcasing modern mobile devel
 - 📊 Centralized color definitions to AppColors class
 - 📊 Generated WIDGET_REFACTORING_RECOMMENDATIONS.md for future optimization
 
+### 🎉 Latest Updates (March 2026)
+
+✨ **Posts, Media & Role Reliability Enhancements:**
+- ✅ **Instagram-Style Events/News Feed** - Refined post cards with author header, gradient headline card, image support, and expandable details
+- ✅ **Smart Body Placement** - Body text now auto-adjusts: visible below heading when image is absent, collapsible when image is present
+- ✅ **Context-Aware More/Less Control** - "More" is hidden when no extra content exists (no body collapse content and no event metadata)
+- ✅ **Profile Details Overhaul** - Improved profile details UI with grouped sections, quick stats, and cleaner academic/personal data presentation
+- ✅ **Role Normalization Fixes** - Role handling normalized to avoid case-related mismatches across login/profile/event permissions
+- ✅ **Session Cleanup Hardening** - Logout now fully clears user session preferences to prevent stale role/profile state
+- ✅ **Cloudinary Media Pipeline** - Added secure signed upload flow (frontend uploads directly to Cloudinary using backend signature endpoint)
+
+**Backend/Integration Notes:**
+- 🔐 Added signed media upload endpoint for Cloudinary (`/api/upload/signature`)
+- 🖼️ Post model supports optional `imageUrl` for event/news media cards
+- 🧭 Event creation flow supports optional 4:3 image uploads with preview before publish
+
 ---
 
 ## 🎯 Key Features
@@ -86,6 +102,13 @@ EduMate is a production-ready Flutter application showcasing modern mobile devel
 - **Admin Authentication** - Separate admin login flow with enhanced security
 - **Admin Dashboard Ready** - Foundation for advanced admin features
 
+### 📰 Events & Posts
+- **Create Post Screen (Society Head)** - News/Event creation with title, body, links, location, date/time and optional media
+- **Cloudinary Signed Uploads** - Direct client upload using backend-generated signature
+- **4:3 Media Support** - Feed-ready image ratio for consistent cards
+- **Adaptive Card Behavior** - Heading-focused compact card with dynamic body placement and conditional expand controls
+- **Role-Gated Publishing** - Create-post action shown only for eligible roles
+
 ### 🎨 Premium UI/UX
 - **Glassmorphic Design** - Modern frosted glass effects using BackdropFilter
 - **Smooth Animations**
@@ -104,6 +127,7 @@ EduMate is a production-ready Flutter application showcasing modern mobile devel
 - **Local Data Persistence** - Token storage with SharedPreferences caching
 - **Form Error Animations** - Engaging error state feedback
 - **Code Optimization** - Constants extraction, code deduplication, reusable widgets
+- **Role/Session Consistency** - Normalized role values and robust logout clearing to avoid stale auth state
 - **Performance Features**
   - HTTP connection pooling for faster requests
   - Shared preferences instance caching to reduce I/O
@@ -232,7 +256,8 @@ lib/
 |---------|---------|---------|
 | `provider` | ^6.1.5 | State management |
 | `http` | ^1.1.0 | HTTP requests |
-| `shared_preferences` | ^2.2.0 | Local data persistence |
+| `shared_preferences` | ^2.2.2 | Local data persistence |
+| `image_picker` | ^1.1.2 | Image selection for post media |
 | `flutter_cupertino_localizations` | ^1.0.0 | iOS localization |
 
 ### Installing Dependencies
