@@ -4,7 +4,7 @@ import '../../services/shared_preferences_service.dart';
 import '../profile/profile_details_screen.dart';
 import '../profile_setup/profile_setup_screen.dart';
 import '../auth/getting_started_screen.dart';
-import 'cgpa_calculator_screen.dart';
+import 'cgpa_calculator/cgpa_calculator_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToEvent;

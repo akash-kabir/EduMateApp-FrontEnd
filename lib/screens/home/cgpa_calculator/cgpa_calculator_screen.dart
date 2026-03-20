@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../../config.dart';
-import '../../services/shared_preferences_service.dart';
+import '../../../config.dart';
+import '../../../services/shared_preferences_service.dart';
 
 class CGPACalculatorScreen extends StatefulWidget {
   const CGPACalculatorScreen({super.key});
