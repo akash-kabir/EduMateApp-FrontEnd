@@ -134,34 +134,17 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
     final saved = await SharedPreferencesService.getBool('savePreference');
 
-    if (saved && savedClass != null && savedClass.isNotEmpty) {
+    if (saved && savedClass != null) {
       setState(() {
         if (savedBranch != null) selectedBranch = savedBranch;
         selectedClass = savedClass;
         savePreference = true;
       });
+      // Fetch schedule for saved class
       _fetchScheduleFromBackend();
     } else {
-      // Fallback: check profile data (branch/section) from SharedPreferences
-      final profileBranch = await SharedPreferencesService.getBranch();
-      final profileSection = await SharedPreferencesService.getSection();
-
-      if (profileBranch != null &&
-          profileBranch.isNotEmpty &&
-          profileSection != null &&
-          profileSection.isNotEmpty) {
-        setState(() {
-          selectedBranch = profileBranch;
-          selectedClass = profileSection;
-          savePreference = true;
-        });
-        // Auto-save these as timesheet preferences too
-        await _savePreference(profileBranch, profileSection, true);
-        _fetchScheduleFromBackend();
-      } else {
-        // No saved preference at all
-        _fetchScheduleFromBackend();
-      }
+      // No saved preference, fetch default schedule
+      _fetchScheduleFromBackend();
     }
   }
 
