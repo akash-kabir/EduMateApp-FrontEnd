@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../constants/app_constants.dart';
 import '../../services/shared_preferences_service.dart';
 import '../../main_page.dart';
 import '../auth/getting_started_screen.dart';
@@ -38,11 +39,12 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: UserColors.background,
       body: Center(
         child: const Text(
           'EduMate',
           style: TextStyle(
+            fontFamily: 'Salena',
             fontSize: 48,
             fontWeight: FontWeight.bold,
             color: Colors.white,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../../constants/app_constants.dart';
 import '../../../config.dart';
 import '../../../services/shared_preferences_service.dart';
 
@@ -260,16 +261,16 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
 
   LinearGradient _getGradientForCGPA(double cgpa) {
     if (cgpa >= 9.5 && cgpa <= 10.0) {
-      // Blue to dark purple
+      // Coral to dark purple
       return LinearGradient(
-        colors: [Colors.blue, Colors.deepPurple],
+        colors: [AuthPalette.coral, Colors.deepPurple],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       );
     } else if (cgpa >= 8.0 && cgpa < 9.5) {
-      // Green to blue
+      // Green to coral
       return LinearGradient(
-        colors: [Colors.green, Colors.blue],
+        colors: [Colors.green, AuthPalette.coral],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       );
@@ -326,16 +327,16 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.pop(context),
-          child: Icon(
-            CupertinoIcons.back,
-            color: isDark
-                ? CupertinoColors.systemBlue
-                : const Color(0xFFFF1744),
-          ),
+          child: Icon(CupertinoIcons.back, color: AuthPalette.coral),
         ),
       ),
       child: isLoading
-          ? const Center(child: CupertinoActivityIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                color: AuthPalette.coral,
+                strokeWidth: 3,
+              ),
+            )
           : Material(
               color: isDark ? CupertinoColors.black : CupertinoColors.white,
               child: SafeArea(
@@ -379,7 +380,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                           states,
                                         ) {
                                           if (b == selectedBranch) {
-                                            return Colors.blue;
+                                            return AuthPalette.coral;
                                           }
                                           return isDark
                                               ? Colors.white
@@ -434,9 +435,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: isDark
-                                    ? CupertinoColors.systemBlue
-                                    : const Color(0xFFFF1744),
+                                color: AuthPalette.coral,
                                 width: 2,
                               ),
                             ),
@@ -487,7 +486,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                                 (states) {
                                                   if (sem['semesterNumber'] ==
                                                       selectedSemesterNumber) {
-                                                    return Colors.blue;
+                                                    return AuthPalette.coral;
                                                   }
                                                   return isDark
                                                       ? Colors.white
@@ -545,9 +544,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
-                                      color: isDark
-                                          ? CupertinoColors.systemBlue
-                                          : const Color(0xFFFF1744),
+                                      color: AuthPalette.coral,
                                       width: 2,
                                     ),
                                   ),
@@ -634,9 +631,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
-                                      color: isDark
-                                          ? CupertinoColors.systemBlue
-                                          : const Color(0xFFFF1744),
+                                      color: AuthPalette.coral,
                                       width: 2,
                                     ),
                                   ),
@@ -761,8 +756,8 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                                             ) {
                                                               if (g ==
                                                                   gradeMap[subjectName]) {
-                                                                return Colors
-                                                                    .blue;
+                                                                return AuthPalette
+                                                                    .coral;
                                                               }
                                                               return isDark
                                                                   ? Colors.white
@@ -840,12 +835,8 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                                             8,
                                                           ),
                                                       borderSide: BorderSide(
-                                                        color: isDark
-                                                            ? CupertinoColors
-                                                                  .systemBlue
-                                                            : const Color(
-                                                                0xFFFF1744,
-                                                              ),
+                                                        color:
+                                                            AuthPalette.coral,
                                                         width: 2,
                                                       ),
                                                     ),
@@ -903,14 +894,12 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                         vertical: 12,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: isDark
-                                            ? CupertinoColors.systemBlue
-                                            : const Color(0xFFFF1744),
+                                        color: AuthPalette.coral,
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Center(
                                         child: Text(
-                                          'Calculate SGPA',
+                                          'Calculate CGPA',
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyLarge

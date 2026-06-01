@@ -115,10 +115,20 @@ class _EventScreenState extends State<EventScreen> {
                       selectedFilter = ['all', 'news', 'event'][index];
                     });
                   },
-                  children: const [
-                    Center(child: Text('All Posts')),
-                    Center(child: Text('News Only')),
-                    Center(child: Text('Events Only')),
+                  children: [
+                    const Center(child: Text('All Posts')),
+                    Center(
+                      child: Text(
+                        'News Only',
+                        style: TextStyle(fontFamily: 'Salena'),
+                      ),
+                    ),
+                    Center(
+                      child: Text(
+                        'Events Only',
+                        style: TextStyle(fontFamily: 'Salena'),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -151,7 +161,13 @@ class _EventScreenState extends State<EventScreen> {
         slivers: [
           CupertinoSliverNavigationBar(
             automaticallyImplyLeading: false,
-            largeTitle: const Text('Events & News'),
+            largeTitle: Text(
+              'Events & News',
+              style: TextStyle(
+                fontFamily: 'Salena',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             backgroundColor: isDark
                 ? CupertinoColors.black.withOpacity(0.6)
                 : CupertinoColors.white.withOpacity(0.6),
@@ -182,7 +198,7 @@ class _EventScreenState extends State<EventScreen> {
                     },
                     child: const Icon(
                       CupertinoIcons.add_circled_solid,
-                      color: CupertinoColors.activeBlue,
+                      color: Color(0xFFFF9B7A),
                     ),
                   ),
                 CupertinoButton(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../constants/app_constants.dart';
+
 class AnimatedCircleGradient extends StatefulWidget {
   final Color primaryColor;
   final Color secondaryColor;
@@ -11,8 +13,8 @@ class AnimatedCircleGradient extends StatefulWidget {
 
   const AnimatedCircleGradient({
     super.key,
-    this.primaryColor = Colors.purple,
-    this.secondaryColor = Colors.blue,
+    this.primaryColor = AuthPalette.blush,
+    this.secondaryColor = AuthPalette.deepTeal,
     this.primaryOpacityStart = 0.3,
     this.primaryOpacityEnd = 0.8,
     this.secondaryOpacityStart = 0.2,

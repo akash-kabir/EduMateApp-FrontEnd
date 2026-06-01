@@ -44,7 +44,7 @@ class _AdminSplashScreenState extends State<AdminSplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AdminColors.background,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
+import '../../constants/app_constants.dart';
 import '../../config.dart';
 import '../../services/shared_preferences_service.dart';
 
@@ -409,7 +410,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           slivers: [
             CupertinoSliverNavigationBar(
               automaticallyImplyLeading: false,
-              largeTitle: const Text('Timesheet'),
+              largeTitle: Text(
+                'Timesheet',
+                style: TextStyle(
+                  fontFamily: 'Salena',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               backgroundColor: isDark
                   ? CupertinoColors.black.withOpacity(0.6)
                   : CupertinoColors.white.withOpacity(0.6),
@@ -421,7 +428,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                     child: Text(
                       selectedBranch.isEmpty ? 'Select Branch' : selectedBranch,
                       style: const TextStyle(
-                        color: CupertinoColors.systemBlue,
+                        color: AuthPalette.coral,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -623,10 +630,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
 
     return Container(
+      height: 70,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: CupertinoColors.systemBlue.withOpacity(0.4),
+          color: AuthPalette.coral.withOpacity(0.4),
           width: 1.5,
         ),
       ),
@@ -656,13 +664,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               height: 36,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? CupertinoColors.systemBlue
-                    : Colors.transparent,
+                color: isSelected ? AuthPalette.coral : Colors.transparent,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isToday && !isSelected
-                      ? CupertinoColors.systemBlue.withOpacity(0.5)
+                      ? AuthPalette.coral.withOpacity(0.5)
                       : Colors.transparent,
                   width: 1.5,
                 ),
@@ -906,7 +912,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           } else if (isPassed) {
             accentColor = isDark ? Colors.grey[700]! : Colors.grey[400]!;
           } else {
-            accentColor = CupertinoColors.systemBlue;
+            accentColor = AuthPalette.coral;
           }
 
           final backgroundColor = isPassed

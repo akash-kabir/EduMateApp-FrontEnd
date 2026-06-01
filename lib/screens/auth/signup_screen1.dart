@@ -4,6 +4,7 @@ import 'login_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/cupertino.dart';
 import '../../widgets/auth_background_wrapper.dart';
+import '../../constants/app_constants.dart';
 
 class SignupScreen1 extends StatefulWidget {
   const SignupScreen1({super.key});
@@ -152,20 +153,20 @@ class _SignupScreen1State extends State<SignupScreen1>
                                 labelStyle: TextStyle(
                                   color: _isFirstNameError
                                       ? CupertinoColors.systemRed
-                                      : Colors.grey,
+                                      : AuthPalette.blush,
                                 ),
                                 enabledBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isFirstNameError
                                         ? CupertinoColors.systemRed
-                                        : Colors.grey,
+                                        : AuthPalette.coral.withOpacity(0.55),
                                   ),
                                 ),
                                 focusedBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isFirstNameError
                                         ? CupertinoColors.systemRed
-                                        : Colors.blue,
+                                        : AuthPalette.blush,
                                   ),
                                 ),
                               ),
@@ -184,20 +185,20 @@ class _SignupScreen1State extends State<SignupScreen1>
                                 labelStyle: TextStyle(
                                   color: _isLastNameError
                                       ? CupertinoColors.systemRed
-                                      : Colors.grey,
+                                      : AuthPalette.blush,
                                 ),
                                 enabledBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isLastNameError
                                         ? CupertinoColors.systemRed
-                                        : Colors.grey,
+                                        : AuthPalette.coral.withOpacity(0.55),
                                   ),
                                 ),
                                 focusedBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isLastNameError
                                         ? CupertinoColors.systemRed
-                                        : Colors.blue,
+                                        : AuthPalette.blush,
                                   ),
                                 ),
                               ),
@@ -212,6 +213,8 @@ class _SignupScreen1State extends State<SignupScreen1>
                               horizontal: 48,
                               vertical: 12,
                             ),
+                            backgroundColor: AuthPalette.deepTeal,
+                            foregroundColor: Colors.white,
                           ),
                           child: const Text('Next'),
                         ),
@@ -227,7 +230,7 @@ class _SignupScreen1State extends State<SignupScreen1>
                               TextSpan(
                                 text: 'Login',
                                 style: const TextStyle(
-                                  color: CupertinoColors.activeGreen,
+                                  color: AuthPalette.blush,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 recognizer: TapGestureRecognizer()

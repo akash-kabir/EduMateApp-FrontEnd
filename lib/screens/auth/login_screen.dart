@@ -6,6 +6,7 @@ import '../../widgets/auth_background_wrapper.dart';
 import '../splash/splash_screen_loading.dart';
 import '../../services/api_service.dart';
 import '../../services/shared_preferences_service.dart';
+import '../../constants/app_constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -187,20 +188,20 @@ class _LoginScreenState extends State<LoginScreen>
                                 labelStyle: TextStyle(
                                   color: _isLoginError
                                       ? CupertinoColors.systemRed
-                                      : Colors.grey,
+                                      : AuthPalette.blush,
                                 ),
                                 enabledBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isLoginError
                                         ? CupertinoColors.systemRed
-                                        : Colors.grey,
+                                        : AuthPalette.coral.withOpacity(0.55),
                                   ),
                                 ),
                                 focusedBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isLoginError
                                         ? CupertinoColors.systemRed
-                                        : Colors.blue,
+                                        : AuthPalette.blush,
                                   ),
                                 ),
                               ),
@@ -220,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 labelStyle: TextStyle(
                                   color: _isPasswordError
                                       ? CupertinoColors.systemRed
-                                      : Colors.grey,
+                                      : AuthPalette.blush,
                                 ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
@@ -229,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         : Icons.visibility_off,
                                     color: _isPasswordError
                                         ? CupertinoColors.systemRed
-                                        : Colors.grey,
+                                        : AuthPalette.coral,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -241,14 +242,14 @@ class _LoginScreenState extends State<LoginScreen>
                                   borderSide: BorderSide(
                                     color: _isPasswordError
                                         ? CupertinoColors.systemRed
-                                        : Colors.grey,
+                                        : AuthPalette.coral.withOpacity(0.55),
                                   ),
                                 ),
                                 focusedBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isPasswordError
                                         ? CupertinoColors.systemRed
-                                        : Colors.blue,
+                                        : AuthPalette.blush,
                                   ),
                                 ),
                               ),
@@ -257,7 +258,11 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(height: 24),
                         _loading
-                            ? const CircularProgressIndicator()
+                            ? const CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AuthPalette.deepTeal,
+                                ),
+                              )
                             : ElevatedButton(
                                 onPressed: _loginUser,
                                 style: ElevatedButton.styleFrom(
@@ -265,6 +270,8 @@ class _LoginScreenState extends State<LoginScreen>
                                     horizontal: 48,
                                     vertical: 12,
                                   ),
+                                  backgroundColor: AuthPalette.deepTeal,
+                                  foregroundColor: Colors.white,
                                 ),
                                 child: const Text('Login'),
                               ),
@@ -280,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen>
                               TextSpan(
                                 text: 'Sign Up',
                                 style: const TextStyle(
-                                  color: CupertinoColors.activeGreen,
+                                  color: AuthPalette.blush,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 recognizer: TapGestureRecognizer()

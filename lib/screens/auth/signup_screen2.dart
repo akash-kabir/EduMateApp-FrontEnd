@@ -8,6 +8,7 @@ import '../../utils/validators.dart';
 import '../../services/api_service.dart';
 import '../../services/shared_preferences_service.dart';
 import '../splash/splash_screen_loading.dart';
+import '../../constants/app_constants.dart';
 
 class SignupScreen2 extends StatefulWidget {
   final String firstName;
@@ -366,7 +367,7 @@ class _SignupScreen2State extends State<SignupScreen2>
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                            color: AuthPalette.deepTeal,
                           ),
                         ),
                       ],
@@ -408,16 +409,20 @@ class _SignupScreen2State extends State<SignupScreen2>
                                     labelStyle: TextStyle(
                                       color: _isUsernameError
                                           ? CupertinoColors.systemRed
-                                          : Colors.grey,
+                                          : AuthPalette.blush,
                                     ),
                                     suffixIcon: _checkingUsername
-                                        ? const SizedBox(
+                                        ? SizedBox(
                                             width: 20,
                                             height: 20,
                                             child: Padding(
-                                              padding: EdgeInsets.all(12),
+                                              padding: const EdgeInsets.all(12),
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(AuthPalette.deepTeal),
                                               ),
                                             ),
                                           )
@@ -435,14 +440,16 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       borderSide: BorderSide(
                                         color: _isUsernameError
                                             ? CupertinoColors.systemRed
-                                            : Colors.grey,
+                                            : AuthPalette.coral.withOpacity(
+                                                0.55,
+                                              ),
                                       ),
                                     ),
                                     focusedBorder: UnderlineInputBorder(
                                       borderSide: BorderSide(
                                         color: _isUsernameError
                                             ? CupertinoColors.systemRed
-                                            : Colors.blue,
+                                            : AuthPalette.blush,
                                       ),
                                     ),
                                   ),
@@ -488,16 +495,20 @@ class _SignupScreen2State extends State<SignupScreen2>
                                     labelStyle: TextStyle(
                                       color: _isEmailError
                                           ? CupertinoColors.systemRed
-                                          : Colors.grey,
+                                          : AuthPalette.blush,
                                     ),
                                     suffixIcon: _checkingEmail
-                                        ? const SizedBox(
+                                        ? SizedBox(
                                             width: 20,
                                             height: 20,
                                             child: Padding(
-                                              padding: EdgeInsets.all(12),
+                                              padding: const EdgeInsets.all(12),
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(AuthPalette.deepTeal),
                                               ),
                                             ),
                                           )
@@ -515,14 +526,16 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       borderSide: BorderSide(
                                         color: _isEmailError
                                             ? CupertinoColors.systemRed
-                                            : Colors.grey,
+                                            : AuthPalette.coral.withOpacity(
+                                                0.55,
+                                              ),
                                       ),
                                     ),
                                     focusedBorder: UnderlineInputBorder(
                                       borderSide: BorderSide(
                                         color: _isEmailError
                                             ? CupertinoColors.systemRed
-                                            : Colors.blue,
+                                            : AuthPalette.blush,
                                       ),
                                     ),
                                   ),
@@ -561,7 +574,7 @@ class _SignupScreen2State extends State<SignupScreen2>
                                     labelStyle: TextStyle(
                                       color: _isPasswordError
                                           ? CupertinoColors.systemRed
-                                          : Colors.grey,
+                                          : AuthPalette.blush,
                                     ),
                                     suffixIcon: IconButton(
                                       icon: Icon(
@@ -570,7 +583,7 @@ class _SignupScreen2State extends State<SignupScreen2>
                                             : Icons.visibility_off,
                                         color: _isPasswordError
                                             ? CupertinoColors.systemRed
-                                            : Colors.grey,
+                                            : AuthPalette.coral,
                                       ),
                                       onPressed: () {
                                         setState(() {
@@ -582,14 +595,16 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       borderSide: BorderSide(
                                         color: _isPasswordError
                                             ? CupertinoColors.systemRed
-                                            : Colors.grey,
+                                            : AuthPalette.coral.withOpacity(
+                                                0.55,
+                                              ),
                                       ),
                                     ),
                                     focusedBorder: UnderlineInputBorder(
                                       borderSide: BorderSide(
                                         color: _isPasswordError
                                             ? CupertinoColors.systemRed
-                                            : Colors.blue,
+                                            : AuthPalette.blush,
                                       ),
                                     ),
                                   ),
@@ -693,7 +708,11 @@ class _SignupScreen2State extends State<SignupScreen2>
                         ),
                         const SizedBox(height: 24),
                         _loading
-                            ? const CircularProgressIndicator()
+                            ? const CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AuthPalette.deepTeal,
+                                ),
+                              )
                             : ElevatedButton(
                                 onPressed: _signupUser,
                                 style: ElevatedButton.styleFrom(
@@ -701,6 +720,8 @@ class _SignupScreen2State extends State<SignupScreen2>
                                     horizontal: 48,
                                     vertical: 12,
                                   ),
+                                  backgroundColor: AuthPalette.deepTeal,
+                                  foregroundColor: Colors.white,
                                 ),
                                 child: const Text('Sign Up'),
                               ),
@@ -716,7 +737,7 @@ class _SignupScreen2State extends State<SignupScreen2>
                               TextSpan(
                                 text: 'Login',
                                 style: const TextStyle(
-                                  color: CupertinoColors.activeGreen,
+                                  color: AuthPalette.blush,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 recognizer: TapGestureRecognizer()

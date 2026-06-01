@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../constants/app_constants.dart';
 import '../../main_page.dart';
 import 'components/splash_progress_bar.dart';
 
@@ -30,7 +31,7 @@ class _SplashScreenWithApiLoadingState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: UserColors.background,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -38,6 +39,7 @@ class _SplashScreenWithApiLoadingState
             const Text(
               'EduMate',
               style: TextStyle(
+                fontFamily: 'Salena',
                 fontSize: 48,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

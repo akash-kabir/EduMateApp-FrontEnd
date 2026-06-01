@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
+import '../../../constants/app_constants.dart';
 import '../../auth/getting_started_screen.dart';
 import '../../../services/api_service.dart';
 import '../../../services/shared_preferences_service.dart';
@@ -133,7 +134,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AdminColors.background,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Padding(

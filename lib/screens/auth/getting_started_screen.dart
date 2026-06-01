@@ -7,6 +7,7 @@ import 'signup_screen1.dart';
 import '../admin/adminsplash/admin_splash_screen.dart';
 import '../../animated_background/animated_circle_gradient.dart';
 import '../../provider/animation_provider.dart';
+import '../../constants/app_constants.dart';
 
 class GettingStartedScreen extends StatefulWidget {
   const GettingStartedScreen({super.key});
@@ -69,8 +70,8 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
             children: [
               // Animated background circles using provider's controller
               AnimatedCircleGradient(
-                primaryColor: Colors.purple,
-                secondaryColor: Colors.blue,
+                primaryColor: AuthPalette.blush,
+                secondaryColor: AuthPalette.deepTeal,
                 externalController:
                     animationProvider.backgroundCircleController,
               ),
@@ -118,7 +119,8 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                                               child: Text(
                                                 'EduMate',
                                                 style: TextStyle(
-                                                  fontSize: 68,
+                                                  fontFamily: 'Salena',
+                                                  fontSize: 60,
                                                   fontWeight: FontWeight.bold,
                                                   foreground: Paint()
                                                     ..shader =
@@ -128,8 +130,8 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                                                           end: Alignment
                                                               .centerRight,
                                                           colors: [
-                                                            Colors.blue,
-                                                            Colors.purple,
+                                                            ...AuthPalette
+                                                                .gradient,
                                                           ],
                                                         ).createShader(
                                                           const Rect.fromLTWH(
@@ -307,11 +309,11 @@ class _GlassButtonState extends State<GlassButton> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          CupertinoColors.activeBlue.withOpacity(
-                            _isHovered ? 0.9 : 0.7,
+                          AuthPalette.blush.withOpacity(
+                            _isHovered ? 0.95 : 0.8,
                           ),
-                          CupertinoColors.activeBlue.withOpacity(
-                            _isHovered ? 0.9 : 0.7,
+                          AuthPalette.deepTeal.withOpacity(
+                            _isHovered ? 0.95 : 0.8,
                           ),
                         ],
                       )

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../constants/app_constants.dart';
 
 class EventCard extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -115,9 +116,7 @@ class _EventCardState extends State<EventCard>
         locationText.isNotEmpty ||
         hasEventDetails;
 
-    final typeColor = isEvent
-        ? CupertinoColors.systemPurple
-        : CupertinoColors.systemBlue;
+    final typeColor = isEvent ? AuthPalette.teal : AuthPalette.coral;
 
     return Container(
       decoration: BoxDecoration(
@@ -145,8 +144,8 @@ class _EventCardState extends State<EventCard>
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: isEvent
-                          ? [const Color(0xFF833AB4), const Color(0xFFC13584)]
-                          : [const Color(0xFF007AFF), const Color(0xFF5AC8FA)],
+                          ? [AuthPalette.teal, AuthPalette.deepTeal]
+                          : [AuthPalette.blush, AuthPalette.coral],
                     ),
                   ),
                   child: Container(
@@ -189,6 +188,7 @@ class _EventCardState extends State<EventCard>
                       Text(
                         isEvent ? 'Event' : 'News',
                         style: TextStyle(
+                          fontFamily: 'Salena',
                           fontSize: 12,
                           color: typeColor,
                           fontWeight: FontWeight.w500,
@@ -257,20 +257,12 @@ class _EventCardState extends State<EventCard>
                   end: Alignment.bottomRight,
                   colors: isEvent
                       ? [
-                          const Color(
-                            0xFF667EEA,
-                          ).withOpacity(isDark ? 0.4 : 0.15),
-                          const Color(
-                            0xFF764BA2,
-                          ).withOpacity(isDark ? 0.5 : 0.2),
+                          AuthPalette.teal.withOpacity(isDark ? 0.4 : 0.15),
+                          AuthPalette.deepTeal.withOpacity(isDark ? 0.5 : 0.2),
                         ]
                       : [
-                          const Color(
-                            0xFF007AFF,
-                          ).withOpacity(isDark ? 0.3 : 0.1),
-                          const Color(
-                            0xFF00C6FB,
-                          ).withOpacity(isDark ? 0.4 : 0.15),
+                          AuthPalette.blush.withOpacity(isDark ? 0.3 : 0.1),
+                          AuthPalette.coral.withOpacity(isDark ? 0.4 : 0.15),
                         ],
                 ),
               ),
@@ -418,7 +410,7 @@ class _EventCardState extends State<EventCard>
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: CupertinoColors.systemBlue),
+          Icon(icon, size: 16, color: AuthPalette.coral),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

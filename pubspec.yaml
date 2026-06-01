@@ -95,3 +95,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  # Custom fonts
+  fonts:
+    - family: Salena
+      fonts:
+        - asset: lib/assets/fonts/salena/Salena.otf

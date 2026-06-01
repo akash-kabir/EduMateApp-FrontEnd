@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../constants/app_constants.dart';
 import '../../../services/api_service.dart';
 import '../../../services/shared_preferences_service.dart';
 
@@ -130,11 +131,27 @@ class _SplashProgressBarState extends State<SplashProgressBar>
       child: AnimatedBuilder(
         animation: _animationController,
         builder: (context, child) {
-          return LinearProgressIndicator(
-            value: _progress,
-            backgroundColor: Colors.grey[800],
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-            minHeight: 4,
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Container(
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey[800]),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: _progress.clamp(0.0, 1.0),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: AuthPalette.gradient,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           );
         },
       ),

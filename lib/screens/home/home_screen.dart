@@ -1,5 +1,8 @@
+// ignore_for_file: unused_field
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../constants/app_constants.dart';
 import '../../services/shared_preferences_service.dart';
 import '../profile/profile_details_screen.dart';
 import '../profile_setup/profile_setup_screen.dart';
@@ -202,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               height: 60,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: CupertinoColors.systemBlue,
+                                color: AuthPalette.coral,
                               ),
                               child: Center(
                                 child: Text(
@@ -271,13 +274,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            gradient: LinearGradient(
+                            gradient: const LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.blue.shade400,
-                                Colors.blue.shade600,
-                              ],
+                              colors: [AuthPalette.blush, AuthPalette.coral],
                             ),
                           ),
                           padding: const EdgeInsets.symmetric(

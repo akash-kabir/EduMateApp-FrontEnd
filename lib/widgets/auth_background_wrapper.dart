@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../animated_background/animated_circle_gradient.dart';
 import '../provider/animation_provider.dart';
+import '../constants/app_constants.dart';
 
 /// Wrapper widget that provides animated background with content overlay
 /// Used consistently across all authentication screens
@@ -18,8 +19,8 @@ class AuthBackgroundWrapper extends StatelessWidget {
       children: [
         // Animated background circles using provider's controller
         AnimatedCircleGradient(
-          primaryColor: Colors.purple,
-          secondaryColor: Colors.blue,
+          primaryColor: AuthPalette.blush,
+          secondaryColor: AuthPalette.deepTeal,
           externalController: animationProvider.backgroundCircleController,
         ),
         // Content
