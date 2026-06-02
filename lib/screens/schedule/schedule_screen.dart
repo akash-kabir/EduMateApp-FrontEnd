@@ -23,6 +23,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   Timer? _refreshTimer;
   String selectedBranch = '';
   String selectedClass = '';
+  String selectedYear = '1st Year';
   bool savePreference = false;
   Map<String, dynamic>? scheduleData;
   bool isLoading = false;
@@ -134,12 +135,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final savedBranch = await SharedPreferencesService.getString(
       'selectedBranch',
     );
+    final savedYear =
+        await SharedPreferencesService.getString('selectedYear') ?? '1st Year';
     final saved = await SharedPreferencesService.getBool('savePreference');
 
     if (saved && savedClass != null) {
       setState(() {
         if (savedBranch != null) selectedBranch = savedBranch;
         selectedClass = savedClass;
+        selectedYear = savedYear;
         savePreference = true;
       });
       // Fetch schedule for saved class
@@ -153,15 +157,18 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   Future<void> _savePreference(
     String branch,
     String classValue,
+    String yearValue,
     bool shouldSave,
   ) async {
     if (shouldSave) {
       await SharedPreferencesService.setString('selectedBranch', branch);
       await SharedPreferencesService.setString('selectedClass', classValue);
+      await SharedPreferencesService.setString('selectedYear', yearValue);
       await SharedPreferencesService.setBool('savePreference', true);
     } else {
       await SharedPreferencesService.remove('selectedBranch');
       await SharedPreferencesService.remove('selectedClass');
+      await SharedPreferencesService.remove('selectedYear');
       await SharedPreferencesService.setBool('savePreference', false);
     }
   }
@@ -421,39 +428,20 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               backgroundColor: isDark
                   ? CupertinoColors.black.withOpacity(0.6)
                   : CupertinoColors.white.withOpacity(0.6),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: _showBranchPicker,
-                    child: Text(
-                      selectedBranch.isEmpty ? 'Select Branch' : selectedBranch,
-                      style: const TextStyle(
-                        color: AuthPalette.coral,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: _showClassPicker,
-                    child: Text(
-                      selectedClass.isEmpty ? 'Select Section' : selectedClass,
-                      style: const TextStyle(
-                        color: CupertinoColors.systemGreen,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _showSettingsBottomSheet,
+                child: const Icon(
+                  CupertinoIcons.settings,
+                  color: AuthPalette.coral,
+                  size: 22,
+                ),
               ),
             ),
-            // Day selector pinned below nav bar
             SliverPersistentHeader(
               pinned: true,
               delegate: _DaySelectorHeaderDelegate(
+                height: 118.0,
                 child: ClipRect(
                   child: BackdropFilter(
                     filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -461,11 +449,46 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       color: isDark
                           ? CupertinoColors.black.withOpacity(0.6)
                           : CupertinoColors.white.withOpacity(0.6),
+                      height:
+                          118.0, // Explicitly match delegate height to prevent paintExtent discrepancy
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
-                        vertical: 8,
+                        vertical: 10,
                       ),
-                      child: _buildWeekCalendarGrid(weekDates, isDark, now),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildWeekCalendarGrid(weekDates, isDark, now),
+                          if (selectedBranch.isNotEmpty &&
+                              selectedClass.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            Text(
+                              'Showing for $selectedClass ($selectedYear)',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                            ),
+                          ] else ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'No Section Selected',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? Colors.grey[600]
+                                    : Colors.grey[400],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -631,9 +654,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
 
     return Container(
-      height: 70,
+      height: 55,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: AuthPalette.coral.withOpacity(0.4),
           width: 1.5,
@@ -662,11 +685,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeInOut,
               width: 48,
-              height: 36,
+              height: 40,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: isSelected ? AuthPalette.coral : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isToday && !isSelected
                       ? AuthPalette.coral.withOpacity(0.5)
@@ -916,82 +939,141 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             accentColor = AuthPalette.coral;
           }
 
-          final backgroundColor = isPassed
-              ? (isDark ? Colors.grey[900] : Colors.grey[200])
-              : (isDark ? Colors.grey[850] : Colors.grey[300]);
-
           final double cardOpacity = isPassed ? 0.5 : 1.0;
+
+          // Glass base decoration
+          final BoxDecoration cardDecoration;
+          if (isOngoing) {
+            cardDecoration = BoxDecoration(
+              color: const Color.fromARGB(
+                255,
+                2,
+                56,
+                38,
+              ).withOpacity(0.14), // Glass Emerald Green Tint
+              borderRadius: BorderRadius.circular(16),
+              border: const Border(
+                left: BorderSide(color: Color(0xFF10B981), width: 5),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withOpacity(0.20),
+                  blurRadius: 18.0,
+                  spreadRadius: 2.0,
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.35),
+                  blurRadius: 12.0,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            );
+          } else {
+            cardDecoration = BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF1E1E23).withOpacity(0.40)
+                  : Colors.grey[200]!.withOpacity(
+                      0.65,
+                    ), // Translucent charcoal glass
+              borderRadius: BorderRadius.circular(16),
+              border: Border(left: BorderSide(color: accentColor, width: 4)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 8.0,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            );
+          }
 
           return Opacity(
             opacity: cardOpacity,
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  border: Border(
-                    left: BorderSide(color: accentColor, width: 4),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(
+                    sigmaX: isOngoing ? 18.0 : 10.0,
+                    sigmaY: isOngoing ? 18.0 : 10.0,
                   ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${classPeriod['startTime']} - ${classPeriod['endTime']}${classCount > 1 ? ' (${classCount}h)' : ''}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
+                  child: Container(
+                    decoration: cardDecoration,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 20,
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            classPeriod['className'],
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : Colors.black,
-                            ),
-                          ),
-                        ),
-                        if (classPeriod['room'] != null &&
-                            (classPeriod['room'] as String).isNotEmpty &&
-                            classPeriod['room'] != '—')
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                CupertinoIcons.location_solid,
-                                size: 14,
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
+                        Row(
+                          children: [
+                            Text(
+                              '${classPeriod['startTime']} - ${classPeriod['endTime']}${classCount > 1 ? ' (${classCount}h)' : ''}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: isOngoing
+                                    ? const Color(0xFF10B981)
+                                    : (isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600]),
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                classPeriod['room'],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                classPeriod['className'],
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: isDark
-                                      ? Colors.grey[300]
-                                      : Colors.grey[700],
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? Colors.white : Colors.black,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            if (classPeriod['room'] != null &&
+                                (classPeriod['room'] as String).isNotEmpty &&
+                                classPeriod['room'] != '—')
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.location_solid,
+                                    size: 14,
+                                    color: isOngoing
+                                        ? const Color(
+                                            0xFF10B981,
+                                          ).withOpacity(0.7)
+                                        : (isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[600]),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    classPeriod['room'],
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: isOngoing
+                                          ? const Color(0xFF10B981)
+                                          : (isDark
+                                                ? Colors.grey[300]
+                                                : Colors.grey[700]),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -1001,11 +1083,19 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
-  void _showBranchPicker() {
-    int selectedIndex = branches.indexOf(selectedBranch);
-    if (selectedIndex == -1) selectedIndex = 0;
+  void _showSettingsBottomSheet() {
+    String tempYear = selectedYear.isEmpty ? '1st Year' : selectedYear;
+    String tempBranch = selectedBranch.isEmpty ? 'CSE' : selectedBranch;
+    String tempClass = selectedClass.isEmpty
+        ? (classesPerBranch[tempBranch]?[0] ?? '')
+        : selectedClass;
 
-    // Sync savePreference with actual saved state from SharedPreferences
+    // Ensure class is valid for branch
+    final classes = classesPerBranch[tempBranch] ?? [];
+    if (!classes.contains(tempClass) && classes.isNotEmpty) {
+      tempClass = classes[0];
+    }
+
     _isSavedPreferenceExists().then((exists) {
       if (mounted) {
         setState(() {
@@ -1017,225 +1107,339 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) => Material(
-          child: Container(
-            height: 280,
-            padding: const EdgeInsets.only(top: 6),
-            margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            color: CupertinoColors.systemBackground.resolveFrom(context),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        CupertinoButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
-                        ),
-                        const Text(
-                          'Select Branch',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        CupertinoButton(
-                          onPressed: () {
-                            if (savePreference) {
-                              _savePreference(
-                                selectedBranch,
-                                selectedClass,
-                                true,
-                              );
-                            }
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Done'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(
-                    color: Colors.grey[400],
-                    height: 1,
-                    indent: 16,
-                    endIndent: 16,
-                  ),
-                  Expanded(
-                    child: CupertinoPicker(
-                      magnification: 1.22,
-                      squeeze: 1.2,
-                      useMagnifier: true,
-                      itemExtent: 32.0,
-                      scrollController: FixedExtentScrollController(
-                        initialItem: selectedIndex,
-                      ),
-                      onSelectedItemChanged: (int index) {
-                        // Clear old data immediately and update selection
-                        this.setState(() {
-                          selectedBranch = branches[index];
-                          selectedClass = classesPerBranch[branches[index]]![0];
-                          scheduleData = null; // Clear old schedule data
-                          isLoading = true; // Show loading state
-                        });
+        builder: (BuildContext context, StateSetter setModalState) {
+          final currentClasses = classesPerBranch[tempBranch] ?? [];
+          final classIndex = currentClasses
+              .indexOf(tempClass)
+              .clamp(0, currentClasses.length - 1);
+          final yearIndex = [
+            '1st Year',
+            '2nd Year',
+            '3rd Year',
+            '4th Year',
+          ].indexOf(tempYear).clamp(0, 3);
 
-                        // Fetch new schedule
-                        _fetchScheduleFromBackend();
-                      },
-                      children: List<Widget>.generate(
-                        branches.length,
-                        (int index) => Center(child: Text(branches[index])),
+          return Material(
+            type: MaterialType.transparency,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24.0),
+                topRight: Radius.circular(24.0),
+              ),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
+                child: Container(
+                  height: 480,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F0F11).withOpacity(0.80),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24.0),
+                      topRight: Radius.circular(24.0),
+                    ),
+                    border: Border(
+                      top: BorderSide(
+                        color: Colors.white.withOpacity(0.08),
+                        width: 1.0,
                       ),
                     ),
                   ),
-                ],
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Header buttons
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                CupertinoButton(
+                                  padding: EdgeInsets.zero,
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text(
+                                    'Cancel',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ),
+                                const Text(
+                                  'Timesheet Settings',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                CupertinoButton(
+                                  padding: EdgeInsets.zero,
+                                  onPressed: () {
+                                    setState(() {
+                                      selectedYear = tempYear;
+                                      selectedBranch = tempBranch;
+                                      selectedClass = tempClass;
+                                      scheduleData = null;
+                                      isLoading = true;
+                                    });
+                                    _savePreference(
+                                      tempBranch,
+                                      tempClass,
+                                      tempYear,
+                                      savePreference,
+                                    );
+                                    if (savePreference) {
+                                      EduMateToast.showSuccessCard(
+                                        context,
+                                        title: 'Preference Saved',
+                                        description:
+                                            'Section $tempClass successfully set as default.',
+                                      );
+                                    }
+                                    _fetchScheduleFromBackend();
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text(
+                                    'Done',
+                                    style: TextStyle(
+                                      color: AuthPalette.coral,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Divider(color: Colors.white10),
+                          // Year selector
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Academic Year',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child:
+                                      CupertinoSlidingSegmentedControl<String>(
+                                        groupValue: tempYear,
+                                        thumbColor: AuthPalette.deepTeal
+                                            .withOpacity(0.70),
+                                        backgroundColor: Colors.white
+                                            .withOpacity(0.06),
+                                        children: {
+                                          '1st Year': _buildSegmentText(
+                                            '1st Yr',
+                                          ),
+                                          '2nd Year': _buildSegmentText(
+                                            '2nd Yr',
+                                          ),
+                                          '3rd Year': _buildSegmentText(
+                                            '3rd Yr',
+                                          ),
+                                          '4th Year': _buildSegmentText(
+                                            '4th Yr',
+                                          ),
+                                        },
+                                        onValueChanged: (val) {
+                                          if (val != null) {
+                                            setModalState(() => tempYear = val);
+                                          }
+                                        },
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Branch selector
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Select Branch',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child:
+                                      CupertinoSlidingSegmentedControl<String>(
+                                        groupValue: tempBranch,
+                                        thumbColor: AuthPalette.coral
+                                            .withOpacity(0.70),
+                                        backgroundColor: Colors.white
+                                            .withOpacity(0.06),
+                                        children: {
+                                          'CSE': _buildSegmentText('CSE'),
+                                          'CSCE': _buildSegmentText('CSCE'),
+                                          'IT': _buildSegmentText('IT'),
+                                          'CSSE': _buildSegmentText('CSSE'),
+                                        },
+                                        onValueChanged: (val) {
+                                          if (val != null) {
+                                            setModalState(() {
+                                              tempBranch = val;
+                                              final newClasses =
+                                                  classesPerBranch[val] ?? [];
+                                              tempClass = newClasses.isNotEmpty
+                                                  ? newClasses[0]
+                                                  : '';
+                                            });
+                                          }
+                                        },
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Section list picker
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Select Section',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: CupertinoPicker(
+                                            magnification: 1.15,
+                                            squeeze: 1.1,
+                                            useMagnifier: true,
+                                            itemExtent: 36.0,
+                                            scrollController:
+                                                FixedExtentScrollController(
+                                                  initialItem: classIndex,
+                                                ),
+                                            onSelectedItemChanged: (int index) {
+                                              if (index >= 0 &&
+                                                  index <
+                                                      currentClasses.length) {
+                                                setModalState(() {
+                                                  tempClass =
+                                                      currentClasses[index];
+                                                });
+                                              }
+                                            },
+                                            children: List<Widget>.generate(
+                                              currentClasses.length,
+                                              (int index) => Center(
+                                                child: Text(
+                                                  currentClasses[index],
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Save preference toggle next to section picker
+                                  Container(
+                                    width: 140,
+                                    padding: const EdgeInsets.only(
+                                      left: 16,
+                                      top: 12,
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        const Text(
+                                          'Remember me',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: 12,
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        CupertinoSwitch(
+                                          activeColor: AuthPalette.deepTeal,
+                                          value: savePreference,
+                                          onChanged: (bool value) {
+                                            setState(() {
+                                              savePreference = value;
+                                            });
+                                            setModalState(() {
+                                              savePreference = value;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  void _showClassPicker() {
-    final classes = classesPerBranch[selectedBranch] ?? [];
-    int selectedIndex = classes.indexOf(selectedClass);
-    if (selectedIndex == -1) selectedIndex = 0;
-
-    // Sync savePreference with actual saved state from SharedPreferences
-    _isSavedPreferenceExists().then((exists) {
-      if (mounted) {
-        setState(() {
-          savePreference = exists;
-        });
-      }
-    });
-
-    showCupertinoModalPopup<void>(
-      context: context,
-      builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) => Material(
-          child: Container(
-            height: 320,
-            padding: const EdgeInsets.only(top: 6),
-            margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            color: CupertinoColors.systemBackground.resolveFrom(context),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        CupertinoButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
-                        ),
-                        CupertinoButton(
-                          onPressed: () {
-                            if (savePreference) {
-                              _savePreference(
-                                selectedBranch,
-                                selectedClass,
-                                true,
-                              );
-                              // Trigger premium success card
-                              EduMateToast.showSuccessCard(
-                                context,
-                                title: 'Preference Saved',
-                                description: 'Section $selectedClass successfully set as default.',
-                              );
-                            }
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Done'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Save Preference',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        CupertinoSwitch(
-                          value: savePreference,
-                          onChanged: (bool value) {
-                            setState(() {
-                              savePreference = value;
-                            });
-                            this.setState(() {
-                              savePreference = value;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(
-                    color: Colors.grey[400],
-                    height: 1,
-                    indent: 16,
-                    endIndent: 16,
-                  ),
-                  Expanded(
-                    child: CupertinoPicker(
-                      magnification: 1.22,
-                      squeeze: 1.2,
-                      useMagnifier: true,
-                      itemExtent: 32.0,
-                      scrollController: FixedExtentScrollController(
-                        initialItem: selectedIndex,
-                      ),
-                      onSelectedItemChanged: (int index) {
-                        // Clear old data immediately and update selection
-                        print('\n🔄 CLASS PICKER CHANGED');
-                        print('Old class: $selectedClass');
-                        print('New class: ${classes[index]}');
-
-                        this.setState(() {
-                          selectedClass = classes[index];
-                          scheduleData = null; // Clear old schedule data
-                          isLoading = true; // Show loading state
-
-                          print(
-                            '✅ State updated: $selectedClass, loading: $isLoading, data cleared',
-                          );
-                        });
-
-                        // Fetch new schedule
-                        _fetchScheduleFromBackend();
-                      },
-                      children: List<Widget>.generate(
-                        classes.length,
-                        (int index) => Center(child: Text(classes[index])),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+  Widget _buildSegmentText(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
         ),
       ),
     );
@@ -1244,14 +1448,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
 class _DaySelectorHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
+  final double height;
 
-  _DaySelectorHeaderDelegate({required this.child});
-
-  @override
-  double get minExtent => 60;
+  _DaySelectorHeaderDelegate({required this.child, required this.height});
 
   @override
-  double get maxExtent => 60;
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
 
   @override
   Widget build(
@@ -1263,5 +1468,6 @@ class _DaySelectorHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(covariant _DaySelectorHeaderDelegate oldDelegate) => true;
+  bool shouldRebuild(covariant _DaySelectorHeaderDelegate oldDelegate) =>
+      oldDelegate.height != height || oldDelegate.child != child;
 }
