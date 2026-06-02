@@ -7,6 +7,7 @@ import '../splash/splash_screen_loading.dart';
 import '../../services/api_service.dart';
 import '../../services/shared_preferences_service.dart';
 import '../../constants/app_constants.dart';
+import '../../widgets/toast_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -73,8 +74,10 @@ class _LoginScreenState extends State<LoginScreen>
         message = 'Please fill the password';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), duration: const Duration(seconds: 1)),
+      EduMateToast.showCompact(
+        context,
+        message: message,
+        isSuccess: false,
       );
       return;
     }
@@ -124,21 +127,19 @@ class _LoginScreenState extends State<LoginScreen>
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Login failed'),
-              duration: const Duration(seconds: 2),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: result['message'] ?? 'Login failed',
+            isSuccess: false,
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            duration: const Duration(seconds: 2),
-          ),
+        EduMateToast.showCompact(
+          context,
+          message: 'Error: $e',
+          isSuccess: false,
         );
       }
     } finally {

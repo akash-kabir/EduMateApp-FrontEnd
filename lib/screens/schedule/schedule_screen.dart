@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import '../../constants/app_constants.dart';
 import '../../config.dart';
 import '../../services/shared_preferences_service.dart';
+import '../../widgets/toast_manager.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -1147,6 +1148,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                 selectedBranch,
                                 selectedClass,
                                 true,
+                              );
+                              // Trigger premium success card
+                              EduMateToast.showSuccessCard(
+                                context,
+                                title: 'Preference Saved',
+                                description: 'Section $selectedClass successfully set as default.',
                               );
                             }
                             Navigator.pop(context);
