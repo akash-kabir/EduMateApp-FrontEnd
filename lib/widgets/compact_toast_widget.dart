@@ -26,6 +26,11 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
 
   bool _isExpanded = false;
   double _pillWidth = 56.0; // Initial compact size matching the circular icon container
+  double _pillHeight = 52.0;
+
+  bool _isDoubleLine = false;
+  double _targetWidth = 56.0;
+  double _targetHeight = 52.0;
 
   @override
   void initState() {
@@ -58,25 +63,8 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
       if (mounted) {
         setState(() {
           _isExpanded = true;
-          // Calculate a responsive width based on text length, capping it at screen width - 32
-          final textPainter = TextPainter(
-            text: TextSpan(
-              text: widget.message,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14.0,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-                letterSpacing: -0.2,
-              ),
-            ),
-            maxLines: 1,
-            textDirection: TextDirection.ltr,
-          )..layout();
-          
-          final screenWidth = MediaQuery.of(context).size.width;
-          final maxAllowedWidth = screenWidth > 600 ? 360.0 : screenWidth - 32.0;
-          _pillWidth = (textPainter.width + 72.0).clamp(56.0, maxAllowedWidth);
+          _pillWidth = _targetWidth;
+          _pillHeight = _targetHeight;
         });
       }
     });
@@ -87,6 +75,7 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
         setState(() {
           _isExpanded = false;
           _pillWidth = 56.0;
+          _pillHeight = 52.0;
         });
         Future.delayed(const Duration(milliseconds: 250), () {
           if (mounted) {
@@ -97,6 +86,35 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
         });
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxAllowedWidth = screenWidth > 600 ? 360.0 : screenWidth - 32.0;
+    final maxTextWidth = maxAllowedWidth - 72.0; // 50px icon container + 22px padding
+
+    // Calculate layout to check if double line is needed
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: widget.message,
+        style: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 14.0,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+          letterSpacing: -0.2,
+        ),
+      ),
+      maxLines: 2,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: maxTextWidth);
+    
+    _isDoubleLine = textPainter.height > 22.0;
+    _targetWidth = (textPainter.width + 72.0).clamp(56.0, maxAllowedWidth);
+    _targetHeight = _isDoubleLine ? 68.0 : 52.0;
   }
 
   @override
@@ -133,7 +151,7 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.fastOutSlowIn,
                 width: _pillWidth,
-                height: 52.0,
+                height: _pillHeight,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(26.0),
                   boxShadow: [
@@ -178,31 +196,26 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
                                 size: 24.0,
                               ),
                             ),
-                            // Expandable message text segment
+                            // Expandable message text segment supporting up to 2 lines
                             Expanded(
                               child: AnimatedOpacity(
                                 duration: const Duration(milliseconds: 150),
                                 opacity: _isExpanded ? 1.0 : 0.0,
-                                child: ClipRect(
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    child: Container(
-                                      padding: const EdgeInsets.only(right: 20.0),
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        widget.message,
-                                        style: const TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 14.0,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                          letterSpacing: -0.2,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.fade,
-                                        softWrap: false,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 20.0),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      widget.message,
+                                      style: const TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 14.0,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                        letterSpacing: -0.2,
                                       ),
+                                      maxLines: _isExpanded ? (_isDoubleLine ? 2 : 1) : 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ),

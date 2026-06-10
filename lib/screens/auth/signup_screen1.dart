@@ -6,6 +6,8 @@ import 'package:flutter/cupertino.dart';
 import '../../widgets/auth_background_wrapper.dart';
 import '../../constants/app_constants.dart';
 
+import '../../widgets/toast_manager.dart';
+
 class SignupScreen1 extends StatefulWidget {
   const SignupScreen1({super.key});
 
@@ -59,11 +61,10 @@ class _SignupScreen1State extends State<SignupScreen1>
         _isLastNameError = true;
       });
       _animationController.forward(from: 0);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill both first and last name'),
-          duration: Duration(seconds: 1),
-        ),
+      EduMateToast.showCompact(
+        context,
+        message: 'Please fill both first and last name',
+        isSuccess: false,
       );
       return;
     }
@@ -74,11 +75,10 @@ class _SignupScreen1State extends State<SignupScreen1>
         _isLastNameError = false;
       });
       _animationController.forward(from: 0);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill the first name'),
-          duration: Duration(seconds: 1),
-        ),
+      EduMateToast.showCompact(
+        context,
+        message: 'Please fill the first name',
+        isSuccess: false,
       );
       return;
     }
@@ -89,11 +89,10 @@ class _SignupScreen1State extends State<SignupScreen1>
         _isLastNameError = true;
       });
       _animationController.forward(from: 0);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill the last name'),
-          duration: Duration(seconds: 1),
-        ),
+      EduMateToast.showCompact(
+        context,
+        message: 'Please fill the last name',
+        isSuccess: false,
       );
       return;
     }

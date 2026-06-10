@@ -4,6 +4,8 @@ import '../../constants/app_constants.dart';
 import '../../services/api_service.dart';
 import '../../services/shared_preferences_service.dart';
 
+import '../../widgets/toast_manager.dart';
+
 class ProfileSetupScreen extends StatefulWidget {
   final String? userId;
   final String? token;
@@ -167,15 +169,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         _selectedBranch == null ||
         _selectedSection == null ||
         _selectedSemester == null) {
-      ScaffoldMessenger.of(
+      EduMateToast.showCompact(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
+        message: 'Please fill all fields',
+        isSuccess: false,
+      );
       return;
     }
 
     if (widget.token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Authentication token missing')),
+      EduMateToast.showCompact(
+        context,
+        message: 'Authentication token missing',
+        isSuccess: false,
       );
       return;
     }
@@ -240,11 +246,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           widget.onProfileSetupComplete?.call();
 
           // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile saved successfully!'),
-              backgroundColor: Colors.green,
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: 'Profile saved successfully!',
+            isSuccess: true,
           );
 
           // Delay to show the success message
@@ -255,21 +260,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           }
         } else {
           // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Failed to save profile'),
-              backgroundColor: Colors.red,
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: result['message'] ?? 'Failed to save profile',
+            isSuccess: false,
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+        EduMateToast.showCompact(
+          context,
+          message: 'Error: ${e.toString()}',
+          isSuccess: false,
         );
       }
     } finally {

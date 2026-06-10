@@ -5,6 +5,7 @@ import 'dart:convert';
 import '../../../constants/app_constants.dart';
 import '../../../config.dart';
 import '../../../services/shared_preferences_service.dart';
+import '../../../widgets/toast_manager.dart';
 
 class CGPACalculatorScreen extends StatefulWidget {
   const CGPACalculatorScreen({super.key});
@@ -189,22 +190,20 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
   void _calculateCGPA() {
     // Check if all grades are entered
     if (subjects.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No subjects available for this semester'),
-          backgroundColor: Colors.red,
-        ),
+      EduMateToast.showCompact(
+        context,
+        message: 'No subjects available for this semester',
+        isSuccess: false,
       );
       return;
     }
 
     for (final subject in subjects) {
       if (!gradeMap.containsKey(subject['name'])) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Please enter grade for ${subject['name']}'),
-            backgroundColor: Colors.orange,
-          ),
+        EduMateToast.showCompact(
+          context,
+          message: 'Please enter grade for ${subject['name']}',
+          isSuccess: false,
         );
         return;
       }

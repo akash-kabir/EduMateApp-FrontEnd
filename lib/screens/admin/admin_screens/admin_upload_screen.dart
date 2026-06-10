@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../../../config.dart';
 import '../../../services/shared_preferences_service.dart';
+import '../../../widgets/toast_manager.dart';
 
 class AdminUploadScreen extends StatefulWidget {
   const AdminUploadScreen({super.key});
@@ -236,12 +237,10 @@ class _CurriculumUploadContentState extends State<_CurriculumUploadContent> {
 
       if (result == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No file selected'),
-              backgroundColor: Colors.grey,
-              duration: Duration(seconds: 2),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: 'No file selected',
+            isSuccess: false,
           );
         }
         return;
@@ -267,12 +266,10 @@ class _CurriculumUploadContentState extends State<_CurriculumUploadContent> {
         }
       } catch (readError) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error reading file: $readError'),
-              backgroundColor: const Color(0xFFFF1744),
-              duration: const Duration(seconds: 4),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: 'Error reading file: $readError',
+            isSuccess: false,
           );
         }
         return;
@@ -286,12 +283,10 @@ class _CurriculumUploadContentState extends State<_CurriculumUploadContent> {
       // Validate: must have 'branch' and 'semesters' array
       if (!jsonData.containsKey('branch')) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Invalid JSON: missing "branch" field'),
-              backgroundColor: Color(0xFFFF1744),
-              duration: Duration(seconds: 3),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: 'Invalid JSON: missing "branch" field',
+            isSuccess: false,
           );
         }
         return;
@@ -301,14 +296,10 @@ class _CurriculumUploadContentState extends State<_CurriculumUploadContent> {
           jsonData['semesters'] is! List ||
           (jsonData['semesters'] as List).isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Invalid JSON: must contain non-empty "semesters" array',
-              ),
-              backgroundColor: Color(0xFFFF1744),
-              duration: Duration(seconds: 3),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: 'Invalid JSON: must contain non-empty "semesters" array',
+            isSuccess: false,
           );
         }
         return;
@@ -320,25 +311,19 @@ class _CurriculumUploadContentState extends State<_CurriculumUploadContent> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Selected: $fileName (${(jsonData['semesters'] as List).length} semesters)',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
+        EduMateToast.showCompact(
+          context,
+          message: 'Selected: $fileName (${(jsonData['semesters'] as List).length} semesters)',
+          isSuccess: true,
         );
       }
     } catch (e) {
       print('File picker error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: const Color(0xFFFF1744),
-            duration: const Duration(seconds: 4),
-          ),
+        EduMateToast.showCompact(
+          context,
+          message: 'Error: ${e.toString()}',
+          isSuccess: false,
         );
       }
     }
@@ -346,11 +331,10 @@ class _CurriculumUploadContentState extends State<_CurriculumUploadContent> {
 
   Future<void> _uploadCurriculum() async {
     if (_selectedFileData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a file first'),
-          backgroundColor: Colors.red,
-        ),
+      EduMateToast.showCompact(
+        context,
+        message: 'Please select a file first',
+        isSuccess: false,
       );
       return;
     }
@@ -384,12 +368,10 @@ class _CurriculumUploadContentState extends State<_CurriculumUploadContent> {
 
       if (response.statusCode == 201) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Curriculum uploaded successfully!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: 'Curriculum uploaded successfully!',
+            isSuccess: true,
           );
           Navigator.pop(context);
         }
@@ -639,12 +621,10 @@ class _ScheduleUploadContentState extends State<_ScheduleUploadContent> {
 
       if (result == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No file selected'),
-              backgroundColor: Colors.grey,
-              duration: Duration(seconds: 2),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: 'No file selected',
+            isSuccess: false,
           );
         }
         return;
@@ -667,12 +647,10 @@ class _ScheduleUploadContentState extends State<_ScheduleUploadContent> {
         }
       } catch (readError) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error reading file: $readError'),
-              backgroundColor: const Color(0xFFFF1744),
-              duration: const Duration(seconds: 4),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: 'Error reading file: $readError',
+            isSuccess: false,
           );
         }
         return;
@@ -687,14 +665,10 @@ class _ScheduleUploadContentState extends State<_ScheduleUploadContent> {
           jsonData['classes'] is! List ||
           (jsonData['classes'] as List).isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Invalid JSON: must contain non-empty "classes" array',
-              ),
-              backgroundColor: Color(0xFFFF1744),
-              duration: Duration(seconds: 3),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: 'Invalid JSON: must contain non-empty "classes" array',
+            isSuccess: false,
           );
         }
         return;
@@ -706,25 +680,19 @@ class _ScheduleUploadContentState extends State<_ScheduleUploadContent> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Selected: $fileName (${(jsonData['classes'] as List).length} classes)',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
+        EduMateToast.showCompact(
+          context,
+          message: 'Selected: $fileName (${(jsonData['classes'] as List).length} classes)',
+          isSuccess: true,
         );
       }
     } catch (e) {
       print('File picker error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: const Color(0xFFFF1744),
-            duration: const Duration(seconds: 4),
-          ),
+        EduMateToast.showCompact(
+          context,
+          message: 'Error: ${e.toString()}',
+          isSuccess: false,
         );
       }
     }
@@ -732,11 +700,10 @@ class _ScheduleUploadContentState extends State<_ScheduleUploadContent> {
 
   Future<void> _uploadSchedule() async {
     if (_selectedFileData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a file first'),
-          backgroundColor: Colors.red,
-        ),
+      EduMateToast.showCompact(
+        context,
+        message: 'Please select a file first',
+        isSuccess: false,
       );
       return;
     }
@@ -770,12 +737,10 @@ class _ScheduleUploadContentState extends State<_ScheduleUploadContent> {
 
       if (response.statusCode == 201) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Schedule uploaded successfully!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: 'Schedule uploaded successfully!',
+            isSuccess: true,
           );
           Navigator.pop(context);
         }

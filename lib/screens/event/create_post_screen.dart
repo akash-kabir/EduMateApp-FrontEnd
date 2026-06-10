@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import '../../config.dart';
 import '../../services/shared_preferences_service.dart';
+import '../../widgets/toast_manager.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -91,9 +92,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           errorMsg = body['message'] ?? errorMsg;
         } catch (_) {}
         if (mounted) {
-          ScaffoldMessenger.of(
+          EduMateToast.showCompact(
             context,
-          ).showSnackBar(SnackBar(content: Text(errorMsg)));
+            message: errorMsg,
+            isSuccess: false,
+          );
         }
         return null;
       }
@@ -133,17 +136,21 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           errorMsg = body['error']?['message'] ?? errorMsg;
         } catch (_) {}
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Image upload failed: $errorMsg')),
+          EduMateToast.showCompact(
+            context,
+            message: 'Image upload failed: $errorMsg',
+            isSuccess: false,
           );
         }
         return null;
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
+        EduMateToast.showCompact(
           context,
-        ).showSnackBar(SnackBar(content: Text('Image upload error: $e')));
+          message: 'Image upload error: $e',
+          isSuccess: false,
+        );
       }
       return null;
     } finally {
@@ -267,46 +274,60 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   void _submitPost() async {
     if (_headingController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
+      EduMateToast.showCompact(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Heading is required')));
+        message: 'Heading is required',
+        isSuccess: false,
+      );
       return;
     }
     if (_bodyController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
+      EduMateToast.showCompact(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Body is required')));
+        message: 'Body is required',
+        isSuccess: false,
+      );
       return;
     }
 
     if (postType == 'event') {
       if (startDate == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Start date is required for events')),
+        EduMateToast.showCompact(
+          context,
+          message: 'Start date is required for events',
+          isSuccess: false,
         );
         return;
       }
       if (startTime == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Start time is required for events')),
+        EduMateToast.showCompact(
+          context,
+          message: 'Start time is required for events',
+          isSuccess: false,
         );
         return;
       }
       if (isDateRange && endDate == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('End date is required for date range')),
+        EduMateToast.showCompact(
+          context,
+          message: 'End date is required for date range',
+          isSuccess: false,
         );
         return;
       }
       if (isTimeRange && endTime == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('End time is required for time range')),
+        EduMateToast.showCompact(
+          context,
+          message: 'End time is required for time range',
+          isSuccess: false,
         );
         return;
       }
       if (_campusController.text.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Campus is required for events')),
+        EduMateToast.showCompact(
+          context,
+          message: 'Campus is required for events',
+          isSuccess: false,
         );
         return;
       }
@@ -374,24 +395,30 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
       if (response.statusCode == 201) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Post created successfully!')),
+          EduMateToast.showCompact(
+            context,
+            message: 'Post created successfully!',
+            isSuccess: true,
           );
           Navigator.pop(context, true);
         }
       } else {
         final error = jsonDecode(response.body)['message'];
         if (mounted) {
-          ScaffoldMessenger.of(
+          EduMateToast.showCompact(
             context,
-          ).showSnackBar(SnackBar(content: Text(error)));
+            message: error,
+            isSuccess: false,
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
+        EduMateToast.showCompact(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+          message: 'Error: $e',
+          isSuccess: false,
+        );
       }
     } finally {
       if (mounted) setState(() => isLoading = false);

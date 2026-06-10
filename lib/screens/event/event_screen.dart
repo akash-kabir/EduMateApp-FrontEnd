@@ -7,6 +7,8 @@ import '../../config.dart';
 import 'event_card.dart';
 import 'create_post_screen.dart';
 
+import '../../widgets/toast_manager.dart';
+
 class EventScreen extends StatefulWidget {
   const EventScreen({super.key});
 
@@ -62,17 +64,21 @@ class _EventScreenState extends State<EventScreen> {
       } else {
         setState(() => isLoading = false);
         if (mounted) {
-          ScaffoldMessenger.of(
+          EduMateToast.showCompact(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Failed to load posts')));
+            message: 'Failed to load posts',
+            isSuccess: false,
+          );
         }
       }
     } catch (e) {
       setState(() => isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
+        EduMateToast.showCompact(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+          message: 'Error: $e',
+          isSuccess: false,
+        );
       }
     }
   }

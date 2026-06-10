@@ -10,6 +10,8 @@ import '../../services/shared_preferences_service.dart';
 import '../splash/splash_screen_loading.dart';
 import '../../constants/app_constants.dart';
 
+import '../../widgets/toast_manager.dart';
+
 class SignupScreen2 extends StatefulWidget {
   final String firstName;
   final String lastName;
@@ -270,11 +272,10 @@ class _SignupScreen2State extends State<SignupScreen2>
 
     if (hasError) {
       _animationController.forward(from: 0);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fix the validation errors'),
-          duration: Duration(seconds: 2),
-        ),
+      EduMateToast.showCompact(
+        context,
+        message: 'Please fix the validation errors',
+        isSuccess: false,
       );
       return;
     }
@@ -312,21 +313,19 @@ class _SignupScreen2State extends State<SignupScreen2>
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Registration failed'),
-              duration: const Duration(seconds: 2),
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: result['message'] ?? 'Registration failed',
+            isSuccess: false,
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            duration: const Duration(seconds: 2),
-          ),
+        EduMateToast.showCompact(
+          context,
+          message: 'Error: $e',
+          isSuccess: false,
         );
       }
     } finally {

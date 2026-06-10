@@ -7,6 +7,8 @@ import '../../../services/api_service.dart';
 import '../../../services/shared_preferences_service.dart';
 import '../admin_main_app.dart';
 
+import '../../../widgets/toast_manager.dart';
+
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
 
@@ -94,36 +96,28 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
           }
         } else {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Access Denied: Only society heads can login as admin',
-                ),
-                duration: Duration(seconds: 2),
-                backgroundColor: Colors.red,
-              ),
+            EduMateToast.showCompact(
+              context,
+              message: 'Access Denied: Only society heads can login as admin',
+              isSuccess: false,
             );
           }
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Login failed'),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.red,
-            ),
+          EduMateToast.showCompact(
+            context,
+            message: result['message'] ?? 'Login failed',
+            isSuccess: false,
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.red,
-          ),
+        EduMateToast.showCompact(
+          context,
+          message: 'Error: $e',
+          isSuccess: false,
         );
       }
     } finally {
