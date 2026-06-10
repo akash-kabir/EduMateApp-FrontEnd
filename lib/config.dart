@@ -21,14 +21,8 @@ class Config {
       "$BASE_URL/api/upload/signature";
 
   // Curriculum endpoints
-  static const String curriculumUploadEndpoint =
-      "$BASE_URL/api/curriculum/upload";
-  static const String curriculumByBranchEndpoint =
-      "$BASE_URL/api/curriculum/branch";
-  static const String allCurriculumsEndpoint = "$BASE_URL/api/curriculum";
+  static const String curriculumBaseEndpoint = "$BASE_URL/api/curriculum";
 
   // Schedule endpoints
-  static const String scheduleUploadEndpoint = "$BASE_URL/api/schedule/upload";
-  static const String scheduleByClassEndpoint = "$BASE_URL/api/schedule/class";
-  static const String allSchedulesEndpoint = "$BASE_URL/api/schedule";
+  static const String scheduleBaseEndpoint = "$BASE_URL/api/schedule";
 }

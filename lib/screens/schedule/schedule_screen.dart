@@ -22,8 +22,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   late DateTime weekStartDate;
   Timer? _refreshTimer;
   String selectedBranch = '';
-  String selectedClass = '';
-  String selectedYear = '1st Year';
+  int selectedSemester = 1;
+  String selectedSection = '';
+  
   bool savePreference = false;
   Map<String, dynamic>? scheduleData;
   bool isLoading = false;
@@ -130,10 +131,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   Future<void> _loadSavedPreferenceAndFetchSchedule() async {
     final savedClass = await SharedPreferencesService.getString(
-      'selectedClass',
+      'selectedSemester.toString()',
     );
     final savedBranch = await SharedPreferencesService.getString(
       'selectedBranch',
+    );
+    final savedSection = await SharedPreferencesService.getString(
+      'selectedSection',
     );
     final savedYear =
         await SharedPreferencesService.getString('selectedYear') ?? '1st Year';
@@ -142,8 +146,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     if (saved && savedClass != null) {
       setState(() {
         if (savedBranch != null) selectedBranch = savedBranch;
-        selectedClass = savedClass;
-        selectedYear = savedYear;
+        selectedSemester = int.tryParse(savedClass) ?? 1;
+        if (savedSection != null) selectedSection = savedSection;
         savePreference = true;
       });
       // Fetch schedule for saved class
@@ -158,16 +162,19 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     String branch,
     String classValue,
     String yearValue,
+    String sectionValue,
     bool shouldSave,
   ) async {
     if (shouldSave) {
       await SharedPreferencesService.setString('selectedBranch', branch);
-      await SharedPreferencesService.setString('selectedClass', classValue);
+      await SharedPreferencesService.setString('selectedSemester.toString()', classValue);
+      await SharedPreferencesService.setString('selectedSection', sectionValue);
       await SharedPreferencesService.setString('selectedYear', yearValue);
       await SharedPreferencesService.setBool('savePreference', true);
     } else {
       await SharedPreferencesService.remove('selectedBranch');
-      await SharedPreferencesService.remove('selectedClass');
+      await SharedPreferencesService.remove('selectedSemester.toString()');
+      await SharedPreferencesService.remove('selectedSection');
       await SharedPreferencesService.remove('selectedYear');
       await SharedPreferencesService.setBool('savePreference', false);
     }
@@ -196,7 +203,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       try {
         return jsonDecode(cachedData) as Map<String, dynamic>?;
       } catch (e) {
-        print('Error decoding cached schedule: $e');
+        // print('Error decoding cached schedule: $e');
         return null;
       }
     }
@@ -204,24 +211,24 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Future<void> _fetchScheduleFromBackend() async {
-    print('\n=== FETCH SCHEDULE START ===');
-    print('Selected Class: $selectedClass');
-    print('Selected Branch: $selectedBranch');
+    // print('\n=== FETCH SCHEDULE START ===');
+    // print('Selected Class: $selectedSemester.toString()');
+    // print('Selected Branch: $selectedBranch');
 
     final currentRequestId = ++_lastRequestId;
-    final requestedClass = selectedClass; // Capture what class was requested
+    final requestedSemester = selectedSemester; // Capture what class was requested
     final requestedBranch = selectedBranch;
-    print('🆔 Request ID: $currentRequestId');
-    print('📌 Captured class: $requestedClass');
+    // print('🆔 Request ID: $currentRequestId');
+    // print('📌 Captured class: $requestedSemester.toString()');
 
     // Try to load from cache first
-    print('📦 Checking cache for $requestedBranch/$requestedClass...');
+    // print('📦 Checking cache for $requestedBranch/$requestedSemester.toString()...');
     final cachedData = await _getCachedScheduleData(
       requestedBranch,
-      requestedClass,
+      requestedSemester.toString(),
     );
     if (cachedData != null) {
-      print('✅ Found cached schedule data');
+      // print('✅ Found cached schedule data');
       if (mounted) {
         setState(() {
           scheduleData = cachedData;
@@ -232,7 +239,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     }
 
     // If no cache, fetch from backend
-    print('❌ No cache found, fetching from backend...');
+    // print('❌ No cache found, fetching from backend...');
     if (mounted) {
       setState(() {
         isLoading = true;
@@ -241,9 +248,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final url =
-          '${Config.scheduleByClassEndpoint}/$requestedClass?t=$timestamp';
-      print('API URL: $url');
+      final url = '${Config.scheduleBaseEndpoint}/$requestedBranch/$requestedSemester?t=$timestamp';
+      // print('API URL: $url');
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -255,45 +261,39 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
       // 🔥 CRITICAL: Check if this is still the latest request
       if (currentRequestId != _lastRequestId) {
-        print(
-          '❌ IGNORING STALE RESPONSE: Request #$currentRequestId is outdated (latest is #$_lastRequestId)',
-        );
-        print('   Requested: $requestedClass, Current: $selectedClass');
+        // print('❌ IGNORING STALE RESPONSE: Request #$currentRequestId is outdated (latest is #$_lastRequestId)');
+        // print('   Requested: $requestedSemester.toString(), Current: $selectedSemester.toString()');
         return; // Discard this response, don't update UI
       }
 
-      print('Response status: ${response.statusCode}');
-      print('Response body length: ${response.body.length} bytes');
+      // print('Response status: ${response.statusCode}');
+      // print('Response body length: ${response.body.length} bytes');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        print('=== RESPONSE DATA ===');
-        print('Response has "data" key: ${responseData.containsKey("data")}');
-        print(
-          'Response has "success" key: ${responseData.containsKey("success")}',
-        );
+        // print('=== RESPONSE DATA ===');
+        // print('Response has "data" key: ${responseData.containsKey("data")}');
+        // print('Response has "success" key: ${responseData.containsKey("success")}');
 
         // Handle the API response structure: { success: true, data: classSchedule }
         if (responseData is Map && responseData.containsKey('data')) {
           final classData = responseData['data'];
-          print('Extracted class data:');
-          print('  - Name: ${classData["name"]}');
-          print('  - Has schedule key: ${classData.containsKey("schedule")}');
+          // print('Extracted class data:');
+          // print('  - Name: ${classData["name"]}');
+          // print('  - Has schedule key: ${classData.containsKey("schedule")}');
 
           if (classData.containsKey('schedule') &&
               classData['schedule'] is List) {
             final scheduleList = classData['schedule'] as List;
-            print('  - Schedule days: ${scheduleList.length}');
+            // print('  - Schedule days: ${scheduleList.length}');
             for (var day in scheduleList) {
-              print(
-                '    Day ${day["day"]}: ${day["periods"]?.length ?? 0} periods',
-              );
+              // print('    Day ${day["day"]}: ${day["periods"]?.length ?? 0} periods');
             }
           }
 
           // Cache the schedule data for offline use
-          await _cacheScheduleData(requestedBranch, requestedClass, classData);
-          print('💾 Schedule data cached for offline use');
+          await _cacheScheduleData(requestedBranch, requestedSemester.toString(), classData);
+          // print('💾 Schedule data cached for offline use');
 
           if (mounted) {
             setState(() {
@@ -301,16 +301,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               isLoading = false;
             });
           }
-          print('✅ Schedule data updated');
+          // print('✅ Schedule data updated');
         } else {
-          print('⚠️ No data key in response, using full response');
+          // print('⚠️ No data key in response, using full response');
           // Cache the schedule data for offline use
           await _cacheScheduleData(
             requestedBranch,
-            requestedClass,
+            requestedSemester.toString(),
             responseData,
           );
-          print('💾 Schedule data cached for offline use');
+          // print('💾 Schedule data cached for offline use');
           if (mounted) {
             setState(() {
               scheduleData = responseData;
@@ -319,7 +319,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           }
         }
       } else if (response.statusCode == 404) {
-        print('❌ Schedule not found for: $requestedClass');
+        // print('❌ Schedule not found for: $requestedSemester.toString()');
         if (mounted) {
           setState(() {
             scheduleData = null;
@@ -329,7 +329,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       } else {
         throw Exception('Failed to load schedule: ${response.statusCode}');
       }
-      print('=== FETCH SCHEDULE END ===\n');
+      // print('=== FETCH SCHEDULE END ===\n');
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -337,7 +337,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           isLoading = false;
         });
       }
-      print('❌ Error fetching schedule: $e');
+      // print('❌ Error fetching schedule: $e');
     }
   }
 
@@ -426,8 +426,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 ),
               ),
               backgroundColor: isDark
-                  ? CupertinoColors.black.withOpacity(0.6)
-                  : CupertinoColors.white.withOpacity(0.6),
+                  ? CupertinoColors.black.withValues(alpha: 0.6)
+                  : CupertinoColors.white.withValues(alpha: 0.6),
               trailing: CupertinoButton(
                 padding: EdgeInsets.zero,
                 onPressed: _showSettingsBottomSheet,
@@ -447,8 +447,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                     filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                     child: Container(
                       color: isDark
-                          ? CupertinoColors.black.withOpacity(0.6)
-                          : CupertinoColors.white.withOpacity(0.6),
+                          ? CupertinoColors.black.withValues(alpha: 0.6)
+                          : CupertinoColors.white.withValues(alpha: 0.6),
                       height:
                           118.0, // Explicitly match delegate height to prevent paintExtent discrepancy
                       padding: const EdgeInsets.symmetric(
@@ -460,10 +460,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                         children: [
                           _buildWeekCalendarGrid(weekDates, isDark, now),
                           if (selectedBranch.isNotEmpty &&
-                              selectedClass.isNotEmpty) ...[
+                              selectedSemester.toString().isNotEmpty) ...[
                             const SizedBox(height: 16),
                             Text(
-                              'Showing for $selectedClass ($selectedYear)',
+                              'Showing for Semester $selectedSemester ($selectedBranch)',
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontSize: 13,
@@ -494,7 +494,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 ),
               ),
             ),
-            if (selectedBranch.isEmpty || selectedClass.isEmpty)
+            if (selectedBranch.isEmpty || selectedSemester.toString().isEmpty)
               SliverFillRemaining(
                 child: Center(
                   child: Column(
@@ -536,7 +536,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       const CupertinoActivityIndicator(),
                       const SizedBox(height: 16),
                       Text(
-                        'Loading schedule for $selectedClass...',
+                        'Loading schedule for $selectedSemester.toString()...',
                         style: TextStyle(
                           color: isDark ? Colors.grey[400] : Colors.grey[600],
                           fontSize: 14,
@@ -559,7 +559,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'No schedule data available for $selectedClass',
+                        'No schedule data available for $selectedSemester.toString()',
                         style: TextStyle(
                           color: isDark ? Colors.grey[400] : Colors.grey[600],
                           fontSize: 14,
@@ -658,7 +658,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: AuthPalette.coral.withOpacity(0.4),
+          color: AuthPalette.coral.withValues(alpha: 0.4),
           width: 1.5,
         ),
       ),
@@ -692,7 +692,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isToday && !isSelected
-                      ? AuthPalette.coral.withOpacity(0.5)
+                      ? AuthPalette.coral.withValues(alpha: 0.5)
                       : Colors.transparent,
                   width: 1.5,
                 ),
@@ -762,58 +762,48 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   List<dynamic> _getClassesForDay(int dayOfWeek) {
-    print('\n=== GET CLASSES FOR DAY ===');
-    print('Day of week: $dayOfWeek (1=Mon, 7=Sun)');
-    print('Selected class: $selectedClass');
+    // print('\n=== GET CLASSES FOR DAY ===');
+    // print('Day of week: $dayOfWeek (1=Mon, 7=Sun)');
+    // print('Selected class: $selectedSemester.toString()');
 
     // Convert Flutter weekday (Mon=1, Sun=7) to our day format (Mon=1, Fri=5)
     // Filter only weekdays (Monday-Friday)
     if (dayOfWeek < 1 || dayOfWeek > 5) {
-      print('❌ Day $dayOfWeek is not a weekday (1-5), returning empty');
+      // print('❌ Day $dayOfWeek is not a weekday (1-5), returning empty');
       return [];
     }
 
-    print('ScheduleData is null: ${scheduleData == null}');
+    // print('ScheduleData is null: ${scheduleData == null}');
 
     // Try to get data from API first
     if (scheduleData != null) {
-      print('ScheduleData keys: ${scheduleData!.keys.toList()}');
-
-      List<dynamic>? schedule = scheduleData!['schedule'] as List<dynamic>?;
-
-      if (schedule != null) {
-        print('📋 Schedule found with ${schedule.length} days');
-        for (int i = 0; i < schedule.length; i++) {
-          var dayData = schedule[i];
-          print(
-            '  Day ${dayData['day']}: ${dayData['periods']?.length ?? 0} periods',
-          );
-          if (dayData['day'] == dayOfWeek) {
-            print('✅ Found matching day $dayOfWeek');
-            if (dayData['periods'] is List) {
-              final periods = dayData['periods'] as List;
-              print('   Returning ${periods.length} periods:');
-              for (var p in periods) {
-                print(
-                  '   - ${p['startTime']}-${p['endTime']}: ${p['className']}',
-                );
-              }
+      List<dynamic>? classes = scheduleData!['classes'] as List<dynamic>?;
+      if (classes != null) {
+        var section = classes.firstWhere((s) => s['name'] == selectedSection, orElse: () => null);
+        if (section != null && section['schedule'] is List) {
+          var schedule = section['schedule'] as List;
+          for (int i = 0; i < schedule.length; i++) {
+            var dayData = schedule[i];
+            if (dayData['day'] == dayOfWeek && dayData['periods'] is List) {
+              final periods = List<Map<String, dynamic>>.from(dayData['periods']);
+              periods.sort((a, b) {
+                final aTime = a['startTime'].toString();
+                final bTime = b['startTime'].toString();
+                return aTime.compareTo(bTime);
+              });
               return periods;
             }
           }
         }
-        print('❌ Day $dayOfWeek not found in schedule');
-      } else {
-        print('⚠️ Schedule key exists but is not a List');
       }
     }
 
-    print('🔄 No API data found, using static fallback');
+    // print('🔄 No API data found, using static fallback');
     // Fallback to static data
-    final schedule = classSchedules[selectedClass] ?? {};
+    final schedule = classSchedules[selectedSemester.toString()] ?? {};
     final result = schedule[dayOfWeek] ?? [];
-    print('Fallback result: ${result.length} periods');
-    print('=== GET CLASSES END ===\n');
+    // print('Fallback result: ${result.length} periods');
+    // print('=== GET CLASSES END ===\n');
     return result;
   }
 
@@ -858,7 +848,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               const CupertinoActivityIndicator(),
               const SizedBox(height: 16),
               Text(
-                'Loading schedule for $selectedClass...',
+                'Loading schedule for $selectedSemester.toString()...',
                 style: TextStyle(
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                   fontSize: 14,
@@ -884,7 +874,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                'No schedule data available for $selectedClass',
+                'No schedule data available for $selectedSemester.toString()',
                 style: TextStyle(
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                   fontSize: 14,
@@ -950,19 +940,19 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 2,
                 56,
                 38,
-              ).withOpacity(0.14), // Glass Emerald Green Tint
+              ).withValues(alpha: 0.14), // Glass Emerald Green Tint
               borderRadius: BorderRadius.circular(16),
               border: const Border(
                 left: BorderSide(color: Color(0xFF10B981), width: 5),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF10B981).withOpacity(0.20),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.20),
                   blurRadius: 18.0,
                   spreadRadius: 2.0,
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.35),
+                  color: Colors.black.withValues(alpha: 0.35),
                   blurRadius: 12.0,
                   offset: const Offset(0, 6),
                 ),
@@ -971,15 +961,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           } else {
             cardDecoration = BoxDecoration(
               color: isDark
-                  ? const Color(0xFF1E1E23).withOpacity(0.40)
-                  : Colors.grey[200]!.withOpacity(
+                  ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
+                  : Colors.grey[200]!.withValues(alpha: 
                       0.65,
                     ), // Translucent charcoal glass
               borderRadius: BorderRadius.circular(16),
               border: Border(left: BorderSide(color: accentColor, width: 4)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 8.0,
                   offset: const Offset(0, 4),
                 ),
@@ -1049,7 +1039,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                     color: isOngoing
                                         ? const Color(
                                             0xFF10B981,
-                                          ).withOpacity(0.7)
+                                          ).withValues(alpha: 0.7)
                                         : (isDark
                                               ? Colors.grey[400]
                                               : Colors.grey[600]),
@@ -1083,18 +1073,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
-  void _showSettingsBottomSheet() {
-    String tempYear = selectedYear.isEmpty ? '1st Year' : selectedYear;
+    void _showSettingsBottomSheet() {
+    int tempSemester = selectedSemester;
     String tempBranch = selectedBranch.isEmpty ? 'CSE' : selectedBranch;
-    String tempClass = selectedClass.isEmpty
-        ? (classesPerBranch[tempBranch]?[0] ?? '')
-        : selectedClass;
-
-    // Ensure class is valid for branch
-    final classes = classesPerBranch[tempBranch] ?? [];
-    if (!classes.contains(tempClass) && classes.isNotEmpty) {
-      tempClass = classes[0];
-    }
+    String tempSection = selectedSection.isEmpty 
+        ? (classesPerBranch[tempBranch]?.first ?? '') 
+        : selectedSection;
 
     _isSavedPreferenceExists().then((exists) {
       if (mounted) {
@@ -1108,16 +1092,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       context: context,
       builder: (BuildContext context) => StatefulBuilder(
         builder: (BuildContext context, StateSetter setModalState) {
-          final currentClasses = classesPerBranch[tempBranch] ?? [];
-          final classIndex = currentClasses
-              .indexOf(tempClass)
-              .clamp(0, currentClasses.length - 1);
-          final yearIndex = [
-            '1st Year',
-            '2nd Year',
-            '3rd Year',
-            '4th Year',
-          ].indexOf(tempYear).clamp(0, 3);
+          final semesterIndex = tempSemester - 1;
+          final sectionIndex = classesPerBranch[tempBranch] != null 
+              ? (classesPerBranch[tempBranch]!.indexOf(tempSection) != -1 
+                  ? classesPerBranch[tempBranch]!.indexOf(tempSection) 
+                  : 0) 
+              : 0;
 
           return Material(
             type: MaterialType.transparency,
@@ -1131,14 +1111,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 child: Container(
                   height: 480,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F0F11).withOpacity(0.80),
+                    color: const Color(0xFF0F0F11).withValues(alpha: 0.80),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(24.0),
                       topRight: Radius.circular(24.0),
                     ),
                     border: Border(
                       top: BorderSide(
-                        color: Colors.white.withOpacity(0.08),
+                        color: Colors.white.withValues(alpha: 0.08),
                         width: 1.0,
                       ),
                     ),
@@ -1150,264 +1130,151 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Header buttons
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 CupertinoButton(
                                   padding: EdgeInsets.zero,
                                   onPressed: () => Navigator.pop(context),
-                                  child: const Text(
-                                    'Cancel',
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
+                                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
                                 ),
-                                const Text(
-                                  'Timesheet Settings',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                                const Text('Timesheet Settings', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                                 CupertinoButton(
                                   padding: EdgeInsets.zero,
                                   onPressed: () {
                                     setState(() {
-                                      selectedYear = tempYear;
                                       selectedBranch = tempBranch;
-                                      selectedClass = tempClass;
+                                      selectedSemester = tempSemester;
+                                      selectedSection = tempSection;
                                       scheduleData = null;
                                       isLoading = true;
                                     });
-                                    _savePreference(
-                                      tempBranch,
-                                      tempClass,
-                                      tempYear,
-                                      savePreference,
-                                    );
+                                    _savePreference(tempBranch, tempSemester.toString(), '1st Year', tempSection, savePreference);
                                     if (savePreference) {
-                                      EduMateToast.showSuccessCard(
-                                        context,
-                                        title: 'Preference Saved',
-                                        description:
-                                            'Section $tempClass successfully set as default.',
-                                      );
+                                      EduMateToast.showSuccessCard(context, title: 'Preference Saved', description: 'Schedule preference saved.');
                                     }
                                     _fetchScheduleFromBackend();
                                     Navigator.pop(context);
                                   },
-                                  child: const Text(
-                                    'Done',
-                                    style: TextStyle(
-                                      color: AuthPalette.coral,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                  child: const Text('Done', style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold)),
                                 ),
                               ],
                             ),
                           ),
                           const Divider(color: Colors.white10),
-                          // Year selector
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Academic Year',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white70,
-                                  ),
-                                ),
+                                const Text('Select Branch', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white70)),
                                 const SizedBox(height: 8),
                                 SizedBox(
                                   width: double.infinity,
-                                  child:
-                                      CupertinoSlidingSegmentedControl<String>(
-                                        groupValue: tempYear,
-                                        thumbColor: AuthPalette.deepTeal
-                                            .withOpacity(0.70),
-                                        backgroundColor: Colors.white
-                                            .withOpacity(0.06),
-                                        children: {
-                                          '1st Year': _buildSegmentText(
-                                            '1st Yr',
-                                          ),
-                                          '2nd Year': _buildSegmentText(
-                                            '2nd Yr',
-                                          ),
-                                          '3rd Year': _buildSegmentText(
-                                            '3rd Yr',
-                                          ),
-                                          '4th Year': _buildSegmentText(
-                                            '4th Yr',
-                                          ),
-                                        },
-                                        onValueChanged: (val) {
-                                          if (val != null) {
-                                            setModalState(() => tempYear = val);
+                                  child: CupertinoSlidingSegmentedControl<String>(
+                                    groupValue: tempBranch,
+                                    thumbColor: AuthPalette.coral.withValues(alpha: 0.70),
+                                    backgroundColor: Colors.white.withValues(alpha: 0.06),
+                                    children: {
+                                      'CSE': _buildSegmentText('CSE'),
+                                      'CSCE': _buildSegmentText('CSCE'),
+                                      'IT': _buildSegmentText('IT'),
+                                      'CSSE': _buildSegmentText('CSSE'),
+                                    },
+                                    onValueChanged: (val) {
+                                      if (val != null) {
+                                        setModalState(() { 
+                                          tempBranch = val; 
+                                          if (classesPerBranch[tempBranch] != null && classesPerBranch[tempBranch]!.isNotEmpty) {
+                                            tempSection = classesPerBranch[tempBranch]!.first;
                                           }
-                                        },
-                                      ),
+                                        });
+                                      }
+                                    },
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          // Branch selector
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Select Branch',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white70,
-                                  ),
-                                ),
+                                const Text('Select Semester', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white70)),
                                 const SizedBox(height: 8),
                                 SizedBox(
                                   width: double.infinity,
-                                  child:
-                                      CupertinoSlidingSegmentedControl<String>(
-                                        groupValue: tempBranch,
-                                        thumbColor: AuthPalette.coral
-                                            .withOpacity(0.70),
-                                        backgroundColor: Colors.white
-                                            .withOpacity(0.06),
-                                        children: {
-                                          'CSE': _buildSegmentText('CSE'),
-                                          'CSCE': _buildSegmentText('CSCE'),
-                                          'IT': _buildSegmentText('IT'),
-                                          'CSSE': _buildSegmentText('CSSE'),
-                                        },
-                                        onValueChanged: (val) {
-                                          if (val != null) {
-                                            setModalState(() {
-                                              tempBranch = val;
-                                              final newClasses =
-                                                  classesPerBranch[val] ?? [];
-                                              tempClass = newClasses.isNotEmpty
-                                                  ? newClasses[0]
-                                                  : '';
-                                            });
-                                          }
-                                        },
-                                      ),
+                                  child: CupertinoSlidingSegmentedControl<int>(
+                                    groupValue: tempSemester,
+                                    thumbColor: AuthPalette.coral.withValues(alpha: 0.70),
+                                    backgroundColor: Colors.white.withValues(alpha: 0.06),
+                                    children: {
+                                      1: _buildSegmentText('1st'),
+                                      2: _buildSegmentText('2nd'),
+                                      3: _buildSegmentText('3rd'),
+                                      4: _buildSegmentText('4th'),
+                                      5: _buildSegmentText('5th'),
+                                      6: _buildSegmentText('6th'),
+                                      7: _buildSegmentText('7th'),
+                                      8: _buildSegmentText('8th'),
+                                    },
+                                    onValueChanged: (val) {
+                                      if (val != null) {
+                                        setModalState(() { tempSemester = val; });
+                                      }
+                                    },
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          // Section list picker
                           Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
-                                          'Select Section',
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white70,
-                                          ),
-                                        ),
+                                        const Text('Select Section', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white70)),
                                         Expanded(
                                           child: CupertinoPicker(
+                                            key: ValueKey(tempBranch), // Rebuild when branch changes
                                             magnification: 1.15,
                                             squeeze: 1.1,
                                             useMagnifier: true,
                                             itemExtent: 36.0,
-                                            scrollController:
-                                                FixedExtentScrollController(
-                                                  initialItem: classIndex,
-                                                ),
+                                            scrollController: FixedExtentScrollController(initialItem: sectionIndex),
                                             onSelectedItemChanged: (int index) {
-                                              if (index >= 0 &&
-                                                  index <
-                                                      currentClasses.length) {
-                                                setModalState(() {
-                                                  tempClass =
-                                                      currentClasses[index];
-                                                });
+                                              if (classesPerBranch[tempBranch] != null) {
+                                                setModalState(() { tempSection = classesPerBranch[tempBranch]![index]; });
                                               }
                                             },
-                                            children: List<Widget>.generate(
-                                              currentClasses.length,
-                                              (int index) => Center(
-                                                child: Text(
-                                                  currentClasses[index],
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
+                                            children: (classesPerBranch[tempBranch] ?? []).map((s) => Center(child: Text(s, style: const TextStyle(color: Colors.white, fontSize: 16)))).toList(),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  // Save preference toggle next to section picker
                                   Container(
-                                    width: 140,
-                                    padding: const EdgeInsets.only(
-                                      left: 16,
-                                      top: 12,
-                                    ),
+                                    width: 100,
+                                    padding: const EdgeInsets.only(left: 8, top: 12),
                                     child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
-                                        const Text(
-                                          'Remember me',
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontSize: 12,
-                                            color: Colors.white70,
-                                          ),
-                                        ),
+                                        const Text('Remember', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white70)),
                                         const SizedBox(height: 6),
                                         CupertinoSwitch(
-                                          activeColor: AuthPalette.deepTeal,
+                                          activeTrackColor: AuthPalette.deepTeal,
                                           value: savePreference,
                                           onChanged: (bool value) {
-                                            setState(() {
-                                              savePreference = value;
-                                            });
-                                            setModalState(() {
-                                              savePreference = value;
-                                            });
+                                            setState(() { savePreference = value; });
+                                            setModalState(() { savePreference = value; });
                                           },
                                         ),
                                       ],
@@ -1429,8 +1296,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       ),
     );
   }
-
-  Widget _buildSegmentText(String text) {
+Widget _buildSegmentText(String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Text(

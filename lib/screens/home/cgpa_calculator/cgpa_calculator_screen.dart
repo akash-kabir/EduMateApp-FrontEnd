@@ -100,7 +100,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
     });
 
     try {
-      final response = await http.get(Uri.parse(Config.allCurriculumsEndpoint));
+      final response = await http.get(Uri.parse(Config.curriculumBaseEndpoint));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -140,7 +140,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('${Config.curriculumByBranchEndpoint}/$branch'),
+        Uri.parse('${Config.curriculumBaseEndpoint}/branch/$branch'),
       );
 
       if (response.statusCode == 200) {
