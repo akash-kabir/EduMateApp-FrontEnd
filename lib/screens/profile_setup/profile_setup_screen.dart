@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../constants/app_constants.dart';
@@ -107,44 +108,141 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   void _showKiitPreFillDialog() {
-    showCupertinoDialog(
+    showGeneralDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Details Pre-filled'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Text(
-              'We\'ve automatically filled in your details based on your KIIT email address.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[300]
-                    : Colors.grey[700],
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.5),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, anim1, anim2) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Center(
+          child: Material(
+            type: MaterialType.transparency,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24.0),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.85,
+                  padding: const EdgeInsets.all(24.0),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF0F0F11).withOpacity(0.65)
+                        : Colors.white.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(24.0),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.black12,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 30.0,
+                        offset: const Offset(0, 15),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 64.0,
+                        height: 64.0,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AuthPalette.coral.withOpacity(0.15),
+                          border: Border.all(
+                            color: AuthPalette.coral.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Icon(
+                          CupertinoIcons.checkmark_seal_fill,
+                          color: AuthPalette.coral,
+                          size: 32.0,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Details Pre-filled',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                          letterSpacing: -0.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'We\'ve automatically filled in your details based on your KIIT email address.',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14.0,
+                          color: isDark ? Colors.grey[400] : Colors.grey[700],
+                          height: 1.4,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AuthPalette.coral.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Please select your Branch and Semester to complete.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontStyle: FontStyle.italic,
+                            color: AuthPalette.coral,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AuthPalette.coral,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Got it',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: CupertinoColors.systemBlue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'Please select your Branch and Semester to complete.',
-                style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Got it'),
           ),
-        ],
-      ),
+        );
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return Transform.scale(
+          scale: Tween<double>(begin: 0.85, end: 1.0).animate(
+            CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+          ).value,
+          child: FadeTransition(
+            opacity: anim1,
+            child: child,
+          ),
+        );
+      },
     );
   }
 
@@ -234,8 +332,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             _selectedBranch!,
           );
           await SharedPreferencesService.setString(
-            'selectedClass',
+            'selectedSemester.toString()',
+            _selectedSemester!,
+          );
+          await SharedPreferencesService.setString(
+            'selectedSection',
             _selectedSection!,
+          );
+          await SharedPreferencesService.setString(
+            'selectedYear',
+            _selectedYear!,
           );
           await SharedPreferencesService.setBool('savePreference', true);
 
@@ -288,300 +394,397 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return CupertinoPageScaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('Complete Your Profile'),
-        backgroundColor: isDark
-            ? CupertinoColors.black.withOpacity(0.6)
-            : CupertinoColors.white.withOpacity(0.6),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Text(
-                  'Provide your academic details to get started',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F0F11) : const Color(0xFFFAFAFA),
+        ),
+        child: Stack(
+          children: [
+            // Ambient glowing orbs
+            Positioned(
+              top: -100,
+              left: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AuthPalette.coral.withOpacity(isDark ? 0.15 : 0.08),
                 ),
-                const SizedBox(height: 32),
-                // First Name & Last Name
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'First Name',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          CupertinoTextField(
-                            controller: _firstNameController,
-                            placeholder: 'First name',
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: isDark
-                                    ? Colors.grey[700]!
-                                    : Colors.grey[300]!,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              color: isDark
-                                  ? Colors.grey[900]
-                                  : Colors.grey[100],
-                            ),
-                            style: TextStyle(
-                              color: isDark ? Colors.white : Colors.black,
-                            ),
-                            placeholderStyle: TextStyle(
-                              color: isDark
-                                  ? Colors.grey[500]
-                                  : Colors.grey[400],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Last Name',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          CupertinoTextField(
-                            controller: _lastNameController,
-                            placeholder: 'Last name',
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: isDark
-                                    ? Colors.grey[700]!
-                                    : Colors.grey[300]!,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              color: isDark
-                                  ? Colors.grey[900]
-                                  : Colors.grey[100],
-                            ),
-                            style: TextStyle(
-                              color: isDark ? Colors.white : Colors.black,
-                            ),
-                            placeholderStyle: TextStyle(
-                              color: isDark
-                                  ? Colors.grey[500]
-                                  : Colors.grey[400],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                // Roll Number Input
-                Text(
-                  'Roll Number',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                CupertinoTextField(
-                  controller: _rollNoController,
-                  placeholder: 'Enter your roll number',
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    color: isDark ? Colors.grey[900] : Colors.grey[100],
-                  ),
-                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
-                  placeholderStyle: TextStyle(
-                    color: isDark ? Colors.grey[500] : Colors.grey[400],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Year and Semester side by side
-                Row(
-                  children: [
-                    // Year Dropdown
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Year',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildDropdown(
-                            context,
-                            hint: 'Select',
-                            value: _selectedYear,
-                            items: ProfileSetupConstants.academicYears,
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedYear = value;
-                                _selectedSemester =
-                                    null; // Reset semester when year changes
-                              });
-                            },
-                            isDark: isDark,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    // Semester Dropdown
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Semester',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildDropdown(
-                            context,
-                            hint: 'Select',
-                            value: _selectedSemester,
-                            items: _getAvailableSemesters(),
-                            onChanged: (value) {
-                              setState(() => _selectedSemester = value);
-                            },
-                            isDark: isDark,
-                            enabled: _selectedYear != null,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                // (CGPA moved to CGPA calculator)
-                const SizedBox(height: 24),
-                // Branch Dropdown
-                Text(
-                  'Branch',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _buildDropdown(
-                  context,
-                  hint: 'Select your branch',
-                  value: _selectedBranch,
-                  items: ProfileSetupConstants.branches,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedBranch = value;
-                      _selectedSection = null;
-                    });
-                  },
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 24),
-                // Section Dropdown
-                Text(
-                  'Section',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _buildDropdown(
-                  context,
-                  hint: 'Select your section',
-                  value: _selectedSection,
-                  items:
-                      ProfileSetupConstants
-                          .sectionsPerBranch[_selectedBranch] ??
-                      [],
-                  onChanged: (value) {
-                    setState(() => _selectedSection = value);
-                  },
-                  isDark: isDark,
-                  enabled: _selectedBranch != null,
-                ),
-                const SizedBox(height: 48),
-                // Submit Button
-                CupertinoButton(
-                  onPressed: _isLoading ? null : _submitProfile,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: _isLoading
-                          ? CupertinoColors.systemGrey
-                          : CupertinoColors.systemBlue,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CupertinoActivityIndicator(
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              'Complete Setup',
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+            Positioned(
+              bottom: -50,
+              right: -50,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AuthPalette.coral.withOpacity(isDark ? 0.1 : 0.05),
+                ),
+              ),
+            ),
+            // Blur layer
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+                child: Container(color: Colors.transparent),
+              ),
+            ),
+            CupertinoPageScaffold(
+              backgroundColor: Colors.transparent,
+              navigationBar: CupertinoNavigationBar(
+                middle: const Text('Complete Your Profile'),
+                backgroundColor: isDark
+                    ? const Color(0xFF0F0F11).withOpacity(0.65)
+                    : Colors.white.withOpacity(0.65),
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? Colors.white12 : Colors.black12,
+                    width: 0.5,
+                  ),
+                ),
+              ),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        Text(
+                          'Provide your academic details to get started',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                        ),
+                        const SizedBox(height: 32),
+                        // First Name & Last Name
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'First Name',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  CupertinoTextField(
+                                    controller: _firstNameController,
+                                    placeholder: 'First name',
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: isDark
+                                            ? Colors.white.withOpacity(0.1)
+                                            : Colors.black.withOpacity(0.1),
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: isDark
+                                          ? Colors.white.withOpacity(0.05)
+                                          : Colors.black.withOpacity(0.03),
+                                    ),
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                    placeholderStyle: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey[500]
+                                          : Colors.grey[400],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Last Name',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  CupertinoTextField(
+                                    controller: _lastNameController,
+                                    placeholder: 'Last name',
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: isDark
+                                            ? Colors.white.withOpacity(0.1)
+                                            : Colors.black.withOpacity(0.1),
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: isDark
+                                          ? Colors.white.withOpacity(0.05)
+                                          : Colors.black.withOpacity(0.03),
+                                    ),
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                    placeholderStyle: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey[500]
+                                          : Colors.grey[400],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        // Roll Number Input
+                        Text(
+                          'Roll Number',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        CupertinoTextField(
+                          controller: _rollNoController,
+                          placeholder: 'Enter your roll number',
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.1)
+                                  : Colors.black.withOpacity(0.1),
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            color: isDark
+                                ? Colors.white.withOpacity(0.05)
+                                : Colors.black.withOpacity(0.03),
+                          ),
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                          placeholderStyle: TextStyle(
+                            color: isDark ? Colors.grey[500] : Colors.grey[400],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Year and Semester side by side
+                        Row(
+                          children: [
+                            // Year Dropdown
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Year',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildDropdown(
+                                    context,
+                                    hint: 'Select',
+                                    value: _selectedYear,
+                                    items: ProfileSetupConstants.academicYears,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _selectedYear = value;
+                                        _selectedSemester =
+                                            null; // Reset semester when year changes
+                                      });
+                                    },
+                                    isDark: isDark,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Semester Dropdown
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Semester',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildDropdown(
+                                    context,
+                                    hint: 'Select',
+                                    value: _selectedSemester,
+                                    items: _getAvailableSemesters(),
+                                    onChanged: (value) {
+                                      setState(() => _selectedSemester = value);
+                                    },
+                                    isDark: isDark,
+                                    enabled: _selectedYear != null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        // (CGPA moved to CGPA calculator)
+                        const SizedBox(height: 24),
+                        // Branch Dropdown
+                        Text(
+                          'Branch',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildDropdown(
+                          context,
+                          hint: 'Select your branch',
+                          value: _selectedBranch,
+                          items: ProfileSetupConstants.branches,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedBranch = value;
+                              _selectedSection = null;
+                            });
+                          },
+                          isDark: isDark,
+                        ),
+                        const SizedBox(height: 24),
+                        // Section Dropdown
+                        Text(
+                          'Section',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildDropdown(
+                          context,
+                          hint: 'Select your section',
+                          value: _selectedSection,
+                          items:
+                              ProfileSetupConstants
+                                  .sectionsPerBranch[_selectedBranch] ??
+                              [],
+                          onChanged: (value) {
+                            setState(() => _selectedSection = value);
+                          },
+                          isDark: isDark,
+                          enabled: _selectedBranch != null,
+                        ),
+                        const SizedBox(height: 30),
+                        // Submit Button
+                        CupertinoButton(
+                          onPressed: _isLoading ? null : _submitProfile,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: _isLoading
+                                  ? (isDark
+                                        ? Colors.grey[800]
+                                        : Colors.grey[300])
+                                  : AuthPalette.coral,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: _isLoading
+                                  ? []
+                                  : [
+                                      BoxShadow(
+                                        color: AuthPalette.coral.withOpacity(
+                                          0.3,
+                                        ),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                            ),
+                            child: Center(
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      height: 15,
+                                      width: 20,
+                                      child: CupertinoActivityIndicator(
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      'Complete Setup',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -598,7 +801,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }) {
     return GestureDetector(
       onTap: enabled
-          ? () {
+          ? () async {
+              FocusManager.instance.primaryFocus?.unfocus();
+              await Future.delayed(const Duration(milliseconds: 50));
+              if (!context.mounted) return;
               showCupertinoModalPopup(
                 context: context,
                 builder: (context) => Material(
@@ -673,40 +879,54 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               );
             }
           : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: enabled
-                ? (isDark ? Colors.grey[700]! : Colors.grey[300]!)
-                : (isDark ? Colors.grey[800]! : Colors.grey[200]!),
-          ),
-          borderRadius: BorderRadius.circular(12),
-          color: enabled
-              ? (isDark ? Colors.grey[900] : Colors.grey[100])
-              : (isDark ? Colors.grey[950] : Colors.grey[50]),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              value ?? hint,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: value == null
-                    ? (enabled
-                          ? (isDark ? Colors.grey[500] : Colors.grey[400])
-                          : (isDark ? Colors.grey[700] : Colors.grey[300]))
-                    : (isDark ? Colors.white : Colors.black),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: enabled
+                    ? (isDark
+                          ? Colors.white.withOpacity(0.1)
+                          : Colors.black.withOpacity(0.1))
+                    : (isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.black.withOpacity(0.05)),
               ),
-            ),
-            Icon(
-              CupertinoIcons.chevron_down,
+              borderRadius: BorderRadius.circular(12),
               color: enabled
-                  ? (isDark ? Colors.grey[500] : Colors.grey[400])
-                  : (isDark ? Colors.grey[700] : Colors.grey[300]),
-              size: 20,
+                  ? (isDark
+                        ? Colors.white.withOpacity(0.05)
+                        : Colors.black.withOpacity(0.03))
+                  : (isDark
+                        ? Colors.white.withOpacity(0.02)
+                        : Colors.black.withOpacity(0.01)),
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  value ?? hint,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: value == null
+                        ? (enabled
+                              ? (isDark ? Colors.grey[500] : Colors.grey[400])
+                              : (isDark ? Colors.grey[700] : Colors.grey[300]))
+                        : (isDark ? Colors.white : Colors.black),
+                  ),
+                ),
+                Icon(
+                  CupertinoIcons.chevron_down,
+                  color: enabled
+                      ? (isDark ? Colors.grey[500] : Colors.grey[400])
+                      : (isDark ? Colors.grey[700] : Colors.grey[300]),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
