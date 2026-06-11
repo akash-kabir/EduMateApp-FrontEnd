@@ -1,5 +1,7 @@
 // ignore_for_file: unused_field
 
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../constants/app_constants.dart';
@@ -80,48 +82,185 @@ class _HomeScreenState extends State<HomeScreen> {
     // Show the dialog after the frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      showCupertinoDialog(
+      showGeneralDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => CupertinoAlertDialog(
-          title: const Text('Complete Your Profile'),
-          content: const Text(
-            'Set up your profile to get the most out of EduMate. '
-            'Your roll number, branch, and section help us personalise your experience.',
-          ),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.of(this.context).push(
-                  CupertinoPageRoute(
-                    builder: (context) => ProfileSetupScreen(
-                      userId: userId,
-                      token: token,
-                      onProfileSetupComplete: () {
-                        SharedPreferencesService.setProfileSetupComplete(true);
-                      },
+        barrierColor: Colors.black.withOpacity(0.5),
+        transitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (context, anim1, anim2) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Center(
+            child: Material(
+              type: MaterialType.transparency,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24.0),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.85,
+                    padding: const EdgeInsets.all(24.0),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF0F0F11).withOpacity(0.65)
+                          : Colors.white.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(24.0),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.black12,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 30.0,
+                          offset: const Offset(0, 15),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 64.0,
+                          height: 64.0,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AuthPalette.coral.withOpacity(0.15),
+                            border: Border.all(
+                              color: AuthPalette.coral.withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Icon(
+                            CupertinoIcons.person_crop_circle_badge_exclam,
+                            color: AuthPalette.coral,
+                            size: 32.0,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Complete Your Profile',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 20.0,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                            letterSpacing: -0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Set up your profile to get the most out of EduMate. Your roll number, branch, and section help us personalise your experience.',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 14.0,
+                            color: isDark ? Colors.grey[400] : Colors.grey[700],
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 28),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.of(this.context).push(
+                                CupertinoPageRoute(
+                                  builder: (context) => ProfileSetupScreen(
+                                    userId: userId,
+                                    token: token,
+                                    onProfileSetupComplete: () {
+                                      SharedPreferencesService.setProfileSetupComplete(true);
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AuthPalette.coral,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Set up Profile',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Close',
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white70 : Colors.black54,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextButton(
+                                onPressed: () async {
+                                  await SharedPreferencesService.setNeverAskProfileSetup(true);
+                                  if (context.mounted) Navigator.pop(context);
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  backgroundColor: isDark 
+                                      ? Colors.red.withOpacity(0.15)
+                                      : Colors.red.withOpacity(0.1),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Never Ask',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-              child: const Text('Set up Profile'),
+                ),
+              ),
             ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () async {
-                await SharedPreferencesService.setNeverAskProfileSetup(true);
-                if (context.mounted) Navigator.pop(context);
-              },
-              child: const Text('Never Ask Again'),
+          );
+        },
+        transitionBuilder: (context, anim1, anim2, child) {
+          return Transform.scale(
+            scale: Tween<double>(begin: 0.85, end: 1.0).animate(
+              CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+            ).value,
+            child: FadeTransition(
+              opacity: anim1,
+              child: child,
             ),
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
+          );
+        },
       );
     });
   }
