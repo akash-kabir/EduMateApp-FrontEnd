@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:ui';
 import '../../config.dart';
+import '../../constants/app_constants.dart';
 import '../../services/shared_preferences_service.dart';
 
 class ProfileDetailsScreen extends StatefulWidget {
@@ -90,7 +91,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = CupertinoColors.systemBlue;
+    final accentColor = AuthPalette.coral;
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
@@ -256,13 +257,13 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           end: Alignment.bottomRight,
           colors: [
             accentColor,
-            accentColor.withOpacity(0.7),
-            isDark ? const Color(0xFF1A1A2E) : const Color(0xFF667EEA),
+            accentColor.withValues(alpha: 0.8),
+            isDark ? accentColor.withValues(alpha: 0.4) : accentColor.withValues(alpha: 0.6),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withOpacity(0.3),
+            color: accentColor.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -287,7 +288,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                 height: 88,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                 ),
                 child: Center(
                   child: Text(
@@ -352,7 +353,6 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
   Widget _buildQuickStats(bool isDark, Color accentColor) {
     final branch = profileData?['branch'] ?? '—';
     final semester = profileData?['semester']?.toString() ?? '—';
-    final role = _formatRole(profileData?['role'] ?? 'student');
 
     return Row(
       children: [
@@ -361,8 +361,6 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
         Expanded(
           child: _buildStatChip(semester, 'Semester', isDark, accentColor),
         ),
-        const SizedBox(width: 10),
-        Expanded(child: _buildStatChip(role, 'Role', isDark, accentColor)),
       ],
     );
   }
@@ -373,28 +371,27 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     bool isDark,
     Color accentColor,
   ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : Colors.black.withOpacity(0.06),
-        ),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
-      child: Column(
-        children: [
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
+                : Colors.grey[200]!.withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 8.0,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
           Text(
             value,
             style: TextStyle(
@@ -417,6 +414,8 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
             textAlign: TextAlign.center,
           ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -440,27 +439,26 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
   }
 
   Widget _buildGroupedCard(bool isDark, List<_InfoRow> rows) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : Colors.black.withOpacity(0.06),
-        ),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
-      child: Column(
-        children: List.generate(rows.length, (index) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
+                : Colors.grey[200]!.withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 8.0,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: List.generate(rows.length, (index) {
           final row = rows[index];
           final isLast = index == rows.length - 1;
           return Column(
@@ -476,15 +474,13 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? CupertinoColors.systemBlue.withOpacity(0.15)
-                            : CupertinoColors.systemBlue.withOpacity(0.1),
+                        color: AuthPalette.coral.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         row.icon,
                         size: 17,
-                        color: CupertinoColors.systemBlue,
+                        color: AuthPalette.coral,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -521,13 +517,15 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                   child: Divider(
                     height: 1,
                     color: isDark
-                        ? Colors.white.withOpacity(0.06)
-                        : Colors.black.withOpacity(0.06),
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.black.withValues(alpha: 0.06),
                   ),
                 ),
             ],
           );
         }),
+          ),
+        ),
       ),
     );
   }
