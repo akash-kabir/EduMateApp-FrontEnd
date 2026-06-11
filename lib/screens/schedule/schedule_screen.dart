@@ -146,7 +146,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     if (saved && savedClass != null) {
       setState(() {
         if (savedBranch != null) selectedBranch = savedBranch;
-        selectedSemester = int.tryParse(savedClass) ?? 1;
+        selectedSemester = int.tryParse(savedClass.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
         if (savedSection != null) selectedSection = savedSection;
         savePreference = true;
       });
@@ -462,15 +462,28 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           if (selectedBranch.isNotEmpty &&
                               selectedSemester.toString().isNotEmpty) ...[
                             const SizedBox(height: 16),
-                            Text(
-                              'Showing for Semester $selectedSemester ($selectedBranch)',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
+                            RichText(
+                              text: TextSpan(
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: 'Showing for Semester $selectedSemester ',
+                                  ),
+                                  TextSpan(
+                                    text: '(${selectedSection.isNotEmpty ? selectedSection : selectedBranch})',
+                                    style: const TextStyle(
+                                      color: Color(0xFF10B981),
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ] else ...[
