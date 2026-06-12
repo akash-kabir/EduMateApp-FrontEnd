@@ -139,8 +139,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final savedSection = await SharedPreferencesService.getString(
       'selectedSection',
     );
-    final savedYear =
-        await SharedPreferencesService.getString('selectedYear') ?? '1st Year';
     final saved = await SharedPreferencesService.getBool('savePreference');
 
     if (saved && savedClass != null) {
@@ -203,7 +201,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       try {
         return jsonDecode(cachedData) as Map<String, dynamic>?;
       } catch (e) {
-        // print('Error decoding cached schedule: $e');
         return null;
       }
     }
@@ -211,24 +208,17 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Future<void> _fetchScheduleFromBackend() async {
-    // print('\n=== FETCH SCHEDULE START ===');
-    // print('Selected Class: $selectedSemester.toString()');
-    // print('Selected Branch: $selectedBranch');
 
     final currentRequestId = ++_lastRequestId;
     final requestedSemester = selectedSemester; // Capture what class was requested
     final requestedBranch = selectedBranch;
-    // print('🆔 Request ID: $currentRequestId');
-    // print('📌 Captured class: $requestedSemester.toString()');
 
     // Try to load from cache first
-    // print('📦 Checking cache for $requestedBranch/$requestedSemester.toString()...');
     final cachedData = await _getCachedScheduleData(
       requestedBranch,
       requestedSemester.toString(),
     );
     if (cachedData != null) {
-      // print('✅ Found cached schedule data');
       if (mounted) {
         setState(() {
           scheduleData = cachedData;
@@ -239,7 +229,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     }
 
     // If no cache, fetch from backend
-    // print('❌ No cache found, fetching from backend...');
     if (mounted) {
       setState(() {
         isLoading = true;
@@ -249,7 +238,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final url = '${Config.scheduleBaseEndpoint}/$requestedBranch/$requestedSemester?t=$timestamp';
-      // print('API URL: $url');
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -261,39 +249,24 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
       // 🔥 CRITICAL: Check if this is still the latest request
       if (currentRequestId != _lastRequestId) {
-        // print('❌ IGNORING STALE RESPONSE: Request #$currentRequestId is outdated (latest is #$_lastRequestId)');
-        // print('   Requested: $requestedSemester.toString(), Current: $selectedSemester.toString()');
         return; // Discard this response, don't update UI
       }
 
-      // print('Response status: ${response.statusCode}');
-      // print('Response body length: ${response.body.length} bytes');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        // print('=== RESPONSE DATA ===');
-        // print('Response has "data" key: ${responseData.containsKey("data")}');
-        // print('Response has "success" key: ${responseData.containsKey("success")}');
 
         // Handle the API response structure: { success: true, data: classSchedule }
         if (responseData is Map && responseData.containsKey('data')) {
           final classData = responseData['data'];
-          // print('Extracted class data:');
-          // print('  - Name: ${classData["name"]}');
-          // print('  - Has schedule key: ${classData.containsKey("schedule")}');
 
           if (classData.containsKey('schedule') &&
               classData['schedule'] is List) {
-            final scheduleList = classData['schedule'] as List;
-            // print('  - Schedule days: ${scheduleList.length}');
-            for (var day in scheduleList) {
-              // print('    Day ${day["day"]}: ${day["periods"]?.length ?? 0} periods');
-            }
+            // Valid schedule found
           }
 
           // Cache the schedule data for offline use
           await _cacheScheduleData(requestedBranch, requestedSemester.toString(), classData);
-          // print('💾 Schedule data cached for offline use');
 
           if (mounted) {
             setState(() {
@@ -301,16 +274,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               isLoading = false;
             });
           }
-          // print('✅ Schedule data updated');
         } else {
-          // print('⚠️ No data key in response, using full response');
           // Cache the schedule data for offline use
           await _cacheScheduleData(
             requestedBranch,
             requestedSemester.toString(),
             responseData,
           );
-          // print('💾 Schedule data cached for offline use');
           if (mounted) {
             setState(() {
               scheduleData = responseData;
@@ -319,7 +289,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           }
         }
       } else if (response.statusCode == 404) {
-        // print('❌ Schedule not found for: $requestedSemester.toString()');
         if (mounted) {
           setState(() {
             scheduleData = null;
@@ -329,7 +298,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       } else {
         throw Exception('Failed to load schedule: ${response.statusCode}');
       }
-      // print('=== FETCH SCHEDULE END ===\n');
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -337,7 +305,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           isLoading = false;
         });
       }
-      // print('❌ Error fetching schedule: $e');
     }
   }
 
@@ -775,18 +742,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   List<dynamic> _getClassesForDay(int dayOfWeek) {
-    // print('\n=== GET CLASSES FOR DAY ===');
-    // print('Day of week: $dayOfWeek (1=Mon, 7=Sun)');
-    // print('Selected class: $selectedSemester.toString()');
 
     // Convert Flutter weekday (Mon=1, Sun=7) to our day format (Mon=1, Fri=5)
     // Filter only weekdays (Monday-Friday)
     if (dayOfWeek < 1 || dayOfWeek > 5) {
-      // print('❌ Day $dayOfWeek is not a weekday (1-5), returning empty');
       return [];
     }
 
-    // print('ScheduleData is null: ${scheduleData == null}');
 
     // Try to get data from API first
     if (scheduleData != null) {
@@ -811,12 +773,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       }
     }
 
-    // print('🔄 No API data found, using static fallback');
     // Fallback to static data
     final schedule = classSchedules[selectedSemester.toString()] ?? {};
     final result = schedule[dayOfWeek] ?? [];
-    // print('Fallback result: ${result.length} periods');
-    // print('=== GET CLASSES END ===\n');
     return result;
   }
 
@@ -1105,9 +1064,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       context: context,
       builder: (BuildContext context) => StatefulBuilder(
         builder: (BuildContext context, StateSetter setModalState) {
-          final semesterIndex = tempSemester - 1;
           final sectionIndex = classesPerBranch[tempBranch] != null 
-              ? (classesPerBranch[tempBranch]!.indexOf(tempSection) != -1 
+              ? (classesPerBranch[tempBranch]!.contains(tempSection) 
                   ? classesPerBranch[tempBranch]!.indexOf(tempSection) 
                   : 0) 
               : 0;

@@ -6,6 +6,7 @@ import 'dart:ui';
 import '../../config.dart';
 import '../../constants/app_constants.dart';
 import '../../services/shared_preferences_service.dart';
+import '../admin/admin_main_app.dart';
 
 class ProfileDetailsScreen extends StatefulWidget {
   const ProfileDetailsScreen({super.key});
@@ -38,7 +39,17 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
       begin: const Offset(0, 0.05),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    
+    _loadEffectiveRole();
     _fetchProfileData();
+  }
+
+  Future<void> _loadEffectiveRole() async {
+    final role = await SharedPreferencesService.getUserRole();
+    if (role != null && mounted) {
+      setState(() {
+      });
+    }
   }
 
   @override
@@ -240,6 +251,19 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                         : 'Incomplete',
                   ),
                 ]),
+                
+                // Debug section (Only for Society Head)
+                if (profileData?['role']?.toString().toLowerCase() == 'society_head') ...[
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(
+                    'Debug Mode',
+                    CupertinoIcons.wrench_fill,
+                    isDark,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDebugCard(isDark, accentColor),
+                ],
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -554,6 +578,102 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     } else {
       return 'Student';
     }
+  }
+
+  Widget _buildDebugCard(bool isDark, Color accentColor) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
+                : Colors.grey[200]!.withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 8.0,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.03),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        CupertinoIcons.arrow_2_squarepath,
+                        color: accentColor,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'View as Admin',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Toggle to see admin UI',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AdminMainApp(fromStudentView: true)),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Switch',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/custom_glass_dialog.dart';
 import '../../constants/app_constants.dart';
 import '../../services/shared_preferences_service.dart';
 import '../profile/profile_details_screen.dart';
@@ -82,40 +83,13 @@ class _HomeScreenState extends State<HomeScreen> {
     // Show the dialog after the frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      showGeneralDialog(
+      showGlassmorphicDialog(
         context: context,
         barrierDismissible: false,
-        barrierColor: Colors.black.withOpacity(0.5),
-        transitionDuration: const Duration(milliseconds: 300),
-        pageBuilder: (context, anim1, anim2) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          return Center(
-            child: Material(
-              type: MaterialType.transparency,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24.0),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.85,
-                    padding: const EdgeInsets.all(24.0),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF0F0F11).withOpacity(0.65)
-                          : Colors.white.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(24.0),
-                      border: Border.all(
-                        color: isDark ? Colors.white12 : Colors.black12,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 30.0,
-                          offset: const Offset(0, 15),
-                        ),
-                      ],
-                    ),
-                    child: Column(
+        child: Builder(
+          builder: (context) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
@@ -243,24 +217,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-        transitionBuilder: (context, anim1, anim2, child) {
-          return Transform.scale(
-            scale: Tween<double>(begin: 0.85, end: 1.0).animate(
-              CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
-            ).value,
-            child: FadeTransition(
-              opacity: anim1,
-              child: child,
-            ),
-          );
-        },
+            );
+          }
+        ),
       );
     });
   }

@@ -8,6 +8,7 @@ import '../../../constants/app_constants.dart';
 import '../../../config.dart';
 import '../../../services/shared_preferences_service.dart';
 import '../../../widgets/toast_manager.dart';
+import '../../../widgets/bottom_sheet_selector.dart';
 
 class CGPACalculatorScreen extends StatefulWidget {
   const CGPACalculatorScreen({super.key});
@@ -403,69 +404,41 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                       const SizedBox(height: 32),
 
                       // Branch Selector
-                      Text(
-                        'Select Branch',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildPickerSelector(
-                        context,
-                        hint: 'Choose a branch',
-                        value: selectedBranch,
-                        items: branches,
-                        isDark: isDark,
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => selectedBranch = value);
-                            _fetchSemesters(value);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Semester Selection
-                      if (semesters.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Select Semester',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark ? Colors.white : Colors.black,
-                                  ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildPickerSelector(
-                              context,
-                              hint: 'Select a semester',
-                              value: selectedSemesterNumber != null
-                                  ? 'Semester $selectedSemesterNumber'
-                                  : null,
-                              items: semesters
-                                  .map((s) => 'Semester ${s['semesterNumber']}')
-                                  .toList(),
-                              isDark: isDark,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: BottomSheetSelector<String>(
+                              value: selectedBranch,
+                              items: branches,
+                              hint: 'Select Branch',
+                              labelBuilder: (String value) => value,
                               onChanged: (value) {
-                                if (value != null) {
-                                  final semNum = int.tryParse(
-                                    value.replaceAll(RegExp(r'[^0-9]'), ''),
-                                  );
-                                  if (semNum != null) {
-                                    setState(
-                                      () => selectedSemesterNumber = semNum,
-                                    );
-                                    _selectSemester(semNum);
-                                  }
-                                }
+                                setState(() => selectedBranch = value);
+                                _fetchSemesters(value);
                               },
                             ),
+                          ),
+                          if (semesters.isNotEmpty) ...[
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: BottomSheetSelector<String>(
+                                value: selectedSemesterNumber != null ? 'Semester $selectedSemesterNumber' : null,
+                                items: semesters.map((s) => 'Semester ${s['semesterNumber']}').toList(),
+                                hint: 'Select Semester',
+                                labelBuilder: (String value) => value,
+                                onChanged: (value) {
+                                  final semNum = int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), ''));
+                                  if (semNum != null) {
+                                    setState(() => selectedSemesterNumber = semNum);
+                                    _selectSemester(semNum);
+                                  }
+                                },
+                              ),
+                            ),
                           ],
-                        ),
+                        ],
+                      ),
                       const SizedBox(height: 24),
 
                       // Past CGPA Card
@@ -1239,175 +1212,6 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
     );
   }
 
-  Widget _buildPickerSelector(
-    BuildContext context, {
-    required String hint,
-    required String? value,
-    required List<String> items,
-    required bool isDark,
-    required Function(String?) onChanged,
-  }) {
-    return GestureDetector(
-      onTap: items.isEmpty
-          ? null
-          : () async {
-              FocusManager.instance.primaryFocus?.unfocus();
-              await Future.delayed(const Duration(milliseconds: 50));
-              if (!context.mounted) return;
-              showCupertinoModalPopup(
-                context: context,
-                builder: (ctx) => Material(
-                  type: MaterialType.transparency,
-                  child: Container(
-                    height: 300,
-                    padding: const EdgeInsets.only(top: 6),
-                    margin: EdgeInsets.only(
-                      bottom: MediaQuery.of(ctx).viewInsets.bottom,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF1C1C1E)
-                          : CupertinoColors.white,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                    ),
-                    child: SafeArea(
-                      top: false,
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                CupertinoButton(
-                                  onPressed: () => Navigator.pop(ctx),
-                                  child: Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.grey[400]
-                                          : Colors.grey[600],
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  hint,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        isDark ? Colors.white : Colors.black,
-                                  ),
-                                ),
-                                CupertinoButton(
-                                  onPressed: () => Navigator.pop(ctx),
-                                  child: Text(
-                                    'Done',
-                                    style: TextStyle(
-                                      color: AuthPalette.coral,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Divider(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.1)
-                                : Colors.grey[300],
-                            height: 1,
-                            indent: 16,
-                            endIndent: 16,
-                          ),
-                          Expanded(
-                            child: CupertinoPicker(
-                              magnification: 1.22,
-                              squeeze: 1.2,
-                              useMagnifier: true,
-                              itemExtent: 36.0,
-                              scrollController: FixedExtentScrollController(
-                                initialItem: value != null
-                                    ? items
-                                          .indexOf(value)
-                                          .clamp(0, items.length - 1)
-                                    : 0,
-                              ),
-                              onSelectedItemChanged: (index) {
-                                onChanged(items[index]);
-                              },
-                              children: items
-                                  .map(
-                                    (item) => Center(
-                                      child: Text(
-                                        item,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: isDark
-                                              ? Colors.white
-                                              : Colors.black,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-                  : Colors.grey[200]!.withValues(alpha: 0.65),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 8.0,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  value ?? hint,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: value == null
-                        ? (isDark ? Colors.grey[500] : Colors.grey[400])
-                        : (isDark ? Colors.white : Colors.black),
-                  ),
-                ),
-                Icon(
-                  CupertinoIcons.chevron_down,
-                  color: isDark ? Colors.grey[500] : Colors.grey[400],
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   // Grade labels ordered from lowest to highest for the slider
   static const List<String> _gradeLabels = ['F', 'D', 'C', 'B', 'A', 'E', 'O'];
