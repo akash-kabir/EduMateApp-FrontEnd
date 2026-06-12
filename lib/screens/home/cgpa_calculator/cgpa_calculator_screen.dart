@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:ui' as ui;
 import '../../../constants/app_constants.dart';
 import '../../../config.dart';
 import '../../../services/shared_preferences_service.dart';
@@ -34,6 +36,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
   final TextEditingController pastCGPAController = TextEditingController();
   final Map<String, TextEditingController> gradeControllers = {};
   late ScrollController _scrollController;
+  bool _showResultPill = false;
 
   // Grade mapping to 10-point scale
   static const Map<String, double> gradeValues = {
@@ -50,7 +53,20 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     _fetchBranchesAndAutoSelect();
+  }
+
+  void _onScroll() {
+    if (calculatedCGPA == null) return;
+    // Show pill when scrolled up enough that the results are off-screen
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
+    // If the user is NOT near the bottom (more than 150px away), show the pill
+    final shouldShow = currentScroll < maxScroll - 150;
+    if (shouldShow != _showResultPill) {
+      setState(() => _showResultPill = shouldShow);
+    }
   }
 
   Future<void> _fetchBranchesAndAutoSelect() async {
@@ -111,7 +127,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
             .toList();
 
         setState(() {
-          branches = branchList;
+          branches = branchList.toSet().toList();
           isLoading = false;
         });
       } else {
@@ -145,11 +161,11 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final curriculum = data['data'];
+        final List<dynamic> semestersData = data['data'];
         final semesterList = List<Map<String, dynamic>>.from(
-          curriculum['semesters'].map(
+          semestersData.map(
             (s) => {
-              'semesterNumber': s['semesterNumber'],
+              'semesterNumber': s['semester'],
               'subjects': s['subjects'],
             },
           ),
@@ -238,6 +254,33 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
     });
   }
 
+  /// Silently recalculates SGPA and overall CGPA without validation or scrolling.
+  /// Called automatically when a grade slider changes after initial calculation.
+  void _autoRecalculate() {
+    double totalWeightedGrade = 0;
+    double totalCredits = 0;
+
+    for (final subject in subjects) {
+      final gradeStr = gradeMap[subject['name']];
+      if (gradeStr == null) continue;
+      final credits = (subject['credits'] as num).toDouble();
+      final gradeValue = gradeValues[gradeStr] ?? 0.0;
+
+      totalWeightedGrade += gradeValue * credits;
+      totalCredits += credits;
+    }
+
+    final cgpa = totalCredits > 0 ? totalWeightedGrade / totalCredits : 0.0;
+
+    setState(() {
+      calculatedCGPA = cgpa;
+      // Also update overall CGPA if past CGPA was already applied
+      if (overallCGPA != null && pastCGPA != null) {
+        overallCGPA = (pastCGPA! + cgpa) / 2;
+      }
+    });
+  }
+
   void _resetGrades() {
     setState(() {
       gradeMap.clear();
@@ -302,6 +345,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
     branchController.dispose();
     semesterController.dispose();
     pastCGPAController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     for (var controller in gradeControllers.values) {
       controller.dispose();
@@ -339,7 +383,9 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
           : Material(
               color: isDark ? CupertinoColors.black : CupertinoColors.white,
               child: SafeArea(
-                child: SingleChildScrollView(
+                child: Stack(
+                  children: [
+                    SingleChildScrollView(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -354,7 +400,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                       ),
                       const SizedBox(height: 32),
 
-                      // Branch Dropdown
+                      // Branch Selector
                       Text(
                         'Select Branch',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -363,92 +409,18 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        child: DropdownMenu<String>(
-                          controller: branchController,
-                          initialSelection: selectedBranch,
-                          dropdownMenuEntries: branches
-                              .map(
-                                (b) => DropdownMenuEntry(
-                                  value: b,
-                                  label: b,
-                                  style: ButtonStyle(
-                                    foregroundColor:
-                                        MaterialStateProperty.resolveWith((
-                                          states,
-                                        ) {
-                                          if (b == selectedBranch) {
-                                            return AuthPalette.coral;
-                                          }
-                                          return isDark
-                                              ? Colors.white
-                                              : Colors.black;
-                                        }),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                          onSelected: (value) {
-                            if (value != null) {
-                              setState(() => selectedBranch = value);
-                              _fetchSemesters(value);
-                            }
-                          },
-                          width: MediaQuery.of(context).size.width - 32,
-                          hintText: 'Choose a branch',
-                          menuStyle: MenuStyle(
-                            backgroundColor: MaterialStateProperty.all(
-                              isDark ? Colors.grey[900] : Colors.white,
-                            ),
-                            elevation: MaterialStateProperty.all(8),
-                            shape: MaterialStateProperty.all(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            shadowColor: MaterialStateProperty.all(
-                              Colors.black.withOpacity(0.2),
-                            ),
-                          ),
-                          inputDecorationTheme: InputDecorationTheme(
-                            fillColor: isDark
-                                ? Colors.grey[900]
-                                : Colors.grey[50],
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: isDark
-                                    ? Colors.grey[700]!
-                                    : Colors.grey[300]!,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: isDark
-                                    ? Colors.grey[700]!
-                                    : Colors.grey[300]!,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AuthPalette.coral,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            hintStyle: TextStyle(
-                              color: isDark
-                                  ? Colors.grey[500]
-                                  : Colors.grey[400],
-                            ),
-                          ),
-                        ),
+                      _buildPickerSelector(
+                        context,
+                        hint: 'Choose a branch',
+                        value: selectedBranch,
+                        items: branches,
+                        isDark: isDark,
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => selectedBranch = value);
+                            _fetchSemesters(value);
+                          }
+                        },
                       ),
                       const SizedBox(height: 24),
 
@@ -466,98 +438,29 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                   ),
                             ),
                             const SizedBox(height: 8),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 0,
-                              ),
-                              child: DropdownMenu<int>(
-                                controller: semesterController,
-                                initialSelection: selectedSemesterNumber,
-                                dropdownMenuEntries: semesters
-                                    .map(
-                                      (sem) => DropdownMenuEntry(
-                                        value: sem['semesterNumber'] as int,
-                                        label:
-                                            'Semester ${sem['semesterNumber']}',
-                                        style: ButtonStyle(
-                                          foregroundColor:
-                                              MaterialStateProperty.resolveWith(
-                                                (states) {
-                                                  if (sem['semesterNumber'] ==
-                                                      selectedSemesterNumber) {
-                                                    return AuthPalette.coral;
-                                                  }
-                                                  return isDark
-                                                      ? Colors.white
-                                                      : Colors.black;
-                                                },
-                                              ),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                                onSelected: (value) {
-                                  if (value != null) {
+                            _buildPickerSelector(
+                              context,
+                              hint: 'Select a semester',
+                              value: selectedSemesterNumber != null
+                                  ? 'Semester $selectedSemesterNumber'
+                                  : null,
+                              items: semesters
+                                  .map((s) => 'Semester ${s['semesterNumber']}')
+                                  .toList(),
+                              isDark: isDark,
+                              onChanged: (value) {
+                                if (value != null) {
+                                  final semNum = int.tryParse(
+                                    value.replaceAll(RegExp(r'[^0-9]'), ''),
+                                  );
+                                  if (semNum != null) {
                                     setState(
-                                      () => selectedSemesterNumber = value,
+                                      () => selectedSemesterNumber = semNum,
                                     );
-                                    _selectSemester(value);
+                                    _selectSemester(semNum);
                                   }
-                                },
-                                width: MediaQuery.of(context).size.width - 32,
-                                hintText: 'Select a semester',
-                                menuStyle: MenuStyle(
-                                  backgroundColor: MaterialStateProperty.all(
-                                    isDark ? Colors.grey[900] : Colors.white,
-                                  ),
-                                  elevation: MaterialStateProperty.all(8),
-                                  shape: MaterialStateProperty.all(
-                                    RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  shadowColor: MaterialStateProperty.all(
-                                    Colors.black.withOpacity(0.2),
-                                  ),
-                                ),
-                                inputDecorationTheme: InputDecorationTheme(
-                                  fillColor: isDark
-                                      ? Colors.grey[900]
-                                      : Colors.grey[50],
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: isDark
-                                          ? Colors.grey[700]!
-                                          : Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: isDark
-                                          ? Colors.grey[700]!
-                                          : Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: AuthPalette.coral,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 14,
-                                  ),
-                                  hintStyle: TextStyle(
-                                    color: isDark
-                                        ? Colors.grey[500]
-                                        : Colors.grey[400],
-                                  ),
-                                ),
-                              ),
+                                }
+                              },
                             ),
                           ],
                         ),
@@ -566,94 +469,100 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                       // Past CGPA Card
                       if (selectedSemesterNumber != null &&
                           selectedSemesterNumber! > 1)
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.grey[900] : Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isDark
-                                  ? Colors.grey[800]!
-                                  : Colors.grey[300]!,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: BackdropFilter(
+                            filter: ui.ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
+                                    : Colors.grey[200]!.withValues(alpha: 0.65),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.15),
+                                    blurRadius: 8.0,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Past CGPA',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.white : Colors.black,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  TextField(
+                                    controller: pastCGPAController,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        pastCGPA = double.tryParse(value);
+                                      });
+                                    },
+                                    decoration: InputDecoration(
+                                      hintText: 'Your CGPA',
+                                      hintStyle: TextStyle(
+                                        color: isDark
+                                            ? Colors.grey[500]
+                                            : Colors.grey[400],
+                                      ),
+                                      filled: true,
+                                      fillColor: isDark
+                                          ? const Color(0xFF1C1C1E)
+                                          : Colors.grey[100],
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(
+                                          color: AuthPalette.coral.withValues(alpha: 0.4),
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(
+                                          color: AuthPalette.coral.withValues(alpha: 0.4),
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(
+                                          color: AuthPalette.coral,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
+                                    ),
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : Colors.black,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Enter your previous CGPA to include it in the calculation.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Past CGPA',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              TextField(
-                                controller: pastCGPAController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                onChanged: (value) {
-                                  setState(() {
-                                    pastCGPA = double.tryParse(value);
-                                  });
-                                },
-                                decoration: InputDecoration(
-                                  hintText: 'Your CGPA',
-                                  hintStyle: TextStyle(
-                                    color: isDark
-                                        ? Colors.grey[500]
-                                        : Colors.grey[400],
-                                  ),
-                                  filled: true,
-                                  fillColor: isDark
-                                      ? Colors.grey[850]
-                                      : Colors.grey[100],
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                      color: isDark
-                                          ? Colors.grey[700]!
-                                          : Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                      color: isDark
-                                          ? Colors.grey[700]!
-                                          : Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                      color: AuthPalette.coral,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 10,
-                                  ),
-                                ),
-                                style: TextStyle(
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Enter your previous CGPA to include it in the calculation.',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       if (selectedSemesterNumber != null &&
@@ -691,19 +600,28 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                   () => TextEditingController(),
                                 );
 
-                                return Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? Colors.grey[900]
-                                        : Colors.grey[50],
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isDark
-                                          ? Colors.grey[800]!
-                                          : Colors.grey[300]!,
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: BackdropFilter(
+                                    filter: ui.ImageFilter.blur(
+                                      sigmaX: 10.0,
+                                      sigmaY: 10.0,
                                     ),
-                                  ),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
+                                            : Colors.grey[200]!.withValues(alpha: 0.65),
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.15),
+                                            blurRadius: 8.0,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -731,144 +649,15 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 10),
-                                      // Grade and Points Row
-                                      Row(
-                                        children: [
-                                          // Grade dropdown
-                                          SizedBox(
-                                            width: 120,
-                                            child: DropdownMenu<String>(
-                                              controller:
-                                                  gradeControllers[subjectName]!,
-                                              initialSelection:
-                                                  gradeMap[subjectName],
-                                              dropdownMenuEntries: gradeValues
-                                                  .keys
-                                                  .map(
-                                                    (g) => DropdownMenuEntry(
-                                                      value: g,
-                                                      label: g,
-                                                      style: ButtonStyle(
-                                                        foregroundColor:
-                                                            MaterialStateProperty.resolveWith((
-                                                              states,
-                                                            ) {
-                                                              if (g ==
-                                                                  gradeMap[subjectName]) {
-                                                                return AuthPalette
-                                                                    .coral;
-                                                              }
-                                                              return isDark
-                                                                  ? Colors.white
-                                                                  : Colors
-                                                                        .black;
-                                                            }),
-                                                      ),
-                                                    ),
-                                                  )
-                                                  .toList(),
-                                              onSelected: (value) {
-                                                if (value != null) {
-                                                  setState(() {
-                                                    gradeMap[subjectName] =
-                                                        value;
-                                                  });
-                                                }
-                                              },
-                                              hintText: 'Grade',
-                                              menuStyle: MenuStyle(
-                                                backgroundColor:
-                                                    MaterialStateProperty.all(
-                                                      isDark
-                                                          ? Colors.grey[900]
-                                                          : Colors.white,
-                                                    ),
-                                                elevation:
-                                                    MaterialStateProperty.all(
-                                                      8,
-                                                    ),
-                                                shape: MaterialStateProperty.all(
-                                                  RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                ),
-                                                shadowColor:
-                                                    MaterialStateProperty.all(
-                                                      Colors.black.withOpacity(
-                                                        0.2,
-                                                      ),
-                                                    ),
-                                              ),
-                                              inputDecorationTheme: InputDecorationTheme(
-                                                fillColor: isDark
-                                                    ? Colors.grey[850]
-                                                    : Colors.grey[50],
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  borderSide: BorderSide(
-                                                    color: isDark
-                                                        ? Colors.grey[700]!
-                                                        : Colors.grey[300]!,
-                                                  ),
-                                                ),
-                                                enabledBorder:
-                                                    OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                      borderSide: BorderSide(
-                                                        color: isDark
-                                                            ? Colors.grey[700]!
-                                                            : Colors.grey[300]!,
-                                                      ),
-                                                    ),
-                                                focusedBorder:
-                                                    OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                      borderSide: BorderSide(
-                                                        color:
-                                                            AuthPalette.coral,
-                                                        width: 2,
-                                                      ),
-                                                    ),
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 10,
-                                                    ),
-                                                hintStyle: TextStyle(
-                                                  color: isDark
-                                                      ? Colors.grey[500]
-                                                      : Colors.grey[400],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          // Points display
-                                          Text(
-                                            gradeMap[subjectName] != null
-                                                ? '${((gradeValues[gradeMap[subjectName]]!) * credits).toStringAsFixed(1)} pts'
-                                                : '0.0 pts',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: isDark
-                                                  ? Colors.grey[300]
-                                                  : Colors.grey[700],
-                                            ),
-                                          ),
-                                        ],
+                                      // Grade Slider
+                                      _buildGradeSlider(
+                                        subjectName: subjectName,
+                                        credits: (credits as num).toDouble(),
+                                        isDark: isDark,
                                       ),
                                     ],
+                                  ),
+                                    ),
                                   ),
                                 );
                               },
@@ -995,76 +784,84 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                       if (calculatedCGPA != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 0),
-                          child: Container(
-                            width: MediaQuery.of(context).size.width - 32,
-                            padding: const EdgeInsets.all(20.0),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.grey[900]
-                                  : Colors.grey[50],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isDark
-                                    ? Colors.grey[800]!
-                                    : Colors.grey[300]!,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Content Row
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: BackdropFilter(
+                              filter: ui.ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width - 32,
+                                padding: const EdgeInsets.all(20.0),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
+                                      : Colors.grey[200]!.withValues(alpha: 0.65),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.15),
+                                      blurRadius: 8.0,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Left Column
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    // Content Row
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        Text(
-                                          'Current',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark
-                                                ? Colors.white
-                                                : Colors.black,
-                                          ),
+                                        // Left Column
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Current',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'SGPA',
+                                              style: TextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'SGPA',
-                                          style: TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark
-                                                ? Colors.white
-                                                : Colors.black,
+                                        // Right Side - Number
+                                        ShaderMask(
+                                          shaderCallback: (bounds) {
+                                            return _getGradientForCGPA(
+                                              calculatedCGPA!,
+                                            ).createShader(bounds);
+                                          },
+                                          child: Text(
+                                            calculatedCGPA!.toStringAsFixed(2),
+                                            style: TextStyle(
+                                              fontSize: 56,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    // Right Side - Number
-                                    ShaderMask(
-                                      shaderCallback: (bounds) {
-                                        return _getGradientForCGPA(
-                                          calculatedCGPA!,
-                                        ).createShader(bounds);
-                                      },
-                                      child: Text(
-                                        calculatedCGPA!.toStringAsFixed(2),
-                                        style: TextStyle(
-                                          fontSize: 56,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
@@ -1074,76 +871,84 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                       if (selectedSemesterNumber == 1 && calculatedCGPA != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 0),
-                          child: Container(
-                            width: MediaQuery.of(context).size.width - 32,
-                            padding: const EdgeInsets.all(20.0),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.grey[900]
-                                  : Colors.grey[50],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isDark
-                                    ? Colors.grey[800]!
-                                    : Colors.grey[300]!,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Content Row
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: BackdropFilter(
+                              filter: ui.ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width - 32,
+                                padding: const EdgeInsets.all(20.0),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
+                                      : Colors.grey[200]!.withValues(alpha: 0.65),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.15),
+                                      blurRadius: 8.0,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Left Column
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    // Content Row
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        Text(
-                                          'Overall',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark
-                                                ? Colors.white
-                                                : Colors.black,
-                                          ),
+                                        // Left Column
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Overall',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'CGPA',
+                                              style: TextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'CGPA',
-                                          style: TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark
-                                                ? Colors.white
-                                                : Colors.black,
+                                        // Right Side - Number
+                                        ShaderMask(
+                                          shaderCallback: (bounds) {
+                                            return _getGradientForCGPA(
+                                              calculatedCGPA!,
+                                            ).createShader(bounds);
+                                          },
+                                          child: Text(
+                                            calculatedCGPA!.toStringAsFixed(2),
+                                            style: TextStyle(
+                                              fontSize: 56,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    // Right Side - Number
-                                    ShaderMask(
-                                      shaderCallback: (bounds) {
-                                        return _getGradientForCGPA(
-                                          calculatedCGPA!,
-                                        ).createShader(bounds);
-                                      },
-                                      child: Text(
-                                        calculatedCGPA!.toStringAsFixed(2),
-                                        style: TextStyle(
-                                          fontSize: 56,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
@@ -1153,76 +958,84 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                           overallCGPA != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 0),
-                          child: Container(
-                            width: MediaQuery.of(context).size.width - 32,
-                            padding: const EdgeInsets.all(20.0),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.grey[900]
-                                  : Colors.grey[50],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isDark
-                                    ? Colors.grey[800]!
-                                    : Colors.grey[300]!,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Content Row
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: BackdropFilter(
+                              filter: ui.ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width - 32,
+                                padding: const EdgeInsets.all(20.0),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
+                                      : Colors.grey[200]!.withValues(alpha: 0.65),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.15),
+                                      blurRadius: 8.0,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Left Column
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    // Content Row
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        Text(
-                                          'Overall',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark
-                                                ? Colors.white
-                                                : Colors.black,
-                                          ),
+                                        // Left Column
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Overall',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'CGPA',
+                                              style: TextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'CGPA',
-                                          style: TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark
-                                                ? Colors.white
-                                                : Colors.black,
+                                        // Right Side - Number
+                                        ShaderMask(
+                                          shaderCallback: (bounds) {
+                                            return _getGradientForCGPA(
+                                              overallCGPA!,
+                                            ).createShader(bounds);
+                                          },
+                                          child: Text(
+                                            overallCGPA!.toStringAsFixed(2),
+                                            style: TextStyle(
+                                              fontSize: 56,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    // Right Side - Number
-                                    ShaderMask(
-                                      shaderCallback: (bounds) {
-                                        return _getGradientForCGPA(
-                                          overallCGPA!,
-                                        ).createShader(bounds);
-                                      },
-                                      child: Text(
-                                        overallCGPA!.toStringAsFixed(2),
-                                        style: TextStyle(
-                                          fontSize: 56,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
@@ -1270,8 +1083,493 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                     ],
                   ),
                 ),
+                    // Floating result pill
+                    if (calculatedCGPA != null)
+                      Positioned(
+                        bottom: 16,
+                        left: 24,
+                        right: 24,
+                        child: AnimatedSlide(
+                          offset: _showResultPill
+                              ? Offset.zero
+                              : const Offset(0, 2),
+                          duration: const Duration(milliseconds: 350),
+                          curve: Curves.easeOutCubic,
+                          child: AnimatedOpacity(
+                            opacity: _showResultPill ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: IgnorePointer(
+                              ignoring: !_showResultPill,
+                              child: GestureDetector(
+                                onTap: () {
+                                  // Scroll to bottom to show full results
+                                  _scrollController.animateTo(
+                                    _scrollController.position.maxScrollExtent,
+                                    duration: const Duration(milliseconds: 500),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: BackdropFilter(
+                                    filter: ui.ImageFilter.blur(
+                                      sigmaX: 30,
+                                      sigmaY: 30,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 14,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? const Color(0xFF1E1E23)
+                                                .withValues(alpha: 0.55)
+                                            : Colors.white
+                                                .withValues(alpha: 0.55),
+                                        borderRadius:
+                                            BorderRadius.circular(20),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.15),
+                                            blurRadius: 20,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          _buildPillItem(
+                                            'SGPA',
+                                            calculatedCGPA!
+                                                .toStringAsFixed(2),
+                                            _getGradientForCGPA(
+                                              calculatedCGPA!,
+                                            ),
+                                            isDark,
+                                          ),
+                                          Container(
+                                            width: 1,
+                                            height: 28,
+                                            color: isDark
+                                                ? Colors.white
+                                                    .withValues(alpha: 0.1)
+                                                : Colors.black
+                                                    .withValues(alpha: 0.08),
+                                          ),
+                                          _buildPillItem(
+                                            'CGPA',
+                                            overallCGPA != null
+                                                ? overallCGPA!
+                                                    .toStringAsFixed(2)
+                                                : (selectedSemesterNumber ==
+                                                        1
+                                                    ? calculatedCGPA!
+                                                        .toStringAsFixed(2)
+                                                    : '—'),
+                                            overallCGPA != null
+                                                ? _getGradientForCGPA(
+                                                    overallCGPA!,
+                                                  )
+                                                : (selectedSemesterNumber ==
+                                                        1
+                                                    ? _getGradientForCGPA(
+                                                        calculatedCGPA!,
+                                                      )
+                                                    : const LinearGradient(
+                                                        colors: [
+                                                          Colors.grey,
+                                                          Colors.grey,
+                                                        ],
+                                                      )),
+                                            isDark,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
+    );
+  }
+
+  Widget _buildPillItem(
+    String label,
+    String value,
+    LinearGradient gradient,
+    bool isDark,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
+        const SizedBox(width: 8),
+        ShaderMask(
+          shaderCallback: (bounds) => gradient.createShader(bounds),
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPickerSelector(
+    BuildContext context, {
+    required String hint,
+    required String? value,
+    required List<String> items,
+    required bool isDark,
+    required Function(String?) onChanged,
+  }) {
+    return GestureDetector(
+      onTap: items.isEmpty
+          ? null
+          : () async {
+              FocusManager.instance.primaryFocus?.unfocus();
+              await Future.delayed(const Duration(milliseconds: 50));
+              if (!context.mounted) return;
+              showCupertinoModalPopup(
+                context: context,
+                builder: (ctx) => Material(
+                  type: MaterialType.transparency,
+                  child: Container(
+                    height: 300,
+                    padding: const EdgeInsets.only(top: 6),
+                    margin: EdgeInsets.only(
+                      bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF1C1C1E)
+                          : CupertinoColors.white,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                CupertinoButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  hint,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                                CupertinoButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: Text(
+                                    'Done',
+                                    style: TextStyle(
+                                      color: AuthPalette.coral,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Divider(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.grey[300],
+                            height: 1,
+                            indent: 16,
+                            endIndent: 16,
+                          ),
+                          Expanded(
+                            child: CupertinoPicker(
+                              magnification: 1.22,
+                              squeeze: 1.2,
+                              useMagnifier: true,
+                              itemExtent: 36.0,
+                              scrollController: FixedExtentScrollController(
+                                initialItem: value != null
+                                    ? items
+                                          .indexOf(value)
+                                          .clamp(0, items.length - 1)
+                                    : 0,
+                              ),
+                              onSelectedItemChanged: (index) {
+                                onChanged(items[index]);
+                              },
+                              children: items
+                                  .map(
+                                    (item) => Center(
+                                      child: Text(
+                                        item,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
+                  : Colors.grey[200]!.withValues(alpha: 0.65),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 8.0,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  value ?? hint,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: value == null
+                        ? (isDark ? Colors.grey[500] : Colors.grey[400])
+                        : (isDark ? Colors.white : Colors.black),
+                  ),
+                ),
+                Icon(
+                  CupertinoIcons.chevron_down,
+                  color: isDark ? Colors.grey[500] : Colors.grey[400],
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Grade labels ordered from lowest to highest for the slider
+  static const List<String> _gradeLabels = ['F', 'D', 'C', 'B', 'A', 'E', 'O'];
+
+  Widget _buildGradeSlider({
+    required String subjectName,
+    required double credits,
+    required bool isDark,
+  }) {
+    final currentGrade = gradeMap[subjectName];
+    final currentIndex = currentGrade != null
+        ? _gradeLabels.indexOf(currentGrade).clamp(0, _gradeLabels.length - 1)
+        : 0;
+    final sliderValue = currentGrade != null ? currentIndex.toDouble() : 0.0;
+    final points = currentGrade != null
+        ? (gradeValues[currentGrade]! * credits)
+        : 0.0;
+
+    // Color for current grade position
+    final gradeFraction = sliderValue / (_gradeLabels.length - 1);
+    final gradeColor = Color.lerp(
+      const Color(0xFFEF4444), // Red for F
+      const Color(0xFF10B981), // Emerald for O
+      gradeFraction,
+    )!;
+
+    return Column(
+      children: [
+        // Slider
+        SliderTheme(
+          data: SliderThemeData(
+            trackHeight: 6,
+            activeTrackColor: gradeColor,
+            inactiveTrackColor: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+            thumbShape: _GradeThumbShape(
+              gradeLabel: currentGrade ?? 'F',
+              gradeColor: gradeColor,
+              isDark: isDark,
+            ),
+            overlayColor: gradeColor.withValues(alpha: 0.15),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+          ),
+          child: Slider(
+            value: sliderValue,
+            min: 0,
+            max: (_gradeLabels.length - 1).toDouble(),
+            divisions: _gradeLabels.length - 1,
+            onChanged: (value) {
+              final newIndex = value.round();
+              final newGrade = _gradeLabels[newIndex];
+              if (newGrade != gradeMap[subjectName]) {
+                HapticFeedback.selectionClick();
+              }
+              setState(() {
+                gradeMap[subjectName] = newGrade;
+              });
+              // Auto-recalculate if already calculated once
+              if (calculatedCGPA != null) {
+                _autoRecalculate();
+              }
+            },
+          ),
+        ),
+        // Points display
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              currentGrade != null
+                  ? 'Grade: $currentGrade (${gradeValues[currentGrade]!.toStringAsFixed(0)} pts)'
+                  : 'Slide to select grade',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: currentGrade != null
+                    ? gradeColor
+                    : (isDark ? Colors.grey[500] : Colors.grey[400]),
+              ),
+            ),
+            Text(
+              '${points.toStringAsFixed(1)} pts',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.grey[300] : Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Custom thumb shape that displays the grade letter on a circular knob
+class _GradeThumbShape extends SliderComponentShape {
+  final String gradeLabel;
+  final Color gradeColor;
+  final bool isDark;
+
+  const _GradeThumbShape({
+    required this.gradeLabel,
+    required this.gradeColor,
+    required this.isDark,
+  });
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) {
+    return const Size(36, 36);
+  }
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    final canvas = context.canvas;
+
+    // Shadow
+    final shadowPaint = Paint()
+      ..color = gradeColor.withValues(alpha: 0.35)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawCircle(center + const Offset(0, 2), 17, shadowPaint);
+
+    // Outer circle (accent color)
+    final outerPaint = Paint()..color = gradeColor;
+    canvas.drawCircle(center, 17, outerPaint);
+
+    // Inner circle (white/dark)
+    final innerPaint = Paint()
+      ..color = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    canvas.drawCircle(center, 14, innerPaint);
+
+    // Grade letter
+    final textSpan = TextSpan(
+      text: gradeLabel,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w800,
+        color: gradeColor,
+        height: 1,
+      ),
+    );
+    final tp = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+    tp.layout();
+    tp.paint(
+      canvas,
+      Offset(center.dx - tp.width / 2, center.dy - tp.height / 2),
     );
   }
 }
