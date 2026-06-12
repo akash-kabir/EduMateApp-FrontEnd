@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../widgets/custom_glass_dialog.dart';
+import 'dart:ui';
 import 'package:http/http.dart' as http;
+import '../../../widgets/bottom_sheet_selector.dart';
 import 'dart:convert';
 import '../../../config.dart';
 import '../../../widgets/toast_manager.dart';
@@ -24,6 +27,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isExisting = false;
+  String? _originalClassesData;
 
   List<dynamic> _classesData = [];
   String? _selectedSection;
@@ -54,12 +58,14 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
         
         if (data['classes'] != null && (data['classes'] as List).isNotEmpty) {
           _classesData = data['classes'];
-          _selectedSection = null;
+          _originalClassesData = jsonEncode(_classesData);
+          _selectedSection = _classesData.first['name'];
+          _selectedDay = 1;
           _isExisting = true;
-          // Prompt user to select section and day after data is loaded
-          WidgetsBinding.instance.addPostFrameCallback((_) => _promptSectionAndDay());
+          _loadScheduleForSection(_selectedSection!);
         } else {
           _classesData = [];
+          _originalClassesData = jsonEncode([]);
           _selectedSection = null;
           _isExisting = false;
         }
@@ -83,8 +89,6 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
     }
   }
 
-
-
   Future<void> _saveSchedule() async {
     // Validation
     for (var day in [1, 2, 3, 4, 5]) {
@@ -100,33 +104,55 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
       }
     }
 
+    // Build the data first so we can compare
+    if (_selectedSection != null) {
+      List<Map<String, dynamic>> finalScheduleData = [];
+      for (var day in [1, 2, 3, 4, 5]) {
+        if (_scheduleData[day]!.isNotEmpty) {
+          finalScheduleData.add({
+            'day': day,
+            'periods': _scheduleData[day],
+          });
+        }
+      }
+      
+      final sectionIndex = _classesData.indexWhere((s) => s['name'] == _selectedSection);
+      if (sectionIndex >= 0) {
+        _classesData[sectionIndex]['schedule'] = finalScheduleData;
+      } else {
+        _classesData.add({
+          'name': _selectedSection,
+          'schedule': finalScheduleData,
+        });
+      }
+    }
+
+    if (jsonEncode(_classesData) == _originalClassesData) {
+      EduMateToast.showCompact(context, message: 'No changes made.', isSuccess: true);
+      return;
+    }
+
+    _showSaveConfirmDialog();
+  }
+
+  void _showSaveConfirmDialog() async {
+    final confirmed = await showConfirmationDialog(
+      context: context,
+      title: 'Save Changes',
+      description: 'Are you sure you want to save the schedule changes for ${widget.branch} Semester ${widget.semester}?',
+      confirmButtonText: 'Save',
+      iconData: CupertinoIcons.checkmark_seal_fill,
+    );
+    if (confirmed == true) {
+      _performSave();
+    }
+  }
+
+  Future<void> _performSave() async {
     setState(() => _isSaving = true);
     try {
       final token = await SharedPreferencesService.getToken();
       final url = Uri.parse('${Config.scheduleBaseEndpoint}/${widget.branch}/${widget.semester}');
-      
-      // Update local _classesData for selected section
-      if (_selectedSection != null) {
-        List<Map<String, dynamic>> finalScheduleData = [];
-        for (var day in [1, 2, 3, 4, 5]) {
-          if (_scheduleData[day]!.isNotEmpty) {
-            finalScheduleData.add({
-              'day': day,
-              'periods': _scheduleData[day],
-            });
-          }
-        }
-        
-        final sectionIndex = _classesData.indexWhere((s) => s['name'] == _selectedSection);
-        if (sectionIndex >= 0) {
-          _classesData[sectionIndex]['schedule'] = finalScheduleData;
-        } else {
-          _classesData.add({
-            'name': _selectedSection,
-            'schedule': finalScheduleData,
-          });
-        }
-      }
 
       final payload = jsonEncode({
         'classes': _classesData
@@ -149,11 +175,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (mounted) {
-          EduMateToast.showSuccessCard(
-            context,
-            title: 'Success',
-            description: 'Schedule saved successfully.',
-          );
+          EduMateToast.showCompact(context, message: 'Schedule saved successfully.', isSuccess: true);
           Navigator.pop(context);
         }
       } else {
@@ -173,101 +195,6 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
         setState(() => _isSaving = false);
       }
     }
-  }
-
-  // Prompt user to select a section and then a day before loading schedule
-  void _promptSectionAndDay() async {
-    if (_classesData.isEmpty) return;
-    String? chosenSection;
-    int? chosenDay;
-
-    // Section selection dialog
-    await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        String? tempSection = _classesData.first['name'];
-        return AlertDialog(
-          title: const Text('Select Section'),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return DropdownButton<String>(
-                isExpanded: true,
-                value: tempSection,
-                items: _classesData.map<DropdownMenuItem<String>>((s) {
-                  return DropdownMenuItem<String>(
-                    value: s['name'],
-                    child: Text(s['name'] ?? ''),
-                  );
-                }).toList(),
-                onChanged: (val) => setState(() => tempSection = val),
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                chosenSection = tempSection;
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-    if (chosenSection == null) return;
-
-    // Day selection dialog
-    await showDialog<int>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        int tempDay = 1;
-        return AlertDialog(
-          title: const Text('Select Day'),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return DropdownButton<String>(
-                isExpanded: true,
-                value: _days[tempDay - 1],
-                items: _days.map<DropdownMenuItem<String>>((d) {
-                  return DropdownMenuItem<String>(
-                    value: d,
-                    child: Text(d),
-                  );
-                }).toList(),
-                onChanged: (val) => setState(() => tempDay = _days.indexOf(val!) + 1),
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                chosenDay = tempDay;
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-    if (chosenDay == null) return;
-
-    setState(() {
-      _selectedSection = chosenSection;
-      _selectedDay = chosenDay!;
-    });
-    _loadScheduleForSection(_selectedSection!);
   }
 
   void _loadScheduleForSection(String sectionName) {
@@ -309,52 +236,39 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
         'room': '',
       });
     });
+    EduMateToast.showCompact(context, message: 'Period added.', isSuccess: true);
   }
 
   void _removePeriod(int index) {
     setState(() {
       _scheduleData[_selectedDay]!.removeAt(index);
     });
+    EduMateToast.showCompact(context, message: 'Period deleted.', isSuccess: true);
   }
 
-  void _showAddSectionDialog() {
-    TextEditingController controller = TextEditingController();
-    showCupertinoDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Add Section'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: CupertinoTextField(
-            controller: controller,
-            placeholder: 'e.g. CSE-10',
+
+
+  Widget _buildSummaryItem(String label, String value, bool isDark) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+            fontWeight: FontWeight.w500,
           ),
         ),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.pop(context),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            color: isDark ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
           ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            child: const Text('Add'),
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                final name = controller.text.trim();
-                setState(() {
-                  _classesData.add({
-                    'name': name,
-                    'schedule': []
-                  });
-                  _selectedSection = name;
-                  _loadScheduleForSection(name);
-                });
-              }
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -364,179 +278,197 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-      appBar: AppBar(
+      appBar: CupertinoNavigationBar(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
+        border: null,
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          child: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Semester ${widget.semester} Schedule (${widget.branch})',
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black,
-            fontWeight: FontWeight.bold,
+        middle: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Edit Schedule',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Salena',
+            ),
           ),
         ),
-        actions: [
-          if (!_isLoading)
-            TextButton(
-              onPressed: _isSaving ? null : _saveSchedule,
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF1744)),
-                    )
-                  : const Text(
-                      'Save',
-                      style: TextStyle(
-                        color: Color(0xFFFF1744),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-            ),
-        ],
+        trailing: !_isLoading ? TextButton(
+          onPressed: _isSaving ? null : _saveSchedule,
+          child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF1744)),
+                )
+              : const Text(
+                  'Save',
+                  style: TextStyle(
+                    color: Color(0xFFFF1744),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+        ) : null,
       ),
       body: _isLoading
           ? const Center(child: CupertinoActivityIndicator())
           : Column(
               children: [
-                // Section Selector
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Section: ',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E1E1E) : CupertinoColors.systemGrey6,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              value: _selectedSection,
-                              hint: Text(
-                                _classesData.isEmpty ? 'No sections added' : 'Select a section',
-                                style: TextStyle(color: isDark ? Colors.grey : Colors.black54),
-                              ),
-                              dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
-                                fontSize: 16,
-                              ),
-                              items: _classesData.map<DropdownMenuItem<String>>((s) {
-                                return DropdownMenuItem<String>(
-                                  value: s['name'],
-                                  child: Text(s['name']),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  // Save current schedule back to _classesData before switching
-                                  if (_selectedSection != null) {
-                                    List<Map<String, dynamic>> finalScheduleData = [];
-                                    for (var day in [1, 2, 3, 4, 5]) {
-                                      if (_scheduleData[day]!.isNotEmpty) {
-                                        finalScheduleData.add({
-                                          'day': day,
-                                          'periods': _scheduleData[day],
-                                        });
-                                      }
-                                    }
-                                    final sectionIndex = _classesData.indexWhere((s) => s['name'] == _selectedSection);
-                                    if (sectionIndex >= 0) {
-                                      _classesData[sectionIndex]['schedule'] = finalScheduleData;
-                                    }
-                                  }
-
-                                  setState(() {
-                                    _selectedSection = val;
-                                  });
-                                  _loadScheduleForSection(val);
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: _showAddSectionDialog,
-                        icon: const Icon(CupertinoIcons.add_circled_solid),
-                        color: const Color(0xFFFF1744),
-                        tooltip: 'Add Section',
-                      ),
-                    ],
-                  ),
-                ),
-                if (_selectedSection != null) ...[
-                  Container(
-                    height: 60,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: 5,
-                      itemBuilder: (context, index) {
-                        final dayNum = index + 1;
-                        final isSelected = _selectedDay == dayNum;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedDay = dayNum),
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFFFF1744) : (isDark ? const Color(0xFF1E1E1E) : CupertinoColors.systemGrey6),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              _days[index],
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : (isDark ? Colors.white : Colors.black),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildSummaryItem('Branch', widget.branch, isDark),
+                        _buildSummaryItem('Semester', '${widget.semester}', isDark),
+                        _buildSummaryItem('Section', _selectedSection ?? 'N/A', isDark),
+                        _buildSummaryItem('Periods', '${_scheduleData[_selectedDay]?.length ?? 0}', isDark),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    child: _scheduleData[_selectedDay]!.isEmpty
-                        ? Center(
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: BottomSheetSelector<String>(
+                                  value: _selectedSection,
+                                  items: _classesData.map<String>((s) => s['name'] as String).toList(),
+                                  hint: _classesData.isEmpty ? 'No sections added' : 'Select a section',
+                                  isAdmin: true,
+                                  labelBuilder: (String val) => val,
+                                  onChanged: (val) {
+                                    // Save current schedule back to _classesData before switching
+                                    if (_selectedSection != null) {
+                                      List<Map<String, dynamic>> finalScheduleData = [];
+                                      for (var day in [1, 2, 3, 4, 5]) {
+                                        if (_scheduleData[day]!.isNotEmpty) {
+                                          finalScheduleData.add({
+                                            'day': day,
+                                            'periods': _scheduleData[day],
+                                          });
+                                        }
+                                      }
+                                      
+                                      final idx = _classesData.indexWhere((c) => c['name'] == _selectedSection);
+                                      if (idx != -1) {
+                                        _classesData[idx]['schedule'] = finalScheduleData;
+                                      }
+                                    }
+
+                                    setState(() {
+                                      _selectedSection = val;
+                                      _loadScheduleForSection(val);
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (_selectedSection != null) ...[
+                          Container(
+                            height: 55,
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: const Color(0xFFFF1744).withValues(alpha: 0.4),
+                                width: 1.5,
+                              ),
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: List.generate(5, (i) {
+                                final dayNum = i + 1;
+                                final isSelected = _selectedDay == dayNum;
+                                return GestureDetector(
+                                  onTap: () => setState(() => _selectedDay = dayNum),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeInOut,
+                                    width: 60,
+                                    height: 40,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? const Color(0xFFFF1744) : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(19),
+                                    ),
+                                    child: Text(
+                                      _days[i],
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : (isDark ? Colors.white70 : Colors.black87),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                          _scheduleData[_selectedDay]!.isEmpty
+                              ? Container(
+                                  height: 200,
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'No classes scheduled for ${_days[_selectedDay - 1]}.',
+                                    style: TextStyle(color: isDark ? Colors.grey : Colors.grey[600]),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: _scheduleData[_selectedDay]!.length,
+                                  itemBuilder: (context, index) {
+                                    final period = _scheduleData[_selectedDay]![index];
+                                    return _PeriodEditCard(
+                                      key: ObjectKey(period),
+                                      period: period,
+                                      isDark: isDark,
+                                      onChanged: () => setState(() {}),
+                                      onRemove: () => _removePeriod(index),
+                                    );
+                                  },
+                                ),
+                        ] else ...[
+                          Container(
+                            height: 200,
+                            alignment: Alignment.center,
                             child: Text(
-                              'No classes scheduled for ${_days[_selectedDay - 1]}.',
+                              'Please add a section to start editing schedules.',
                               style: TextStyle(color: isDark ? Colors.grey : Colors.grey[600]),
                             ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _scheduleData[_selectedDay]!.length,
-                            itemBuilder: (context, index) {
-                              return _PeriodEditCard(
-                                period: _scheduleData[_selectedDay]![index],
-                                isDark: isDark,
-                                onChanged: () => setState(() {}),
-                                onRemove: () => _removePeriod(index),
-                              );
-                            },
                           ),
+                        ],
+                      ],
+                    ),
                   ),
+                ),
+                if (_selectedSection != null)
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(8.0),
                     child: ElevatedButton.icon(
                       onPressed: _addPeriod,
                       icon: const Icon(Icons.add),
@@ -545,33 +477,26 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                         backgroundColor: isDark ? const Color(0xFF1E1E1E) : CupertinoColors.systemGrey6,
                         foregroundColor: isDark ? Colors.white : Colors.black,
                         minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
                       ),
                     ),
+                    
                   ),
-                ] else ...[
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Please add a section to start editing schedules.',
-                        style: TextStyle(color: isDark ? Colors.grey : Colors.grey[600]),
-                      ),
-                    ),
-                  ),
-                ],
+                  const SizedBox(height: 12),
               ],
             ),
     );
   }
 }
 
-class _PeriodEditCard extends StatelessWidget {
+class _PeriodEditCard extends StatefulWidget {
   final Map<String, dynamic> period;
   final bool isDark;
   final VoidCallback onChanged;
   final VoidCallback onRemove;
 
   const _PeriodEditCard({
+    super.key,
     required this.period,
     required this.isDark,
     required this.onChanged,
@@ -579,100 +504,261 @@ class _PeriodEditCard extends StatelessWidget {
   });
 
   @override
+  State<_PeriodEditCard> createState() => _PeriodEditCardState();
+}
+
+class _PeriodEditCardState extends State<_PeriodEditCard> {
+
+  void _confirmDelete(BuildContext context) async {
+    final confirmed = await showDeleteConfirmationDialog(
+      context: context,
+      title: 'Delete Period',
+      description: 'Are you sure you want to delete ${widget.period['className']?.toString().isNotEmpty == true ? "'${widget.period['className']}'" : 'this period'}? This action cannot be undone.',
+    );
+    if (confirmed == true) {
+      widget.onRemove();
+    }
+  }
+
+  void _showEditDialog(BuildContext context) {
+    String tempStartTime = widget.period['startTime'] ?? '09:00';
+    String tempEndTime = widget.period['endTime'] ?? '10:00';
+    String tempClassName = widget.period['className'] ?? '';
+    String tempRoom = widget.period['room'] ?? '';
+
+    showGlassmorphicDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Edit Period',
+      widthFactor: 0.9,
+      child: StatefulBuilder(
+        builder: (context, setDialogState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Edit Period',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 20.0,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                            letterSpacing: -0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                initialValue: tempStartTime,
+                                style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                                decoration: _buildInputDecoration('Start Time'),
+                                onChanged: (val) => tempStartTime = val,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                initialValue: tempEndTime,
+                                style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                                decoration: _buildInputDecoration('End Time'),
+                                onChanged: (val) => tempEndTime = val,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          initialValue: tempClassName,
+                          style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                          decoration: _buildInputDecoration('Class/Subject Name'),
+                          onChanged: (val) => tempClassName = val,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          initialValue: tempRoom,
+                          style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                          decoration: _buildInputDecoration('Room'),
+                          onChanged: (val) => tempRoom = val,
+                        ),
+                        const SizedBox(height: 28),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: isDark ? Colors.white : Colors.black,
+                                  side: BorderSide(color: isDark ? Colors.white24 : Colors.black26),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  widget.period['startTime'] = tempStartTime;
+                                  widget.period['endTime'] = tempEndTime;
+                                  widget.period['className'] = tempClassName;
+                                  widget.period['room'] = tempRoom;
+                                  widget.onChanged();
+                                  Navigator.pop(context);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFF1744),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: const Text(
+                                  'Save',
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+        },
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: widget.isDark ? Colors.grey[500] : Colors.grey[600], fontSize: 13),
+      filled: true,
+      fillColor: widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: const Color(0xFFFF1744).withValues(alpha: 0.5), width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final String title = widget.period['className']?.toString().trim().isNotEmpty == true 
+        ? widget.period['className'] 
+        : 'New Period';
+    final String subtitle = '${widget.period['startTime'] ?? '09:00'} - ${widget.period['endTime'] ?? '10:00'}  •  Room: ${widget.period['room'] ?? 'N/A'}';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : CupertinoColors.systemGrey6,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  initialValue: period['startTime'],
-                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'Start Time (HH:MM)',
-                    labelStyle: TextStyle(color: Colors.grey[500]),
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  onChanged: (val) {
-                    period['startTime'] = val;
-                    onChanged();
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  initialValue: period['endTime'],
-                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'End Time (HH:MM)',
-                    labelStyle: TextStyle(color: Colors.grey[500]),
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  onChanged: (val) {
-                    period['endTime'] = val;
-                    onChanged();
-                  },
-                ),
-              ),
-              IconButton(
-                icon: const Icon(CupertinoIcons.delete, color: Colors.red),
-                onPressed: onRemove,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: TextFormField(
-                  initialValue: period['className'],
-                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'Class/Subject Name',
-                    labelStyle: TextStyle(color: Colors.grey[500]),
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  onChanged: (val) {
-                    period['className'] = val;
-                    onChanged();
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 1,
-                child: TextFormField(
-                  initialValue: period['room'],
-                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'Room',
-                    labelStyle: TextStyle(color: Colors.grey[500]),
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  onChanged: (val) {
-                    period['room'] = val;
-                    onChanged();
-                  },
-                ),
-              ),
-            ],
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: widget.isDark ? const Color(0xFF141414).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: widget.isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: widget.isDark ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: widget.isDark ? Colors.grey[400] : Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                  color: widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: () => _showEditDialog(context),
+                        icon: Icon(CupertinoIcons.pencil, size: 18, color: widget.isDark ? Colors.white70 : Colors.black87),
+                        label: Text('Edit', style: TextStyle(color: widget.isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600)),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16))),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 48,
+                      color: widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                    ),
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: () => _confirmDelete(context),
+                        icon: const Icon(CupertinoIcons.trash, size: 18, color: Colors.redAccent),
+                        label: const Text('Delete', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(bottomRight: Radius.circular(16))),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 }
+

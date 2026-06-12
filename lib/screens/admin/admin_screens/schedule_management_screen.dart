@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
@@ -8,6 +9,7 @@ import '../../../config.dart';
 import '../../../widgets/toast_manager.dart';
 import '../../../services/shared_preferences_service.dart';
 import 'schedule_editor_screen.dart';
+import '../../../widgets/bottom_sheet_selector.dart';
 
 
 class ScheduleManagementScreen extends StatefulWidget {
@@ -141,21 +143,26 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-      appBar: AppBar(
+      appBar: CupertinoNavigationBar(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
+        border: null,
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          child: Icon(
             CupertinoIcons.back,
             color: isDark ? Colors.white : Colors.black,
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Schedule Management',
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black,
-            fontWeight: FontWeight.bold,
+        middle: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Schedule Management',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Salena',
+            ),
           ),
         ),
       ),
@@ -167,46 +174,18 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Select Branch',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: isDark ? CupertinoColors.systemGrey6.withValues(alpha: 0.3) : CupertinoColors.systemGrey6,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedBranch,
-                      isExpanded: true,
-                      dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black,
-                        fontSize: 16,
-                      ),
-                      onChanged: (String? newValue) {
-                        if (newValue != null) {
-                          setState(() {
-                            _selectedBranch = newValue;
-                          });
-                          _fetchSchedules();
-                        }
-                      },
-                      items: _branches.map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  ),
+                BottomSheetSelector<String>(
+                  value: _selectedBranch,
+                  items: _branches,
+                  hint: 'Select Branch',
+                  isAdmin: true,
+                  labelBuilder: (String value) => value,
+                  onChanged: (String newValue) {
+                    setState(() {
+                      _selectedBranch = newValue;
+                    });
+                    _fetchSchedules();
+                  },
                 ),
               ],
             ),
@@ -277,17 +256,33 @@ class _SemesterCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isDark ? CupertinoColors.systemGrey6.withValues(alpha: 0.3) : CupertinoColors.systemGrey6,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isConfigured 
-              ? Colors.green.withValues(alpha: 0.3)
-              : Colors.orange.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: isConfigured 
+            ? Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.8), width: 1.5)
+            : Border.all(color: Colors.transparent, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: isConfigured ? 18.0 : 10.0, 
+            sigmaY: isConfigured ? 18.0 : 10.0
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isConfigured 
+                  ? const Color.fromARGB(255, 2, 56, 38).withValues(alpha: 0.14)
+                  : (isDark ? Colors.black.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.65)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -333,39 +328,51 @@ class _SemesterCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                ElevatedButton.icon(
-                  onPressed: onUpload,
-                  icon: const Icon(Icons.upload_file, size: 18),
-                  label: const Text('Upload JSON'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF1744),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: onUpload,
+                    icon: const Icon(Icons.upload_file, size: 16),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Upload JSON', style: TextStyle(fontSize: 12)),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      backgroundColor: const Color(0xFFFF1744),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ScheduleEditorScreen(
-                          branch: branch,
-                          semester: semester,
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ScheduleEditorScreen(
+                            branch: branch,
+                            semester: semester,
+                          ),
                         ),
+                      ).then((_) => onUpdate());
+                    },
+                    icon: const Icon(Icons.edit, size: 16),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(isConfigured ? 'Edit Schedule' : 'Add Schedule', style: const TextStyle(fontSize: 12)),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      backgroundColor: isDark ? const Color(0xFF1E1E1E) : CupertinoColors.systemGrey6,
+                      foregroundColor: isDark ? Colors.white : Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(color: const Color(0xFFFF1744).withValues(alpha: 0.3)),
                       ),
-                    ).then((_) => onUpdate());
-                  },
-                  icon: const Icon(Icons.edit, size: 18),
-                  label: Text(isConfigured ? 'Edit Schedule' : 'Add Schedule'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? const Color(0xFF1E1E1E) : CupertinoColors.systemGrey6,
-                    foregroundColor: isDark ? Colors.white : Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: const Color(0xFFFF1744).withValues(alpha: 0.3)),
                     ),
                   ),
                 ),
@@ -374,6 +381,6 @@ class _SemesterCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ))));
   }
 }

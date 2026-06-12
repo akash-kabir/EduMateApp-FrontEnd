@@ -4,7 +4,8 @@ import 'admin_screens/admin_home_screen.dart';
 import 'admin_screens/admin_upload_screen.dart';
 
 class AdminMainApp extends StatefulWidget {
-  const AdminMainApp({super.key});
+  final bool fromStudentView;
+  const AdminMainApp({super.key, this.fromStudentView = false});
 
   @override
   State<AdminMainApp> createState() => _AdminMainAppState();
@@ -25,7 +26,10 @@ class _AdminMainAppState extends State<AdminMainApp> {
           bottom: false,
           child: IndexedStack(
             index: _selectedIndex,
-            children: const [AdminHomeScreen(), AdminUploadScreen()],
+            children: [
+              AdminHomeScreen(fromStudentView: widget.fromStudentView),
+              const AdminUploadScreen()
+            ],
           ),
         ),
         bottomNavigationBar: _AdminNavBar(
