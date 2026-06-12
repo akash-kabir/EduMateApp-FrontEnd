@@ -95,8 +95,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Profile'),
-        previousPageTitle: 'Home',
+        middle: const Text('Profile',
+                  style: TextStyle(
+                  fontFamily: 'Salena')),
         backgroundColor: isDark
             ? CupertinoColors.black.withOpacity(0.7)
             : CupertinoColors.white.withOpacity(0.7),

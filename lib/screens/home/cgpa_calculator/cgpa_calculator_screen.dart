@@ -360,7 +360,9 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
     return CupertinoPageScaffold(
       backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('CGPA Calculator'),
+        middle: const Text('CGPA Calculator',
+                  style: TextStyle(
+                  fontFamily: 'Salena')),
         backgroundColor: isDark
             ? CupertinoColors.black.withOpacity(0.6)
             : CupertinoColors.white.withOpacity(0.6),
