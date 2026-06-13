@@ -278,69 +278,14 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: Colors.transparent,
-        border: null,
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          child: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        middle: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            'Edit Schedule',
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Salena',
-            ),
-          ),
-        ),
-        trailing: !_isLoading ? TextButton(
-          onPressed: _isSaving ? null : _saveSchedule,
-          child: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF1744)),
-                )
-              : const Text(
-                  'Save',
-                  style: TextStyle(
-                    color: Color(0xFFFF1744),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-        ) : null,
-      ),
+      extendBodyBehindAppBar: true,
       body: _isLoading
           ? const Center(child: CupertinoActivityIndicator())
-          : Column(
+          : Stack(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildSummaryItem('Branch', widget.branch, isDark),
-                        _buildSummaryItem('Semester', '${widget.semester}', isDark),
-                        _buildSummaryItem('Section', _selectedSection ?? 'N/A', isDark),
-                        _buildSummaryItem('Periods', '${_scheduleData[_selectedDay]?.length ?? 0}', isDark),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
+                Positioned.fill(
                   child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(top: 180, bottom: 120),
                     child: Column(
                       children: [
                         Padding(
@@ -355,7 +300,6 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                   isAdmin: true,
                                   labelBuilder: (String val) => val,
                                   onChanged: (val) {
-                                    // Save current schedule back to _classesData before switching
                                     if (_selectedSection != null) {
                                       List<Map<String, dynamic>> finalScheduleData = [];
                                       for (var day in [1, 2, 3, 4, 5]) {
@@ -387,44 +331,53 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                           Container(
                             height: 55,
                             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: const Color(0xFFFF1744).withValues(alpha: 0.4),
-                                width: 1.5,
-                              ),
-                            ),
-                            padding: const EdgeInsets.all(4),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: List.generate(5, (i) {
-                                final dayNum = i + 1;
-                                final isSelected = _selectedDay == dayNum;
-                                return GestureDetector(
-                                  onTap: () => setState(() => _selectedDay = dayNum),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 250),
-                                    curve: Curves.easeInOut,
-                                    width: 60,
-                                    height: 40,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: isSelected ? const Color(0xFFFF1744) : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(19),
-                                    ),
-                                    child: Text(
-                                      _days[i],
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : (isDark ? Colors.white70 : Colors.black87),
-                                      ),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF141414).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.6),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: const Color(0xFFFF1744).withValues(alpha: 0.3),
+                                      width: 1.5,
                                     ),
                                   ),
-                                );
-                              }),
+                                  padding: const EdgeInsets.all(4),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: List.generate(5, (i) {
+                                      final dayNum = i + 1;
+                                      final isSelected = _selectedDay == dayNum;
+                                      return GestureDetector(
+                                        onTap: () => setState(() => _selectedDay = dayNum),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 250),
+                                          curve: Curves.easeInOut,
+                                          width: 60,
+                                          height: 40,
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: isSelected ? const Color(0xFFFF1744) : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(19),
+                                          ),
+                                          child: Text(
+                                            _days[i],
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : (isDark ? Colors.white70 : Colors.black87),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                           _scheduleData[_selectedDay]!.isEmpty
@@ -466,23 +419,133 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                     ),
                   ),
                 ),
-                if (_selectedSection != null)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton.icon(
-                      onPressed: _addPeriod,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Period'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? const Color(0xFF1E1E1E) : CupertinoColors.systemGrey6,
-                        foregroundColor: isDark ? Colors.white : Colors.black,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.7),
+                          border: Border(
+                            bottom: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                          ),
+                        ),
+                        child: SafeArea(
+                          bottom: false,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                height: 50,
+                                child: Stack(
+                                  children: [
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: CupertinoButton(
+                                        padding: EdgeInsets.zero,
+                                        child: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
+                                        onPressed: () => Navigator.pop(context),
+                                      ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        'Edit Schedule',
+                                        style: TextStyle(
+                                          color: isDark ? Colors.white : Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Salena',
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ),
+                                    if (!_isLoading)
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(right: 8.0),
+                                          child: TextButton(
+                                            onPressed: _isSaving ? null : _saveSchedule,
+                                            child: _isSaving
+                                                ? const SizedBox(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF1744)),
+                                                  )
+                                                : const Text(
+                                                    'Save',
+                                                    style: TextStyle(
+                                                      color: Color(0xFFFF1744),
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _buildSummaryItem('Branch', widget.branch, isDark),
+                                    _buildSummaryItem('Semester', '${widget.semester}', isDark),
+                                    _buildSummaryItem('Section', _selectedSection ?? 'N/A', isDark),
+                                    _buildSummaryItem('Periods', '${_scheduleData[_selectedDay]?.length ?? 0}', isDark),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    
                   ),
-                  const SizedBox(height: 12),
+                ),
+                if (_selectedSection != null)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(21),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6),
+                                borderRadius: BorderRadius.circular(21),
+                              ),
+                              child: ElevatedButton.icon(
+                                onPressed: _addPeriod,
+                                icon: const Icon(Icons.add),
+                                label: const Text('Add Period'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  foregroundColor: isDark ? Colors.white : Colors.black,
+                                  minimumSize: const Size(double.infinity, 55),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
     );
@@ -681,15 +744,11 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             decoration: BoxDecoration(
-              color: widget.isDark ? const Color(0xFF141414).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.9),
+              color: widget.isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.65),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: widget.isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
-                width: 1,
-              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
