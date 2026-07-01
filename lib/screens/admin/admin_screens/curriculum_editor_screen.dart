@@ -231,7 +231,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.only(top: 160, bottom: 120, left: 16, right: 16),
+                          padding: const EdgeInsets.only(top: 175, bottom: 120, left: 16, right: 16),
                           itemCount: _subjects.length,
                           itemBuilder: (context, index) {
                             final subject = _subjects[index];

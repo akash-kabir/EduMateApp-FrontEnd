@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import '../../../main_page.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   final bool fromStudentView;
@@ -12,16 +11,6 @@ class AdminHomeScreen extends StatefulWidget {
 }
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
-  void _switchToStudentView() {
-    if (Navigator.canPop(context)) {
-      Navigator.pop(context);
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,40 +36,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     color: isDark ? CupertinoColors.white : CupertinoColors.black,
                   ),
                 ),
-                if (widget.fromStudentView)
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: _switchToStudentView,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF1744).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFFFF1744).withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            CupertinoIcons.arrow_2_squarepath,
-                            size: 16,
-                            color: Color(0xFFFF1744),
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'Student',
-                            style: TextStyle(
-                              color: Color(0xFFFF1744),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
               ],
             ),
             const SizedBox(height: 12),
