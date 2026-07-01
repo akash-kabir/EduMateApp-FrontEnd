@@ -172,7 +172,7 @@ class _CurriculumManagementScreenState extends State<CurriculumManagementScreen>
             child: _isLoading
                 ? const Center(child: CupertinoActivityIndicator())
                 : ListView.builder(
-                    padding: const EdgeInsets.only(top: 235, bottom: 40, left: 16, right: 16),
+                    padding: const EdgeInsets.only(top: 150, bottom: 40, left: 16, right: 16),
                     itemCount: 8,
                     itemBuilder: (context, index) {
                       final semester = index + 1;
@@ -201,15 +201,9 @@ class _CurriculumManagementScreenState extends State<CurriculumManagementScreen>
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF141414).withValues(alpha: 0.6)
-                        : Colors.white.withValues(alpha: 0.7),
+                    color: isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.7),
                     border: Border(
-                      bottom: BorderSide(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : Colors.black.withValues(alpha: 0.05),
-                      ),
+                      bottom: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
                     ),
                   ),
                   child: SafeArea(
@@ -225,8 +219,7 @@ class _CurriculumManagementScreenState extends State<CurriculumManagementScreen>
                                 alignment: Alignment.centerLeft,
                                 child: CupertinoButton(
                                   padding: EdgeInsets.zero,
-                                  child: Icon(CupertinoIcons.back,
-                                      color: isDark ? Colors.white : Colors.black),
+                                  child: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
                                   onPressed: () => Navigator.pop(context),
                                 ),
                               ),
@@ -246,38 +239,41 @@ class _CurriculumManagementScreenState extends State<CurriculumManagementScreen>
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                          child: BottomSheetSelector<String>(
-                            value: _selectedBranch,
-                            items: _branches,
-                            hint: 'Select Branch',
-                            isAdmin: true,
-                            labelBuilder: (String value) => value,
-                            onChanged: (String newValue) {
-                              setState(() {
-                                _selectedBranch = newValue;
-                              });
-                              _fetchCurriculums();
-                            },
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _isLoading ? null : _handleBulkUpload,
-                              icon: const Icon(Icons.file_upload),
-                              label: const Text('Bulk Upload'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF10B981),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              BottomSheetSelector<String>(
+                                value: _selectedBranch,
+                                items: _branches,
+                                hint: 'Select Branch',
+                                isAdmin: true,
+                                labelBuilder: (String value) => value,
+                                onChanged: (String newValue) {
+                                  setState(() {
+                                    _selectedBranch = newValue;
+                                  });
+                                  _fetchCurriculums();
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: _isLoading ? null : _handleBulkUpload,
+                                  icon: const Icon(Icons.file_upload),
+                                  label: const Text('Bulk Upload'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       ],
@@ -326,7 +322,7 @@ class _SemesterCard extends StatelessWidget {
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: isConfigured
+              color: isConfigured 
                   ? const Color.fromARGB(255, 2, 56, 38).withValues(alpha: 0.14)
                   : (isDark ? Colors.black.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.65)),
               borderRadius: BorderRadius.circular(16),
@@ -337,13 +333,13 @@ class _SemesterCard extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
                   'Semester $semester',
                   style: TextStyle(
                     fontSize: 18,

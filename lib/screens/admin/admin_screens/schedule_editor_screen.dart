@@ -8,6 +8,7 @@ import 'dart:convert';
 import '../../../config.dart';
 import '../../../widgets/toast_manager.dart';
 import '../../../services/shared_preferences_service.dart';
+import 'dart:math' as math;
 
 class ScheduleEditorScreen extends StatefulWidget {
   final String branch;
@@ -227,16 +228,206 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
     });
   }
 
+  int _timeToMinutes(String time) {
+    try {
+      final parts = time.split(':');
+      if (parts.length != 2) return 0;
+      return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  bool _hasOverlap(String startTime, String endTime, int day, {int? ignoreIndex}) {
+    final startMin = _timeToMinutes(startTime);
+    final endMin = _timeToMinutes(endTime);
+    
+    if (startMin >= endMin) return true;
+
+    final periods = _scheduleData[day] ?? [];
+    for (int i = 0; i < periods.length; i++) {
+      if (i == ignoreIndex) continue;
+      
+      final pStart = _timeToMinutes(periods[i]['startTime'] ?? '00:00');
+      final pEnd = _timeToMinutes(periods[i]['endTime'] ?? '00:00');
+      
+      if (math.max(startMin, pStart) < math.min(endMin, pEnd)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  InputDecoration _buildInputDecoration(String label, bool isDark) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[600], fontSize: 13),
+      filled: true,
+      fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: const Color(0xFFFF1744).withValues(alpha: 0.5), width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
+  }
+
   void _addPeriod() {
-    setState(() {
-      _scheduleData[_selectedDay]!.add({
-        'startTime': '09:00',
-        'endTime': '10:00',
-        'className': '',
-        'room': '',
-      });
-    });
-    EduMateToast.showCompact(context, message: 'Period added.', isSuccess: true);
+    String tempStartTime = '09:00';
+    String tempEndTime = '10:00';
+    String tempClassName = '';
+    String tempRoom = '';
+    
+    final startTimeController = TextEditingController(text: tempStartTime);
+    final endTimeController = TextEditingController(text: tempEndTime);
+
+    showGlassmorphicDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Add Period',
+      widthFactor: 0.9,
+      child: StatefulBuilder(
+        builder: (context, setDialogState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Add Period',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: startTimeController,
+                        readOnly: true,
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                        decoration: _buildInputDecoration('Start Time', isDark),
+                        onTap: () async {
+                          final parts = tempStartTime.split(':');
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay(hour: int.tryParse(parts[0]) ?? 9, minute: int.tryParse(parts[1]) ?? 0),
+                          );
+                          if (picked != null) {
+                            final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                            setDialogState(() {
+                              tempStartTime = formatted;
+                              startTimeController.text = formatted;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: endTimeController,
+                        readOnly: true,
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                        decoration: _buildInputDecoration('End Time', isDark),
+                        onTap: () async {
+                          final parts = tempEndTime.split(':');
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay(hour: int.tryParse(parts[0]) ?? 10, minute: int.tryParse(parts[1]) ?? 0),
+                          );
+                          if (picked != null) {
+                            final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                            setDialogState(() {
+                              tempEndTime = formatted;
+                              endTimeController.text = formatted;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  initialValue: tempClassName,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                  decoration: _buildInputDecoration('Class/Subject Name', isDark),
+                  onChanged: (val) => tempClassName = val,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  initialValue: tempRoom,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                  decoration: _buildInputDecoration('Room', isDark),
+                  onChanged: (val) => tempRoom = val,
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: isDark ? Colors.white : Colors.black,
+                          side: BorderSide(color: isDark ? Colors.white24 : Colors.black26),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Cancel', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_hasOverlap(tempStartTime, tempEndTime, _selectedDay)) {
+                            EduMateToast.showCompact(context, message: 'Time overlap or invalid time.', isSuccess: false);
+                            return;
+                          }
+                          setState(() {
+                            _scheduleData[_selectedDay]!.add({
+                              'startTime': tempStartTime,
+                              'endTime': tempEndTime,
+                              'className': tempClassName,
+                              'room': tempRoom,
+                            });
+                          });
+                          EduMateToast.showCompact(context, message: 'Period added.', isSuccess: true);
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF1744),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text('Save', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _removePeriod(int index) {
@@ -402,6 +593,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                       isDark: isDark,
                                       onChanged: () => setState(() {}),
                                       onRemove: () => _removePeriod(index),
+                                      onValidateTime: (start, end) => !_hasOverlap(start, end, _selectedDay, ignoreIndex: index),
                                     );
                                   },
                                 ),
@@ -557,6 +749,7 @@ class _PeriodEditCard extends StatefulWidget {
   final bool isDark;
   final VoidCallback onChanged;
   final VoidCallback onRemove;
+  final bool Function(String, String)? onValidateTime;
 
   const _PeriodEditCard({
     super.key,
@@ -564,6 +757,7 @@ class _PeriodEditCard extends StatefulWidget {
     required this.isDark,
     required this.onChanged,
     required this.onRemove,
+    this.onValidateTime,
   });
 
   @override
@@ -588,6 +782,9 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
     String tempEndTime = widget.period['endTime'] ?? '10:00';
     String tempClassName = widget.period['className'] ?? '';
     String tempRoom = widget.period['room'] ?? '';
+    
+    final startTimeController = TextEditingController(text: tempStartTime);
+    final endTimeController = TextEditingController(text: tempEndTime);
 
     showGlassmorphicDialog(
       context: context,
@@ -617,19 +814,47 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                           children: [
                             Expanded(
                               child: TextFormField(
-                                initialValue: tempStartTime,
+                                controller: startTimeController,
+                                readOnly: true,
                                 style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
                                 decoration: _buildInputDecoration('Start Time'),
-                                onChanged: (val) => tempStartTime = val,
+                                onTap: () async {
+                                  final parts = tempStartTime.split(':');
+                                  final picked = await showTimePicker(
+                                    context: context,
+                                    initialTime: TimeOfDay(hour: int.tryParse(parts[0]) ?? 9, minute: int.tryParse(parts[1]) ?? 0),
+                                  );
+                                  if (picked != null) {
+                                    final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                                    setDialogState(() {
+                                      tempStartTime = formatted;
+                                      startTimeController.text = formatted;
+                                    });
+                                  }
+                                },
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: TextFormField(
-                                initialValue: tempEndTime,
+                                controller: endTimeController,
+                                readOnly: true,
                                 style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
                                 decoration: _buildInputDecoration('End Time'),
-                                onChanged: (val) => tempEndTime = val,
+                                onTap: () async {
+                                  final parts = tempEndTime.split(':');
+                                  final picked = await showTimePicker(
+                                    context: context,
+                                    initialTime: TimeOfDay(hour: int.tryParse(parts[0]) ?? 10, minute: int.tryParse(parts[1]) ?? 0),
+                                  );
+                                  if (picked != null) {
+                                    final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                                    setDialogState(() {
+                                      tempEndTime = formatted;
+                                      endTimeController.text = formatted;
+                                    });
+                                  }
+                                },
                               ),
                             ),
                           ],
@@ -672,6 +897,12 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
+                                  if (widget.onValidateTime != null) {
+                                    if (!widget.onValidateTime!(tempStartTime, tempEndTime)) {
+                                      EduMateToast.showCompact(context, message: 'Time overlap or invalid time.', isSuccess: false);
+                                      return;
+                                    }
+                                  }
                                   widget.period['startTime'] = tempStartTime;
                                   widget.period['endTime'] = tempEndTime;
                                   widget.period['className'] = tempClassName;
