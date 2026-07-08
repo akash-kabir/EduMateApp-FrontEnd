@@ -74,7 +74,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
 
   Future<void> _uploadSchedule(int semester) async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
         allowMultiple: false,
@@ -86,12 +86,11 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
 
       final file = result.files.first;
       String jsonString;
-      if (file.bytes != null) {
-        jsonString = String.fromCharCodes(file.bytes!);
-      } else if (file.path != null) {
+      if (file.path != null) {
         jsonString = await File(file.path!).readAsString();
       } else {
-        throw Exception('Unable to read file');
+        final bytes = await file.readAsBytes();
+        jsonString = String.fromCharCodes(bytes);
       }
 
       final jsonData = jsonDecode(jsonString);

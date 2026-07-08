@@ -15,6 +15,7 @@ class AppNavigator extends StatefulWidget {
 class _AppNavigatorState extends State<AppNavigator> {
   int _selectedIndex = 0;
   bool _slideFromRight = true;
+  bool _isMapNavBarVisible = true;
 
   late final List<Widget> _pages;
 
@@ -25,7 +26,13 @@ class _AppNavigatorState extends State<AppNavigator> {
       _HomeScreenWrapper(onNavigate: _onItemTapped),
       const ScheduleScreen(),
       const EventScreen(),
-      const MapScreen(),
+      MapScreen(onNavBarVisibilityChange: (visible) {
+        if (mounted && _isMapNavBarVisible != visible) {
+          setState(() {
+            _isMapNavBarVisible = visible;
+          });
+        }
+      }),
     ];
   }
 
@@ -40,6 +47,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       extendBody: true,
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
@@ -70,9 +78,16 @@ class _AppNavigatorState extends State<AppNavigator> {
           child: _pages[_selectedIndex],
         ),
       ),
-      bottomNavigationBar: CupertinoBottomTabBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
+      bottomNavigationBar: AnimatedSlide(
+        duration: Duration(milliseconds: _isMapNavBarVisible ? 250 : 800),
+        curve: Curves.easeInOut,
+        offset: (_selectedIndex == 3 && !_isMapNavBarVisible)
+            ? const Offset(0, 1.2) // slide down below the screen
+            : Offset.zero,
+        child: CupertinoBottomTabBar(
+          selectedIndex: _selectedIndex,
+          onItemTapped: _onItemTapped,
+        ),
       ),
     );
   }
