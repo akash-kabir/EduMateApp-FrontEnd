@@ -31,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? userId;
   String? token;
   late String _cachedGreeting;
+  bool openAppToTimesheet = false;
 
   @override
   void initState() {
@@ -51,11 +52,13 @@ class _HomeScreenState extends State<HomeScreen> {
         : (await SharedPreferencesService.getUserName() ?? 'User');
     final newUserId = await SharedPreferencesService.getUserId();
     final newToken = await SharedPreferencesService.getToken();
+    final openTimesheetPref = await SharedPreferencesService.getBool('openToTimesheet');
 
     setState(() {
       userFirstName = newFirstName;
       userId = newUserId;
       token = newToken;
+      openAppToTimesheet = openTimesheetPref;
       _cachedGreeting = _calculateGreeting();
     });
   }
@@ -352,6 +355,40 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Open App to TimeSheet Toggle (Simple Debug Option)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            CupertinoIcons.clock,
+                            color: CupertinoColors.systemGrey,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Open App to TimeSheet (Debug)',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? Colors.grey[400] : Colors.grey[700],
+                              ),
+                            ),
+                          ),
+                          CupertinoSwitch(
+                            value: openAppToTimesheet,
+                            activeColor: AuthPalette.coral,
+                            onChanged: (bool value) async {
+                              setState(() {
+                                openAppToTimesheet = value;
+                              });
+                              await SharedPreferencesService.setBool('openToTimesheet', value);
+                            },
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),

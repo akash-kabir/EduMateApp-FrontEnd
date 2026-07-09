@@ -3,6 +3,7 @@ import '../screens/schedule/schedule_screen.dart';
 import '../screens/map/map_screen.dart';
 import '../screens/event/event_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../services/shared_preferences_service.dart';
 import 'nav_bar.dart';
 
 class AppNavigator extends StatefulWidget {
@@ -22,6 +23,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   @override
   void initState() {
     super.initState();
+    _loadInitialPage();
     _pages = [
       _HomeScreenWrapper(onNavigate: _onItemTapped),
       const ScheduleScreen(),
@@ -42,6 +44,15 @@ class _AppNavigatorState extends State<AppNavigator> {
       _slideFromRight = index > _selectedIndex;
       _selectedIndex = index;
     });
+  }
+
+  void _loadInitialPage() async {
+    final openTimesheet = await SharedPreferencesService.getBool('openToTimesheet');
+    if (openTimesheet && mounted) {
+      setState(() {
+        _selectedIndex = 1;
+      });
+    }
   }
 
   @override
