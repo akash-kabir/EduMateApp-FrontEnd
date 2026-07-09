@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'admin_elective_management.dart';
 import 'curriculum_management_screen.dart';
 import 'schedule_management_screen.dart';
 
@@ -61,6 +62,21 @@ class AdminUploadScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ScheduleManagementScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            _UploadCard(
+              title: 'Elective Management',
+              description: 'Manage semester-wise professional electives',
+              icon: Icons.assignment_turned_in_rounded,
+              isDark: isDark,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminElectiveManagementScreen(),
                   ),
                 );
               },

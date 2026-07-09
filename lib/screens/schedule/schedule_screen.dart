@@ -7,7 +7,6 @@ import 'dart:ui' as ui;
 import '../../constants/app_constants.dart';
 import '../../config.dart';
 import '../../services/shared_preferences_service.dart';
-import '../../widgets/toast_manager.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -28,6 +27,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   bool savePreference = false;
   Map<String, dynamic>? scheduleData;
   bool isLoading = false;
+  
+  List<dynamic> rawElectiveData = [];
+  Map<String, List<String>> availableElectives = {};
+  Map<String, String> selectedElectives = {};
   int _lastRequestId = 0;
   bool _slideFromRight = true; // true = next day, false = prev day
   double _dragOffset = 0.0; // tracks real-time drag distance
@@ -35,7 +38,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   final List<String> branches = ['CSCE', 'CSE', 'IT', 'CSSE'];
   final Map<String, List<String>> classesPerBranch = {
     'CSCE': ['CSCE-1'],
-    'CSE': ['CSE-1', ...List.generate(54, (i) => 'CSE-${i + 1}')],
+    'CSE': ['CSE-1', ...List.generate(70, (i) => 'CSE-${i + 1}')],
     'IT': ['IT-1', 'IT-2'],
     'CSSE': ['CSSE-1'],
   };
@@ -129,6 +132,112 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     });
   }
 
+  Future<void> _loadSavedElectivePreferences() async {
+    final Map<String, String> tempSelected = {};
+    for (var group in availableElectives.keys) {
+      final saved = await SharedPreferencesService.getString('selectedElective_${selectedBranch}_${selectedSemester}_$group');
+      if (saved != null) {
+        tempSelected[group] = saved;
+      }
+    }
+    setState(() {
+      selectedElectives = tempSelected;
+    });
+  }
+
+  Future<void> _fetchAvailableElectives(String branch, int semester) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${Config.electiveBaseEndpoint}/$branch/$semester'),
+      );
+      if (response.statusCode == 200) {
+        final resData = jsonDecode(response.body);
+        if (resData['success'] == true && resData['data'] != null) {
+          final electivesList = resData['data']['electives'] as List;
+          final Map<String, List<String>> grouped = {};
+          for (var item in electivesList) {
+            final group = item['electiveGroup'] as String;
+            final name = item['name'] as String;
+            grouped.putIfAbsent(group, () => []).add(name);
+          }
+          if (mounted) {
+            setState(() {
+              rawElectiveData = electivesList;
+              availableElectives = grouped;
+            });
+            await _loadSavedElectivePreferences();
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching electives: $e');
+    }
+    if (mounted) {
+      setState(() {
+        rawElectiveData = [];
+        availableElectives = {};
+        selectedElectives = {};
+      });
+    }
+  }
+
+  Future<Map<String, List<String>>> _getElectivesForSettings(String branch, int semester) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${Config.electiveBaseEndpoint}/$branch/$semester'),
+      );
+      if (response.statusCode == 200) {
+        final resData = jsonDecode(response.body);
+        if (resData['success'] == true && resData['data'] != null) {
+          final electivesList = resData['data']['electives'] as List;
+          final Map<String, List<String>> grouped = {};
+          for (var item in electivesList) {
+            final group = item['electiveGroup'] as String;
+            final name = item['name'] as String;
+            grouped.putIfAbsent(group, () => []).add(name);
+          }
+          return grouped;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching electives: $e');
+    }
+    return {};
+  }
+
+  String? _matchElectiveGroup(String className) {
+    final cleanName = className.toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
+    for (var group in selectedElectives.keys) {
+      final cleanGroup = group.toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
+      if (cleanName == cleanGroup) return group;
+      
+      if ((cleanName.contains('PROFESSIONALELECTIVE1') || cleanName.contains('PE1')) && 
+          (cleanGroup.contains('PROFESSIONALELECTIVE1') || cleanGroup.contains('PE1'))) {
+        return group;
+      }
+      if ((cleanName.contains('PROFESSIONALELECTIVE2') || cleanName.contains('PE2')) && 
+          (cleanGroup.contains('PROFESSIONALELECTIVE2') || cleanGroup.contains('PE2'))) {
+        return group;
+      }
+    }
+    return null;
+  }
+
+  String _getElectiveRoom(String electiveName, int day, String startTime) {
+    for (var elective in rawElectiveData) {
+      if (elective['name'] == electiveName && elective['periods'] is List) {
+        final periods = elective['periods'] as List;
+        for (var p in periods) {
+          if (p['day'] == day && p['startTime'] == startTime) {
+            return p['room'] ?? '';
+          }
+        }
+      }
+    }
+    return '';
+  }
+
   Future<void> _loadSavedPreferenceAndFetchSchedule() async {
     final savedClass = await SharedPreferencesService.getString(
       'selectedSemester.toString()',
@@ -148,9 +257,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         if (savedSection != null) selectedSection = savedSection;
         savePreference = true;
       });
+      _fetchAvailableElectives(selectedBranch, selectedSemester);
       // Fetch schedule for saved class
       _fetchScheduleFromBackend();
     } else {
+      setState(() {
+        selectedBranch = 'CSE';
+        selectedSemester = 1;
+        selectedSection = 'CSE-1';
+      });
+      _fetchAvailableElectives(selectedBranch, selectedSemester);
       // No saved preference, fetch default schedule
       _fetchScheduleFromBackend();
     }
@@ -741,42 +857,134 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     return merged;
   }
 
-  List<dynamic> _getClassesForDay(int dayOfWeek) {
+  List<dynamic> _processPeriods(List<dynamic> originalPeriods, int dayOfWeek) {
+    final periods = originalPeriods.map((p) => Map<String, dynamic>.from(p)).toList();
+    for (var period in periods) {
+      final className = period['className']?.toString() ?? '';
+      final matchedGroup = _matchElectiveGroup(className);
+      if (matchedGroup != null) {
+        final chosenElective = selectedElectives[matchedGroup];
+        if (chosenElective != null) {
+          period['className'] = chosenElective;
+          final room = _getElectiveRoom(chosenElective, dayOfWeek, period['startTime']?.toString() ?? '');
+          if (room.isNotEmpty) {
+            period['room'] = room;
+          }
+        }
+      }
+    }
+    return periods;
+  }
 
-    // Convert Flutter weekday (Mon=1, Sun=7) to our day format (Mon=1, Fri=5)
+  List<dynamic> _getClassesForDay(int dayOfWeek) {
     // Filter only weekdays (Monday-Friday)
     if (dayOfWeek < 1 || dayOfWeek > 5) {
       return [];
     }
 
+    List<dynamic> dayClasses = [];
 
-    // Try to get data from API first
-    if (scheduleData != null) {
-      List<dynamic>? classes = scheduleData!['classes'] as List<dynamic>?;
-      if (classes != null) {
-        var section = classes.firstWhere((s) => s['name'] == selectedSection, orElse: () => null);
-        if (section != null && section['schedule'] is List) {
-          var schedule = section['schedule'] as List;
-          for (int i = 0; i < schedule.length; i++) {
-            var dayData = schedule[i];
-            if (dayData['day'] == dayOfWeek && dayData['periods'] is List) {
-              final periods = List<Map<String, dynamic>>.from(dayData['periods']);
-              periods.sort((a, b) {
-                final aTime = a['startTime'].toString();
-                final bTime = b['startTime'].toString();
-                return aTime.compareTo(bTime);
-              });
-              return periods;
+    try {
+      // Try to get data from API first
+      if (scheduleData != null) {
+        List<dynamic>? classes = scheduleData!['classes'] as List<dynamic>?;
+        if (classes != null && classes.isNotEmpty) {
+          var section = classes.firstWhere(
+            (s) => s['name'] == selectedSection,
+            orElse: () => null,
+          );
+          
+          // Smart correction if no exact match is found
+          if (section == null) {
+            final normalizedSaved = selectedSection.toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
+            section = classes.firstWhere((s) {
+              final normName = s['name'].toString().toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
+              return normalizedSaved == normName;
+            }, orElse: () => null);
+
+            if (section == null && normalizedSaved.startsWith('CSE')) {
+              final correctedSearch = 'CS' + normalizedSaved.substring(3);
+              section = classes.firstWhere((s) {
+                final normName = s['name'].toString().toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
+                return correctedSearch == normName;
+              }, orElse: () => null);
             }
+
+            if (section == null) {
+              section = classes.first;
+            }
+
+            if (section != null) {
+              // Safely update selectedSection in a post-frame callback or schedule future to avoid setState build warnings
+              final correctedName = section['name'] as String;
+              Future.microtask(() {
+                if (mounted && selectedSection != correctedName) {
+                  setState(() {
+                    selectedSection = correctedName;
+                  });
+                }
+              });
+            }
+          }
+
+          if (section != null && section['schedule'] is List) {
+            var schedule = section['schedule'] as List;
+            for (int i = 0; i < schedule.length; i++) {
+              var dayData = schedule[i];
+              final dayNum = dayData['day'] is int
+                  ? dayData['day'] as int
+                  : int.tryParse(dayData['day'].toString()) ?? -1;
+              if (dayNum == dayOfWeek && dayData['periods'] is List) {
+                dayClasses = _processPeriods(dayData['periods'], dayOfWeek);
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in _getClassesForDay: $e');
+    }
+
+    // If no classes were fetched from the database, fall back to static data
+    if (dayClasses.isEmpty) {
+      final schedule = classSchedules[selectedSemester.toString()] ?? {};
+      final result = schedule[dayOfWeek] ?? [];
+      dayClasses = _processPeriods(result, dayOfWeek);
+    }
+
+    // Append chosen electives for this day
+    for (var entry in selectedElectives.entries) {
+      final electiveName = entry.value;
+      final electiveItem = rawElectiveData.firstWhere(
+        (e) => e['name'] == electiveName,
+        orElse: () => null,
+      );
+      if (electiveItem != null && electiveItem['periods'] is List) {
+        final periods = electiveItem['periods'] as List;
+        for (var p in periods) {
+          final pDay = p['day'] is int ? p['day'] as int : int.tryParse(p['day'].toString()) ?? -1;
+          if (pDay == dayOfWeek) {
+            dayClasses.add({
+              'startTime': p['startTime'] ?? '',
+              'endTime': p['endTime'] ?? '',
+              'className': electiveName,
+              'room': p['room'] ?? '',
+              'isElective': true,
+            });
           }
         }
       }
     }
 
-    // Fallback to static data
-    final schedule = classSchedules[selectedSemester.toString()] ?? {};
-    final result = schedule[dayOfWeek] ?? [];
-    return result;
+    // Sort combined list by startTime
+    dayClasses.sort((a, b) {
+      final aTime = a['startTime'].toString();
+      final bTime = b['startTime'].toString();
+      return aTime.compareTo(bTime);
+    });
+
+    return dayClasses;
   }
 
   bool _isClassPassed(String endTime) {
@@ -1052,6 +1260,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         ? (classesPerBranch[tempBranch]?.first ?? '') 
         : selectedSection;
 
+    Map<String, List<String>> tempAvailableElectives = Map.from(availableElectives);
+    Map<String, String> tempSelectedElectives = Map.from(selectedElectives);
+
     _isSavedPreferenceExists().then((exists) {
       if (mounted) {
         setState(() {
@@ -1070,6 +1281,20 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   : 0) 
               : 0;
 
+          void updateElectives(String branch, int sem) {
+            _getElectivesForSettings(branch, sem).then((electives) {
+              setModalState(() {
+                tempAvailableElectives = electives;
+                // Set default selected values for any new elective groups found
+                electives.forEach((group, options) {
+                  if (!tempSelectedElectives.containsKey(group) && options.isNotEmpty) {
+                    tempSelectedElectives[group] = options.first;
+                  }
+                });
+              });
+            });
+          }
+
           return Material(
             type: MaterialType.transparency,
             child: ClipRRect(
@@ -1080,7 +1305,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               child: BackdropFilter(
                 filter: ui.ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
                 child: Container(
-                  height: 480,
+                  height: tempAvailableElectives.isNotEmpty ? 580 : 480,
                   decoration: BoxDecoration(
                     color: const Color(0xFF0F0F11).withValues(alpha: 0.80),
                     borderRadius: const BorderRadius.only(
@@ -1119,13 +1344,24 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                       selectedBranch = tempBranch;
                                       selectedSemester = tempSemester;
                                       selectedSection = tempSection;
+                                      availableElectives = tempAvailableElectives;
+                                      selectedElectives = tempSelectedElectives;
                                       scheduleData = null;
                                       isLoading = true;
                                     });
                                     _savePreference(tempBranch, tempSemester.toString(), '1st Year', tempSection, savePreference);
-                                    if (savePreference) {
-                                      EduMateToast.showSuccessCard(context, title: 'Preference Saved', description: 'Schedule preference saved.');
-                                    }
+                                    
+                                    // Save/remove elective selections persistently
+                                    tempSelectedElectives.forEach((group, val) {
+                                      if (savePreference) {
+                                        SharedPreferencesService.setString('selectedElective_${tempBranch}_${tempSemester}_$group', val);
+                                      } else {
+                                        SharedPreferencesService.remove('selectedElective_${tempBranch}_${tempSemester}_$group');
+                                      }
+                                    });
+
+                                    // Refresh schedule
+                                    _fetchAvailableElectives(tempBranch, tempSemester);
                                     _fetchScheduleFromBackend();
                                     Navigator.pop(context);
                                   },
@@ -1162,6 +1398,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                             tempSection = classesPerBranch[tempBranch]!.first;
                                           }
                                         });
+                                        updateElectives(tempBranch, tempSemester);
                                       }
                                     },
                                   ),
@@ -1195,6 +1432,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                     onValueChanged: (val) {
                                       if (val != null) {
                                         setModalState(() { tempSemester = val; });
+                                        updateElectives(tempBranch, tempSemester);
                                       }
                                     },
                                   ),
@@ -1202,6 +1440,66 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                               ],
                             ),
                           ),
+                          
+                          // Electives selection area if available
+                          if (tempAvailableElectives.isNotEmpty) ...[
+                            const Divider(color: Colors.white10),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Select Electives', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white70)),
+                                  const SizedBox(height: 8),
+                                  ...tempAvailableElectives.entries.map((entry) {
+                                    final groupName = entry.key;
+                                    final electiveOptions = entry.value;
+                                    final selectedValue = tempSelectedElectives[groupName] ?? electiveOptions.first;
+                                    
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 10.0),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(groupName, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                                          GestureDetector(
+                                            onTap: () {
+                                              _showItemPicker(
+                                                context: context,
+                                                title: 'Select $groupName',
+                                                items: electiveOptions,
+                                                selectedItem: selectedValue,
+                                                onSelected: (val) {
+                                                  setModalState(() {
+                                                    tempSelectedElectives[groupName] = val;
+                                                  });
+                                                },
+                                              );
+                                            },
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withValues(alpha: 0.06),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Text(selectedValue, style: const TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14)),
+                                                  const SizedBox(width: 4),
+                                                  const Icon(CupertinoIcons.chevron_down, color: Colors.white70, size: 14),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ],
+                              ),
+                            ),
+                          ],
+
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1277,6 +1575,63 @@ Widget _buildSegmentText(String text) {
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  void _showItemPicker({
+    required BuildContext context,
+    required String title,
+    required List<String> items,
+    required String selectedItem,
+    required ValueChanged<String> onSelected,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    int tempIndex = items.indexOf(selectedItem);
+    if (tempIndex == -1) tempIndex = 0;
+
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => Container(
+        height: 280,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        child: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Container(
+                color: isDark ? Colors.black12 : Colors.grey[200],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CupertinoButton(
+                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 16, decoration: TextDecoration.none)),
+                    CupertinoButton(
+                      child: const Text('Done', style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        onSelected(items[tempIndex]);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CupertinoPicker(
+                  itemExtent: 36.0,
+                  scrollController: FixedExtentScrollController(initialItem: tempIndex),
+                  onSelectedItemChanged: (index) {
+                    tempIndex = index;
+                  },
+                  children: items.map((item) => Center(child: Text(item, style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 18, decoration: TextDecoration.none)))).toList(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -25,4 +25,7 @@ class Config {
 
   // Schedule endpoints
   static const String scheduleBaseEndpoint = "$BASE_URL/api/schedule";
+
+  // Elective endpoints
+  static const String electiveBaseEndpoint = "$BASE_URL/api/elective";
 }
