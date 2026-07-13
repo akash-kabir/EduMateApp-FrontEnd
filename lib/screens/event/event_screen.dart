@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../services/shared_preferences_service.dart';
-import 'package:http/http.dart' as http;
+import '../../services/token_refresh_service.dart';
 import 'dart:convert';
 import '../../config.dart';
 import 'event_card.dart';
@@ -17,10 +17,10 @@ class EventScreen extends StatefulWidget {
 }
 
 class _EventScreenState extends State<EventScreen> {
-  String userRole = 'student';
   List<dynamic> posts = [];
   bool isLoading = true;
   String selectedFilter = 'all';
+  String? userRole;
 
   @override
   void initState() {
@@ -30,7 +30,7 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   Future<void> _loadUserRole() async {
-    final role = await SharedPreferencesService.getUserRole() ?? 'student';
+    final role = await SharedPreferencesService.getUserRole();
     setState(() {
       userRole = role;
     });
@@ -40,20 +40,12 @@ class _EventScreenState extends State<EventScreen> {
     setState(() => isLoading = true);
 
     try {
-      final token = await SharedPreferencesService.getToken();
-
       String url = '${Config.postsEndpoint}';
       if (selectedFilter != 'all') {
         url += '?postType=$selectedFilter';
       }
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await TokenRefreshService.authenticatedGet(url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -159,7 +151,7 @@ class _EventScreenState extends State<EventScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isSocietyHead = userRole.toLowerCase() == 'society_head';
+    final isSocietyHead = userRole?.toLowerCase() == 'society_head';
 
     return CupertinoPageScaffold(
       child: CustomScrollView(

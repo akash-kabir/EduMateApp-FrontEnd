@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// A master service class for managing all SharedPreferences operations.
 /// This file acts as a centralized location for all shared preference data access.
@@ -24,6 +25,7 @@ class SharedPreferencesService {
 
   // Key constants for all shared preferences
   static const String _tokenKey = 'token';
+  static const String _refreshTokenKey = 'refresh_token';
   static const String _userIdKey = 'user_id';
   static const String _userRoleKey = 'user_role';
   static const String _userNameKey = 'user_name';
@@ -41,18 +43,30 @@ class SharedPreferencesService {
   static const String _profileSetupCompleteKey = 'profile_setup_complete';
   static const String _neverAskProfileSetupKey = 'never_ask_profile_setup';
 
+  // Secure storage instance
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+
   // ==================== Token Management ====================
 
   /// Save authentication token
   static Future<bool> setToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.setString(_tokenKey, token);
+    try {
+      await _secureStorage.write(key: _tokenKey, value: token);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   /// Retrieve authentication token
   static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    try {
+      return await _secureStorage.read(key: _tokenKey);
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Check if token exists
@@ -63,8 +77,41 @@ class SharedPreferencesService {
 
   /// Remove authentication token
   static Future<bool> removeToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.remove(_tokenKey);
+    try {
+      await _secureStorage.delete(key: _tokenKey);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Save refresh token
+  static Future<bool> setRefreshToken(String token) async {
+    try {
+      await _secureStorage.write(key: _refreshTokenKey, value: token);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Retrieve refresh token
+  static Future<String?> getRefreshToken() async {
+    try {
+      return await _secureStorage.read(key: _refreshTokenKey);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Remove refresh token
+  static Future<bool> removeRefreshToken() async {
+    try {
+      await _secureStorage.delete(key: _refreshTokenKey);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   // ==================== User Information ====================
@@ -313,6 +360,10 @@ class SharedPreferencesService {
   /// Clear all stored data (usually called on logout)
   static Future<bool> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
+    // Clear secure storage tokens
+    try {
+      await _secureStorage.deleteAll();
+    } catch (_) {}
     return prefs.clear();
   }
 
@@ -326,6 +377,11 @@ class SharedPreferencesService {
 
     // Wipe everything
     await prefs.clear();
+
+    // Clear secure storage tokens
+    try {
+      await _secureStorage.deleteAll();
+    } catch (_) {}
 
     // Restore theme
     if (savedTheme != null) {

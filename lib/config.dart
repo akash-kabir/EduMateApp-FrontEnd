@@ -4,6 +4,7 @@ class Config {
   // Auth endpoints
   static const String registerEndpoint = "$BASE_URL/api/users/register";
   static const String loginEndpoint = "$BASE_URL/api/users/login";
+  static const String refreshEndpoint = "$BASE_URL/api/users/refresh";
 
   // Profile endpoints
   static const String profileEndpoint = "$BASE_URL/api/users/me";

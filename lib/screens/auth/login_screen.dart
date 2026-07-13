@@ -93,10 +93,14 @@ class _LoginScreenState extends State<LoginScreen>
       if (result['success'] ?? false) {
         final data = result['data'];
         final token = data['token'];
+        final refreshToken = data['refreshToken'];
         final user = data['user'];
 
         // Save token and login state
         await SharedPreferencesService.setToken(token);
+        if (refreshToken != null) {
+          await SharedPreferencesService.setRefreshToken(refreshToken);
+        }
         await SharedPreferencesService.setIsLoggedIn(true);
 
         // Save full user profile to SharedPreferences
