@@ -1,4 +1,7 @@
 import 'dart:ui';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../config.dart';
 import '../../widgets/custom_glass_dialog.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +37,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   String? _selectedSection;
   String? _selectedSemester;
   bool _isLoading = false;
+  List<String> _dynamicSections = [];
+  bool _loadingSections = false;
 
   @override
   void initState() {
@@ -106,6 +111,54 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         }
       });
     }
+  }
+
+  Future<void> _fetchSectionsForSelectedConfig() async {
+    if (_selectedBranch == null || _selectedSemester == null) return;
+    
+    setState(() {
+      _loadingSections = true;
+      _dynamicSections = [];
+      _selectedSection = null;
+    });
+
+    final semNum = _getSemesterNumber(_selectedSemester!);
+    try {
+      final url = Uri.parse('${Config.scheduleBaseEndpoint}/${_selectedBranch!.toUpperCase()}/$semNum/sections');
+      final response = await http.get(url);
+      
+      if (response.statusCode == 200) {
+        final resData = jsonDecode(response.body);
+        if (resData['success'] == true && resData['data'] is List) {
+          setState(() {
+            _dynamicSections = List<String>.from(resData['data']);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching sections: $e');
+    }
+
+    // Fallback if empty or failed
+    if (_dynamicSections.isEmpty) {
+      setState(() {
+        final fallbackList = ProfileSetupConstants.sectionsPerBranch[_selectedBranch] ?? [];
+        _dynamicSections = fallbackList;
+      });
+    }
+
+    setState(() {
+      _loadingSections = false;
+    });
+  }
+
+  int _getSemesterNumber(String semesterStr) {
+    final RegExp regExp = RegExp(r'\d+');
+    final match = regExp.firstMatch(semesterStr);
+    if (match != null) {
+      return int.parse(match.group(0)!);
+    }
+    return 1;
   }
 
   void _showKiitPreFillDialog() {
@@ -629,7 +682,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                     value: _selectedSemester,
                                     items: _getAvailableSemesters(),
                                     onChanged: (value) {
-                                      setState(() => _selectedSemester = value);
+                                      setState(() {
+                                        _selectedSemester = value;
+                                        _selectedSection = null;
+                                      });
+                                      _fetchSectionsForSelectedConfig();
                                     },
                                     isDark: isDark,
                                     enabled: _selectedYear != null,
@@ -661,33 +718,46 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                               _selectedBranch = value;
                               _selectedSection = null;
                             });
+                            _fetchSectionsForSelectedConfig();
                           },
                           isDark: isDark,
                         ),
                         const SizedBox(height: 24),
                         // Section Dropdown
-                        Text(
-                          'Section',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white : Colors.black,
+                        Row(
+                          children: [
+                            Text(
+                              'Section',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                            ),
+                            if (_loadingSections) ...[
+                              const SizedBox(width: 8),
+                              const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                ),
                               ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 8),
                         _buildDropdown(
                           context,
-                          hint: 'Select your section',
+                          hint: _loadingSections ? 'Loading sections...' : 'Select your section',
                           value: _selectedSection,
-                          items:
-                              ProfileSetupConstants
-                                  .sectionsPerBranch[_selectedBranch] ??
-                              [],
+                          items: _dynamicSections,
                           onChanged: (value) {
                             setState(() => _selectedSection = value);
                           },
                           isDark: isDark,
-                          enabled: _selectedBranch != null,
+                          enabled: _selectedBranch != null && !_loadingSections,
                         ),
                         const SizedBox(height: 30),
                         // Submit Button

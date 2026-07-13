@@ -148,10 +148,42 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Future<void> _fetchAvailableElectives(String branch, int semester) async {
+    final cacheKey = 'cached_electives_${branch}_$semester';
+    bool hasCache = false;
+    List<dynamic> cachedRawData = [];
+
+    // 1. Try to load from cache
+    try {
+      final cached = await SharedPreferencesService.getString(cacheKey);
+      if (cached != null) {
+        final decoded = jsonDecode(cached);
+        if (decoded is Map && decoded.containsKey('raw') && decoded.containsKey('grouped')) {
+          final raw = decoded['raw'] as List;
+          final Map<String, List<String>> grouped = {};
+          (decoded['grouped'] as Map).forEach((key, val) {
+            grouped[key] = List<String>.from(val as List);
+          });
+          
+          hasCache = true;
+          cachedRawData = raw;
+          if (mounted) {
+            setState(() {
+              rawElectiveData = raw;
+              availableElectives = grouped;
+            });
+            await _loadSavedElectivePreferences();
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error reading electives cache: $e');
+    }
+
+    // 2. Fetch from backend
     try {
       final response = await http.get(
         Uri.parse('${Config.electiveBaseEndpoint}/$branch/$semester'),
-      );
+      ).timeout(const Duration(seconds: 7));
       if (response.statusCode == 200) {
         final resData = jsonDecode(response.body);
         if (resData['success'] == true && resData['data'] != null) {
@@ -162,12 +194,25 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             final name = item['name'] as String;
             grouped.putIfAbsent(group, () => []).add(name);
           }
-          if (mounted) {
-            setState(() {
-              rawElectiveData = electivesList;
-              availableElectives = grouped;
-            });
-            await _loadSavedElectivePreferences();
+
+          // Save to cache
+          final cacheData = {
+            'raw': electivesList,
+            'grouped': grouped,
+          };
+          await SharedPreferencesService.setString(cacheKey, jsonEncode(cacheData));
+
+          // Only update UI if the fetched electives differ from what we have
+          final String fetchedStr = jsonEncode(electivesList);
+          final String cachedStr = jsonEncode(cachedRawData);
+          if (fetchedStr != cachedStr || !hasCache) {
+            if (mounted) {
+              setState(() {
+                rawElectiveData = electivesList;
+                availableElectives = grouped;
+              });
+              await _loadSavedElectivePreferences();
+            }
           }
           return;
         }
@@ -175,7 +220,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     } catch (e) {
       debugPrint('Error fetching electives: $e');
     }
-    if (mounted) {
+    if (!hasCache && mounted) {
       setState(() {
         rawElectiveData = [];
         availableElectives = {};
@@ -378,21 +423,24 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       requestedBranch,
       requestedSemester.toString(),
     );
+    bool hasCache = false;
     if (cachedData != null) {
+      hasCache = true;
       if (mounted) {
         setState(() {
           scheduleData = cachedData;
           isLoading = false;
         });
       }
-      return;
     }
 
-    // If no cache, fetch from backend
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-      });
+    // If no cache, set loading to true
+    if (!hasCache) {
+      if (mounted) {
+        setState(() {
+          isLoading = true;
+        });
+      }
     }
 
     try {
@@ -405,13 +453,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           'Pragma': 'no-cache',
           'Expires': '0',
         },
-      );
+      ).timeout(const Duration(seconds: 7));
 
       // 🔥 CRITICAL: Check if this is still the latest request
       if (currentRequestId != _lastRequestId) {
         return; // Discard this response, don't update UI
       }
-
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -420,19 +467,19 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         if (responseData is Map && responseData.containsKey('data')) {
           final classData = responseData['data'];
 
-          if (classData.containsKey('schedule') &&
-              classData['schedule'] is List) {
-            // Valid schedule found
-          }
-
           // Cache the schedule data for offline use
           await _cacheScheduleData(requestedBranch, requestedSemester.toString(), classData);
 
-          if (mounted) {
-            setState(() {
-              scheduleData = classData;
-              isLoading = false;
-            });
+          // Update UI only if data changed or we didn't have cached data
+          final String classDataStr = jsonEncode(classData);
+          final String cachedDataStr = jsonEncode(cachedData);
+          if (classDataStr != cachedDataStr || !hasCache) {
+            if (mounted) {
+              setState(() {
+                scheduleData = classData;
+                isLoading = false;
+              });
+            }
           }
         } else {
           // Cache the schedule data for offline use
@@ -441,15 +488,21 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             requestedSemester.toString(),
             responseData,
           );
-          if (mounted) {
-            setState(() {
-              scheduleData = responseData;
-              isLoading = false;
-            });
+          
+          final String responseDataStr = jsonEncode(responseData);
+          final String cachedDataStr = jsonEncode(cachedData);
+          if (responseDataStr != cachedDataStr || !hasCache) {
+            if (mounted) {
+              setState(() {
+                scheduleData = responseData;
+                isLoading = false;
+              });
+            }
           }
         }
       } else if (response.statusCode == 404) {
-        if (mounted) {
+        // If 404 and we don't have cache, set schedule to null
+        if (!hasCache && mounted) {
           setState(() {
             scheduleData = null;
             isLoading = false;
@@ -459,9 +512,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         throw Exception('Failed to load schedule: ${response.statusCode}');
       }
     } catch (e) {
+      debugPrint('Error fetching schedule from backend: $e');
       if (mounted) {
         setState(() {
-          scheduleData = null;
+          // If we had cache, preserve it. Else set to null.
+          if (!hasCache) {
+            scheduleData = null;
+          }
           isLoading = false;
         });
       }
