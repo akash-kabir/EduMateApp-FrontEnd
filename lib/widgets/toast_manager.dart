@@ -16,6 +16,9 @@ class EduMateToast {
     BuildContext context, {
     required String message,
     required bool isSuccess,
+    String? actionLabel,
+    VoidCallback? onActionTap,
+    Duration? duration,
   }) {
     // Dismiss any existing overlay first
     dismiss();
@@ -27,6 +30,12 @@ class EduMateToast {
       builder: (context) => CompactToastWidget(
         message: message,
         isSuccess: isSuccess,
+        actionLabel: actionLabel,
+        onActionTap: () {
+          if (onActionTap != null) onActionTap();
+          dismiss();
+        },
+        duration: duration ?? const Duration(milliseconds: 3800),
         onDismiss: () {
           if (_currentOverlayEntry == entry) {
             dismiss();

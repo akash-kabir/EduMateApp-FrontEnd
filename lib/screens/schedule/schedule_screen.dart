@@ -7,8 +7,9 @@ import 'dart:ui' as ui;
 import '../../constants/app_constants.dart';
 import '../../config.dart';
 import '../../services/shared_preferences_service.dart';
+import '../../services/token_refresh_service.dart';
 import '../../widgets/success_card_widget.dart';
-
+import '../../widgets/toast_manager.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -130,7 +131,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   void _startRefreshTimer() {
     _refreshTimer?.cancel();
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {}); // Updates the current time indicator
+        
+        // Poll for updates in the background
+        if (selectedBranch.isNotEmpty && selectedSemester > 0) {
+          _fetchScheduleFromBackend(isPolling: true);
+          _fetchAvailableElectives(selectedBranch, selectedSemester, isPolling: true);
+        }
+      }
     });
   }
 
@@ -147,10 +156,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     });
   }
 
-  Future<void> _fetchAvailableElectives(String branch, int semester) async {
+  Future<void> _fetchAvailableElectives(String branch, int semester, {bool isPolling = false}) async {
     final cacheKey = 'cached_electives_${branch}_$semester';
     bool hasCache = false;
-    List<dynamic> cachedRawData = [];
+    String? localUpdatedAt;
 
     // 1. Try to load from cache
     try {
@@ -159,14 +168,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         final decoded = jsonDecode(cached);
         if (decoded is Map && decoded.containsKey('raw') && decoded.containsKey('grouped')) {
           final raw = decoded['raw'] as List;
+          localUpdatedAt = decoded['updatedAt'] as String?;
           final Map<String, List<String>> grouped = {};
           (decoded['grouped'] as Map).forEach((key, val) {
             grouped[key] = List<String>.from(val as List);
           });
           
           hasCache = true;
-          cachedRawData = raw;
-          if (mounted) {
+          if (mounted && !isPolling) {
             setState(() {
               rawElectiveData = raw;
               availableElectives = grouped;
@@ -179,15 +188,35 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       debugPrint('Error reading electives cache: $e');
     }
 
-    // 2. Fetch from backend
     try {
-      final response = await http.get(
-        Uri.parse('${Config.electiveBaseEndpoint}/$branch/$semester'),
-      ).timeout(const Duration(seconds: 7));
+      // 2. Check metadata endpoint
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final metaUrl = '${Config.electiveBaseEndpoint}/$branch/$semester/metadata?t=$timestamp';
+      final metaResponse = await TokenRefreshService.authenticatedGet(metaUrl).timeout(const Duration(seconds: 5));
+
+      if (metaResponse.statusCode == 200) {
+        final metaData = jsonDecode(metaResponse.body);
+        final serverUpdatedAt = metaData['updatedAt'];
+
+        if (hasCache && serverUpdatedAt != null) {
+          if (localUpdatedAt == serverUpdatedAt) {
+            return; // Up to date
+          } else if (isPolling && mounted) {
+            _showElectiveUpdateNotification(branch, semester);
+            return;
+          }
+        }
+      }
+
+      // 3. Fetch full electives payload
+      final url = '${Config.electiveBaseEndpoint}/$branch/$semester?t=$timestamp';
+      final response = await TokenRefreshService.authenticatedGet(url).timeout(const Duration(seconds: 7));
+      
       if (response.statusCode == 200) {
         final resData = jsonDecode(response.body);
         if (resData['success'] == true && resData['data'] != null) {
           final electivesList = resData['data']['electives'] as List;
+          final serverUpdatedAtStr = resData['data']['updatedAt'] as String?;
           final Map<String, List<String>> grouped = {};
           for (var item in electivesList) {
             final group = item['electiveGroup'] as String;
@@ -197,22 +226,18 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
           // Save to cache
           final cacheData = {
+            'updatedAt': serverUpdatedAtStr,
             'raw': electivesList,
             'grouped': grouped,
           };
           await SharedPreferencesService.setString(cacheKey, jsonEncode(cacheData));
 
-          // Only update UI if the fetched electives differ from what we have
-          final String fetchedStr = jsonEncode(electivesList);
-          final String cachedStr = jsonEncode(cachedRawData);
-          if (fetchedStr != cachedStr || !hasCache) {
-            if (mounted) {
-              setState(() {
-                rawElectiveData = electivesList;
-                availableElectives = grouped;
-              });
-              await _loadSavedElectivePreferences();
-            }
+          if (mounted) {
+            setState(() {
+              rawElectiveData = electivesList;
+              availableElectives = grouped;
+            });
+            await _loadSavedElectivePreferences();
           }
           return;
         }
@@ -220,13 +245,28 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     } catch (e) {
       debugPrint('Error fetching electives: $e');
     }
-    if (!hasCache && mounted) {
+    
+    if (!hasCache && mounted && !isPolling) {
       setState(() {
         rawElectiveData = [];
         availableElectives = {};
         selectedElectives = {};
       });
     }
+  }
+
+  void _showElectiveUpdateNotification(String branch, int semester) {
+    if (!mounted) return;
+    EduMateToast.showCompact(
+      context,
+      message: 'Electives updated by admin',
+      isSuccess: true,
+      actionLabel: 'Refresh',
+      onActionTap: () {
+        _fetchAvailableElectives(branch, semester, isPolling: false);
+      },
+      duration: const Duration(seconds: 10),
+    );
   }
 
   Future<Map<String, List<String>>> _getElectivesForSettings(String branch, int semester) async {
@@ -412,20 +452,19 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     return null;
   }
 
-  Future<void> _fetchScheduleFromBackend() async {
-
+  Future<void> _fetchScheduleFromBackend({bool isPolling = false}) async {
     final currentRequestId = ++_lastRequestId;
-    final requestedSemester = selectedSemester; // Capture what class was requested
+    final requestedSemester = selectedSemester;
     final requestedBranch = selectedBranch;
 
-    // Try to load from cache first
+    // Load from cache
     final cachedData = await _getCachedScheduleData(
       requestedBranch,
       requestedSemester.toString(),
     );
-    bool hasCache = false;
-    if (cachedData != null) {
-      hasCache = true;
+    final hasCache = cachedData != null;
+    
+    if (hasCache && !isPolling) {
       if (mounted) {
         setState(() {
           scheduleData = cachedData;
@@ -434,74 +473,70 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       }
     }
 
-    // If no cache, set loading to true
-    if (!hasCache) {
-      if (mounted) {
-        setState(() {
-          isLoading = true;
-        });
-      }
+    // Set loading state if not polling and no cache
+    if (!hasCache && !isPolling && mounted) {
+      setState(() {
+        isLoading = true;
+      });
     }
 
     try {
+      // 1. Check Metadata Endpoint
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final url = '${Config.scheduleBaseEndpoint}/$requestedBranch/$requestedSemester?t=$timestamp';
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-      ).timeout(const Duration(seconds: 7));
+      final metaUrl = '${Config.scheduleBaseEndpoint}/$requestedBranch/$requestedSemester/metadata?t=$timestamp';
+      final metaResponse = await TokenRefreshService.authenticatedGet(metaUrl).timeout(const Duration(seconds: 5));
 
-      // 🔥 CRITICAL: Check if this is still the latest request
-      if (currentRequestId != _lastRequestId) {
-        return; // Discard this response, don't update UI
+      if (metaResponse.statusCode == 200) {
+        final metaData = jsonDecode(metaResponse.body);
+        final serverUpdatedAt = metaData['updatedAt'];
+
+        // If we have cache, compare timestamps
+        if (hasCache && serverUpdatedAt != null) {
+          final localUpdatedAt = cachedData['updatedAt'];
+          
+          if (localUpdatedAt == serverUpdatedAt) {
+            // Data is up to date, no need to fetch full payload
+            if (!isPolling && mounted) {
+              setState(() => isLoading = false);
+            }
+            return; 
+          } else if (isPolling && mounted) {
+            // Data changed while polling, show notification!
+            _showUpdateNotification();
+            return;
+          }
+        }
       }
+
+      // 2. Fetch full schedule if no cache or outdated
+      final url = '${Config.scheduleBaseEndpoint}/$requestedBranch/$requestedSemester?t=$timestamp';
+      final response = await TokenRefreshService.authenticatedGet(url).timeout(const Duration(seconds: 7));
+
+      if (currentRequestId != _lastRequestId) return; // Discard if user changed tabs
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
-        // Handle the API response structure: { success: true, data: classSchedule }
         if (responseData is Map && responseData.containsKey('data')) {
           final classData = responseData['data'];
-
-          // Cache the schedule data for offline use
           await _cacheScheduleData(requestedBranch, requestedSemester.toString(), classData);
 
-          // Update UI only if data changed or we didn't have cached data
-          final String classDataStr = jsonEncode(classData);
-          final String cachedDataStr = jsonEncode(cachedData);
-          if (classDataStr != cachedDataStr || !hasCache) {
-            if (mounted) {
-              setState(() {
-                scheduleData = classData;
-                isLoading = false;
-              });
-            }
+          if (mounted) {
+            setState(() {
+              scheduleData = classData;
+              isLoading = false;
+            });
           }
         } else {
-          // Cache the schedule data for offline use
-          await _cacheScheduleData(
-            requestedBranch,
-            requestedSemester.toString(),
-            responseData,
-          );
-          
-          final String responseDataStr = jsonEncode(responseData);
-          final String cachedDataStr = jsonEncode(cachedData);
-          if (responseDataStr != cachedDataStr || !hasCache) {
-            if (mounted) {
-              setState(() {
-                scheduleData = responseData;
-                isLoading = false;
-              });
-            }
+          await _cacheScheduleData(requestedBranch, requestedSemester.toString(), responseData);
+          if (mounted) {
+            setState(() {
+              scheduleData = responseData;
+              isLoading = false;
+            });
           }
         }
       } else if (response.statusCode == 404) {
-        // If 404 and we don't have cache, set schedule to null
         if (!hasCache && mounted) {
           setState(() {
             scheduleData = null;
@@ -509,13 +544,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           });
         }
       } else {
-        throw Exception('Failed to load schedule: ${response.statusCode}');
+        if (!hasCache && mounted) setState(() => isLoading = false);
       }
     } catch (e) {
       debugPrint('Error fetching schedule from backend: $e');
       if (mounted) {
         setState(() {
-          // If we had cache, preserve it. Else set to null.
           if (!hasCache) {
             scheduleData = null;
           }
@@ -523,6 +557,20 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         });
       }
     }
+  }
+
+  void _showUpdateNotification() {
+    if (!mounted) return;
+    EduMateToast.showCompact(
+      context,
+      message: 'Schedule updated by admin',
+      isSuccess: true,
+      actionLabel: 'Refresh',
+      onActionTap: () {
+        _fetchScheduleFromBackend(isPolling: false);
+      },
+      duration: const Duration(seconds: 10),
+    );
   }
 
   List<DateTime> getWeekDates() {

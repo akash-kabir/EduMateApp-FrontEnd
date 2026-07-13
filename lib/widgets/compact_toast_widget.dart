@@ -6,12 +6,18 @@ class CompactToastWidget extends StatefulWidget {
   final String message;
   final bool isSuccess;
   final VoidCallback onDismiss;
+  final String? actionLabel;
+  final VoidCallback? onActionTap;
+  final Duration? duration;
 
   const CompactToastWidget({
     super.key,
     required this.message,
     required this.isSuccess,
     required this.onDismiss,
+    this.actionLabel,
+    this.onActionTap,
+    this.duration,
   });
 
   @override
@@ -70,7 +76,7 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
     });
 
     // Auto-dismiss duration
-    Timer(const Duration(milliseconds: 3800), () {
+    Timer(widget.duration ?? const Duration(milliseconds: 3800), () {
       if (mounted) {
         setState(() {
           _isExpanded = false;
@@ -112,8 +118,9 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: maxTextWidth);
     
+    double actionWidth = widget.actionLabel != null ? 80.0 : 0.0;
     _isDoubleLine = textPainter.height > 22.0;
-    _targetWidth = (textPainter.width + 72.0).clamp(56.0, maxAllowedWidth);
+    _targetWidth = (textPainter.width + 72.0 + actionWidth).clamp(56.0, maxAllowedWidth);
     _targetHeight = _isDoubleLine ? 68.0 : 52.0;
   }
 
@@ -221,6 +228,33 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
                                 ),
                               ),
                             ),
+                            if (widget.actionLabel != null)
+                              AnimatedOpacity(
+                                duration: const Duration(milliseconds: 150),
+                                opacity: _isExpanded ? 1.0 : 0.0,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 12.0),
+                                  child: GestureDetector(
+                                    onTap: widget.onActionTap,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+                                      decoration: BoxDecoration(
+                                        color: accentColor.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(12.0),
+                                      ),
+                                      child: Text(
+                                        widget.actionLabel!,
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 12.0,
+                                          fontWeight: FontWeight.w700,
+                                          color: accentColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
