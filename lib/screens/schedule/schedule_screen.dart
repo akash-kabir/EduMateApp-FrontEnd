@@ -8,8 +8,9 @@ import '../../constants/app_constants.dart';
 import '../../config.dart';
 import '../../services/shared_preferences_service.dart';
 import '../../services/token_refresh_service.dart';
-import '../../widgets/success_card_widget.dart';
+
 import '../../widgets/toast_manager.dart';
+import 'schedule_settings_modal.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -156,7 +157,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     });
   }
 
-  Future<void> _fetchAvailableElectives(String branch, int semester, {bool isPolling = false}) async {
+  Future<void> _fetchAvailableElectives(String branch, int semester, {bool isPolling = false, bool skipLoadPreferences = false}) async {
     final cacheKey = 'cached_electives_${branch}_$semester';
     bool hasCache = false;
     String? localUpdatedAt;
@@ -180,7 +181,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               rawElectiveData = raw;
               availableElectives = grouped;
             });
-            await _loadSavedElectivePreferences();
+            if (!skipLoadPreferences) {
+              await _loadSavedElectivePreferences();
+            }
           }
         }
       }
@@ -237,7 +240,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               rawElectiveData = electivesList;
               availableElectives = grouped;
             });
-            await _loadSavedElectivePreferences();
+            if (!skipLoadPreferences) {
+              await _loadSavedElectivePreferences();
+            }
           }
           return;
         }
@@ -1425,419 +1430,71 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
-    void _showSettingsBottomSheet() {
-    int tempSemester = selectedSemester;
-    String tempBranch = selectedBranch.isEmpty ? 'CSE' : selectedBranch;
-    String tempSection = selectedSection.isEmpty 
-        ? (classesPerBranch[tempBranch]?.first ?? '') 
-        : selectedSection;
-
-    Map<String, List<String>> tempAvailableElectives = Map.from(availableElectives);
-    Map<String, String> tempSelectedElectives = Map.from(selectedElectives);
+  // Shared save handler for both settings variants
+  void _onSettingsSaved(String branch, int semester, String section, Map<String, String> electives, bool savePref) async {
+    setState(() {
+      selectedBranch = branch;
+      selectedSemester = semester;
+      selectedSection = section;
+      selectedElectives = electives;
+      if (savePref) {
+        savePreference = true;
+      }
+      scheduleData = null;
+      isLoading = true;
+    });
     
-    // Hardcode Semester 5 elective group keys immediately so button appears instantly
-    if (tempSemester == 5) {
-      if (!tempAvailableElectives.containsKey('PE-1')) tempAvailableElectives['PE-1'] = [];
-      if (!tempAvailableElectives.containsKey('PE-2')) tempAvailableElectives['PE-2'] = [];
-      if (!tempAvailableElectives.containsKey('K-Explore')) tempAvailableElectives['K-Explore'] = [];
+    if (savePref) {
+      await _savePreference(branch, semester.toString(), '1st Year', section, true);
+      
+      for (final entry in electives.entries) {
+        final group = entry.key;
+        final val = entry.value;
+        if (val != 'Not Selected') {
+          await SharedPreferencesService.setString('selectedElective_${branch}_${semester}_$group', val);
+        } else {
+          await SharedPreferencesService.remove('selectedElective_${branch}_${semester}_$group');
+        }
+      }
     }
 
-    // Eagerly kick off elective options fetch so data is ready before user opens the sheet
-    _getElectivesForSettings(tempBranch, tempSemester).then((electives) {
-      electives.forEach((group, options) {
-        tempAvailableElectives[group] = options;
-        // Do NOT auto-select first option; leave as 'Not Selected' until user chooses
-      });
-    });
+    // If we are just showing (savePref == false), we skip loading preferences 
+    // so we don't overwrite the temporary electives we just set in state.
+    _fetchAvailableElectives(branch, semester, skipLoadPreferences: !savePref);
+    _fetchScheduleFromBackend();
+    
+    if (mounted) {
+      Navigator.pop(context);
+      if (savePref) {
+        EduMateToast.showSuccessCard(
+          context,
+          title: 'Preference Saved',
+          description: 'Your settings have been saved successfully.',
+        );
+      }
+    }
+  }
 
-    // Set remember preference to always true as requested
-    setState(() {
-      savePreference = true;
-    });
-
-    List<String> tempSections = [];
-    FixedExtentScrollController? sectionController;
-
-    showCupertinoModalPopup<void>(
+  void _showSettingsBottomSheet() {
+    showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setModalState) {
-          // Initialize tempSections if empty
-          if (tempSections.isEmpty) {
-            _fetchSectionsList(tempBranch, tempSemester).then((sections) {
-              if (mounted) {
-                setModalState(() {
-                  tempSections = sections;
-                  if (sections.isNotEmpty && !sections.contains(tempSection)) {
-                    tempSection = sections.first;
-                  }
-                  final index = sections.indexOf(tempSection);
-                  if (index != -1 && sectionController != null && sectionController!.hasClients) {
-                    sectionController!.jumpToItem(index);
-                  }
-                });
-              }
-            });
-          }
-
-          final currentList = tempSections.isNotEmpty ? tempSections : (classesPerBranch[tempBranch] ?? []);
-          final sectionIndex = currentList.contains(tempSection) 
-              ? currentList.indexOf(tempSection) 
-              : 0;
-
-          if (sectionController == null) {
-            sectionController = FixedExtentScrollController(initialItem: sectionIndex);
-          }
-
-          void updateElectives(String branch, int sem) {
-            _getElectivesForSettings(branch, sem).then((electives) {
-              setModalState(() {
-                tempAvailableElectives = electives;
-                if (sem == 5) {
-                  if (!tempAvailableElectives.containsKey('PE-1')) tempAvailableElectives['PE-1'] = [];
-                  if (!tempAvailableElectives.containsKey('PE-2')) tempAvailableElectives['PE-2'] = [];
-                  if (!tempAvailableElectives.containsKey('K-Explore')) tempAvailableElectives['K-Explore'] = [];
-                }
-                // Do NOT auto-select first option; leave as 'Not Selected' until user chooses
-                electives.forEach((group, options) {
-                  // only keep existing selections valid
-                });
-              });
-            });
-          }
-
-          void updateSections(String branch, int sem) {
-            sectionController = null; // reset to re-initialize with new branch/semester index
-            _fetchSectionsList(branch, sem).then((sections) {
-              if (mounted) {
-                setModalState(() {
-                  tempSections = sections;
-                  if (sections.isNotEmpty) {
-                    if (!sections.contains(tempSection)) {
-                      tempSection = sections.first;
-                    }
-                  } else {
-                    tempSection = '';
-                  }
-                  final index = sections.indexOf(tempSection);
-                  if (index != -1 && sectionController != null && sectionController!.hasClients) {
-                    sectionController!.jumpToItem(index);
-                  }
-                });
-              }
-            });
-          }
-
-          return Material(
-            type: MaterialType.transparency,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(24.0),
-                topRight: Radius.circular(24.0),
-              ),
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
-                child: Container(
-                  height: tempAvailableElectives.isNotEmpty ? 540 : 480,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F0F11).withValues(alpha: 0.80),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24.0),
-                      topRight: Radius.circular(24.0),
-                    ),
-                    border: Border(
-                      top: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        width: 1.0,
-                      ),
-                    ),
-                  ),
-                  child: SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                CupertinoButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-                                ),
-                                const Text('Timesheet Settings', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                                CupertinoButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () {
-                                    setState(() {
-                                      selectedBranch = tempBranch;
-                                      selectedSemester = tempSemester;
-                                      selectedSection = tempSection;
-                                      availableElectives = tempAvailableElectives;
-                                      selectedElectives = tempSelectedElectives;
-                                      scheduleData = null;
-                                      isLoading = true;
-                                    });
-                                    _savePreference(tempBranch, tempSemester.toString(), '1st Year', tempSection, savePreference);
-                                    
-                                    // Save/remove elective selections persistently
-                                    tempSelectedElectives.forEach((group, val) {
-                                      if (savePreference) {
-                                        SharedPreferencesService.setString('selectedElective_${tempBranch}_${tempSemester}_$group', val);
-                                      } else {
-                                        SharedPreferencesService.remove('selectedElective_${tempBranch}_${tempSemester}_$group');
-                                      }
-                                    });
-
-                                    // Refresh schedule
-                                    _fetchAvailableElectives(tempBranch, tempSemester);
-                                    _fetchScheduleFromBackend();
-                                    Navigator.pop(context);
-
-                                    // Show success card overlay
-                                    late OverlayEntry overlayEntry;
-                                    overlayEntry = OverlayEntry(
-                                      builder: (_) => SuccessCardWidget(
-                                        title: 'Preference Saved',
-                                        description: 'Your settings have been saved successfully.',
-                                        onDismiss: () => overlayEntry.remove(),
-                                      ),
-                                    );
-                                    Overlay.of(context).insert(overlayEntry);
-                                  },
-                                  child: const Text('Save', style: TextStyle(color: CupertinoColors.activeGreen, fontWeight: FontWeight.bold)),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Divider(color: Colors.white10),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Select Branch', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white70)),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: CupertinoSlidingSegmentedControl<String>(
-                                    groupValue: tempBranch,
-                                    thumbColor: AuthPalette.coral.withValues(alpha: 0.70),
-                                    backgroundColor: Colors.white.withValues(alpha: 0.06),
-                                    children: {
-                                      'CSE': _buildSegmentText('CSE'),
-                                      'CSCE': _buildSegmentText('CSCE'),
-                                      'IT': _buildSegmentText('IT'),
-                                      'CSSE': _buildSegmentText('CSSE'),
-                                    },
-                                    onValueChanged: (val) {
-                                      if (val != null) {
-                                        setModalState(() { 
-                                          tempBranch = val; 
-                                        });
-                                        updateSections(tempBranch, tempSemester);
-                                        updateElectives(tempBranch, tempSemester);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Select Semester', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white70)),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: CupertinoSlidingSegmentedControl<int>(
-                                    groupValue: tempSemester,
-                                    thumbColor: AuthPalette.coral.withValues(alpha: 0.70),
-                                    backgroundColor: Colors.white.withValues(alpha: 0.06),
-                                    children: {
-                                      1: _buildSegmentText('1st'),
-                                      2: _buildSegmentText('2nd'),
-                                      3: _buildSegmentText('3rd'),
-                                      4: _buildSegmentText('4th'),
-                                      5: _buildSegmentText('5th'),
-                                      6: _buildSegmentText('6th'),
-                                      7: _buildSegmentText('7th'),
-                                      8: _buildSegmentText('8th'),
-                                    },
-                                    onValueChanged: (val) {
-                                      if (val != null) {
-                                        setModalState(() { tempSemester = val; });
-                                        updateSections(tempBranch, tempSemester);
-                                        updateElectives(tempBranch, tempSemester);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          // Electives selection area button if available
-                          if (tempAvailableElectives.isNotEmpty) ...[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                              child: SizedBox(
-                                width: double.infinity,
-                                child: CupertinoButton(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  color: Colors.white.withValues(alpha: 0.06),
-                                  borderRadius: BorderRadius.circular(12),
-                                  onPressed: () {
-                                    _showElectiveSelectionSheet(
-                                      context: context,
-                                      tempBranch: tempBranch,
-                                      tempSemester: tempSemester,
-                                      tempAvailableElectives: tempAvailableElectives,
-                                      tempSelectedElectives: tempSelectedElectives,
-                                      setParentState: setModalState,
-                                    );
-                                  },
-                                  child: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(CupertinoIcons.book_fill, color: AuthPalette.coral, size: 18),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Select Electives',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Select Section', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white70)),
-                                  Expanded(
-                                    child: CupertinoPicker(
-                                      key: ValueKey('${tempBranch}_${tempSemester}'), // Stable key to avoid disposal on list load
-                                      magnification: 1.25,
-                                      squeeze: 1.1,
-                                      useMagnifier: true,
-                                      looping: true,
-                                      itemExtent: 36.0,
-                                      scrollController: sectionController,
-                                      onSelectedItemChanged: (int index) {
-                                        final list = tempSections.isNotEmpty ? tempSections : (classesPerBranch[tempBranch] ?? []);
-                                        final wrappedIndex = index % list.length;
-                                        setModalState(() { tempSection = list[wrappedIndex]; });
-                                      },
-                                      children: (tempSections.isNotEmpty ? tempSections : (classesPerBranch[tempBranch] ?? [])).map((s) => Center(child: Text(s, style: const TextStyle(color: Colors.white, fontSize: 16)))).toList(),
-                                    ),
-                                  ),
-                               ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-Widget _buildSegmentText(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => SettingsBottomSheet(
+        initialBranch: selectedBranch,
+        initialSemester: selectedSemester,
+        initialSection: selectedSection,
+        initialSelectedElectives: selectedElectives,
+        branches: classesPerBranch.keys.toList(),
+        hasPreference: savePreference, // Pass the savePreference flag
+        fetchSections: _fetchSectionsList,
+        fetchElectives: _getElectivesForSettings,
+        onSave: _onSettingsSaved,
       ),
     );
   }
 
-  void _showItemPicker({
-    required BuildContext context,
-    required String title,
-    required List<String> items,
-    required String selectedItem,
-    required ValueChanged<String> onSelected,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    int tempIndex = items.indexOf(selectedItem);
-    if (tempIndex == -1) tempIndex = 0;
 
-    showCupertinoModalPopup<void>(
-      context: context,
-      builder: (BuildContext context) => Container(
-        height: 280,
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        child: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              Container(
-                color: isDark ? Colors.black12 : Colors.grey[200],
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CupertinoButton(
-                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    Text(title, style: TextStyle(fontFamily: 'Poppins', color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 16, decoration: TextDecoration.none)),
-                    CupertinoButton(
-                      child: const Text('Done', style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold)),
-                      onPressed: () {
-                        onSelected(items[tempIndex]);
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  key: ValueKey(items.hashCode),
-                  itemExtent: 36.0,
-                  magnification: 1.25,
-                  useMagnifier: true,
-                  scrollController: FixedExtentScrollController(initialItem: tempIndex),
-                  onSelectedItemChanged: (index) {
-                    tempIndex = index;
-                  },
-                  children: items.map((item) => Center(child: Text(item, style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 18, decoration: TextDecoration.none)))).toList(),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Future<List<String>> _fetchSectionsList(String branch, int semester) async {
     try {
@@ -1883,208 +1540,6 @@ Widget _buildSegmentText(String text) {
 
   List<String> _generateSectionNames(String branch, int semester, int count) {
     return List.generate(count, (i) => '$branch-${i + 1}');
-  }
-
-  void _showElectiveSelectionSheet({
-    required BuildContext context,
-    required String tempBranch,
-    required int tempSemester,
-    required Map<String, List<String>> tempAvailableElectives,
-    required Map<String, String> tempSelectedElectives,
-    required StateSetter setParentState,
-  }) {
-    showCupertinoModalPopup<void>(
-      context: context,
-      builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setModalState) {
-          return Material(
-            type: MaterialType.transparency,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(24.0),
-                topRight: Radius.circular(24.0),
-              ),
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
-                child: Container(
-                  height: 380,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F0F11).withValues(alpha: 0.85),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24.0),
-                      topRight: Radius.circular(24.0),
-                    ),
-                    border: Border(
-                      top: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        width: 1.0,
-                      ),
-                    ),
-                  ),
-                  child: SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Select Electives',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                CupertinoButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () {
-                                    // Save elective selections persistently to SharedPreferences
-                                    tempSelectedElectives.forEach((group, val) {
-                                      SharedPreferencesService.setString(
-                                        'selectedElective_${tempBranch}_${tempSemester}_$group',
-                                        val,
-                                      );
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text(
-                                    'Done',
-                                    style: TextStyle(
-                                      color: AuthPalette.coral,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Divider(color: Colors.white10),
-                          Expanded(
-                            child: ListView(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                              children: tempAvailableElectives.entries.map((entry) {
-                                final groupName = entry.key;
-                                final electiveOptions = entry.value;
-                                final selectedValue = tempSelectedElectives[groupName] ?? 'Not Selected';
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 14.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        groupName,
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          if (electiveOptions.isEmpty) {
-                                            // Fetch inline and show picker once loaded
-                                            _getElectivesForSettings(
-                                              selectedBranch.isEmpty ? 'CSE' : selectedBranch,
-                                              selectedSemester,
-                                            ).then((fetched) {
-                                              final freshOptions = fetched[groupName] ?? [];
-                                              if (freshOptions.isNotEmpty) {
-                                                // Update the maps
-                                                setModalState(() {
-                                                  tempAvailableElectives[groupName] = freshOptions;
-                                                });
-                                                setParentState(() {
-                                                  tempAvailableElectives[groupName] = freshOptions;
-                                                });
-                                                if (!context.mounted) return;
-                                                _showItemPicker(
-                                                  context: context,
-                                                  title: 'Select $groupName',
-                                                  items: freshOptions,
-                                                  selectedItem: freshOptions.first,
-                                                  onSelected: (val) {
-                                                    setModalState(() {
-                                                      tempSelectedElectives[groupName] = val;
-                                                    });
-                                                    setParentState(() {
-                                                      tempSelectedElectives[groupName] = val;
-                                                    });
-                                                  },
-                                                );
-                                              }
-                                            });
-                                            return;
-                                          }
-                                          _showItemPicker(
-                                            context: context,
-                                            title: 'Select $groupName',
-                                            items: electiveOptions,
-                                            selectedItem: selectedValue,
-                                            onSelected: (val) {
-                                              setModalState(() {
-                                                tempSelectedElectives[groupName] = val;
-                                              });
-                                              setParentState(() {
-                                                tempSelectedElectives[groupName] = val;
-                                              });
-                                            },
-                                          );
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.06),
-                                            borderRadius: BorderRadius.circular(10),
-                                            border: Border.all(
-                                              color: Colors.white.withValues(alpha: 0.04),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                selectedValue,
-                                                style: const TextStyle(
-                                                  color: AuthPalette.coral,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 6),
-                                              const Icon(
-                                                CupertinoIcons.chevron_down,
-                                                color: Colors.white70,
-                                                size: 14,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
 }
 
