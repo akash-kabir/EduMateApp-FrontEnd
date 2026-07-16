@@ -99,6 +99,60 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await _httpClient.post(
+        Uri.parse(Config.forgotPasswordEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Failed to send OTP'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> verifyOTP(String email, String otp) async {
+    try {
+      final response = await _httpClient.post(
+        Uri.parse(Config.verifyOTPEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'otp': otp}),
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, 'resetToken': data['resetToken']};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Invalid OTP'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> resetPassword(String resetToken, String newPassword) async {
+    try {
+      final response = await _httpClient.post(
+        Uri.parse(Config.resetPasswordEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'resetToken': resetToken, 'newPassword': newPassword}),
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Failed to reset password'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error: $e'};
+    }
+  }
+
   // ==================== Profile Management ====================
 
   /// Check if user has completed their profile setup
