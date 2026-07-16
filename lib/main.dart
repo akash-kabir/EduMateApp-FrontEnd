@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'provider/animation_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'screens/splash/splash_screen.dart';
-
+import 'screens/pwa_install_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -45,7 +46,9 @@ class _EduMateAppState extends State<EduMateApp> with TickerProviderStateMixin {
         theme: AppTheme.darkTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.dark,
-        home: const SplashScreen(),
+        home: (kIsWeb && defaultTargetPlatform == TargetPlatform.iOS)
+            ? const PwaInstallScreen()
+            : const SplashScreen(),
       ),
     );
   }
