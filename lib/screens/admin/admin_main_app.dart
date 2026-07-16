@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'admin_screens/admin_home_screen.dart';
 import 'admin_screens/admin_upload_screen.dart';
-import 'admin_screens/admin_poi_management.dart';
+import 'admin_screens/admin_settings_screen.dart';
 
 class AdminMainApp extends StatefulWidget {
   final bool fromStudentView;
@@ -13,7 +13,7 @@ class AdminMainApp extends StatefulWidget {
 }
 
 class _AdminMainAppState extends State<AdminMainApp> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1; // Default to Home (middle tab)
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +28,9 @@ class _AdminMainAppState extends State<AdminMainApp> {
           child: IndexedStack(
             index: _selectedIndex,
             children: [
-              AdminHomeScreen(fromStudentView: widget.fromStudentView),
               const AdminUploadScreen(),
-              const AdminPoiManagementScreen(),
+              AdminHomeScreen(fromStudentView: widget.fromStudentView),
+              const AdminSettingsScreen(),
             ],
           ),
         ),
@@ -70,13 +70,6 @@ class _AdminNavBar extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Padding(
               padding: const EdgeInsets.only(top: 16.0),
-              child: Icon(CupertinoIcons.home),
-            ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: const EdgeInsets.only(top: 16.0),
               child: Icon(CupertinoIcons.cloud_upload),
             ),
             label: '',
@@ -84,7 +77,14 @@ class _AdminNavBar extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Padding(
               padding: const EdgeInsets.only(top: 16.0),
-              child: Icon(CupertinoIcons.map_pin_ellipse),
+              child: Icon(CupertinoIcons.home),
+            ),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Icon(CupertinoIcons.settings),
             ),
             label: '',
           ),

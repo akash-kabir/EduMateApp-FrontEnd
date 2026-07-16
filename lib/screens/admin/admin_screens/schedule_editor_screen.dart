@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../widgets/custom_glass_dialog.dart';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
-import '../../../widgets/bottom_sheet_selector.dart';
 import 'dart:convert';
 import '../../../config.dart';
 import '../../../widgets/toast_manager.dart';
@@ -11,12 +10,10 @@ import '../../../services/shared_preferences_service.dart';
 import 'dart:math' as math;
 
 class ScheduleEditorScreen extends StatefulWidget {
-  final String branch;
   final int semester;
 
   const ScheduleEditorScreen({
     super.key,
-    required this.branch,
     required this.semester,
   });
 
@@ -31,7 +28,60 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
   String? _originalClassesData;
 
   List<dynamic> _classesData = [];
+  String? _selectedBranch;
   String? _selectedSection;
+
+  List<String> get _availableBranches {
+    final Set<String> branches = {};
+    for (var c in _classesData) {
+      final name = c['name'] as String;
+      final match = RegExp(r'^([a-zA-Z\s\-]+?)\s*(\d+)$').firstMatch(name.trim());
+      if (match != null) {
+        branches.add(match.group(1)!.trim());
+      } else {
+        branches.add(name);
+      }
+    }
+    return branches.toList()..sort();
+  }
+
+  List<String> get _availableSections {
+    if (_selectedBranch == null) return [];
+    final List<String> sections = [];
+    for (var c in _classesData) {
+      final name = c['name'] as String;
+      final match = RegExp(r'^([a-zA-Z\s\-]+?)\s*(\d+)$').firstMatch(name.trim());
+      if (match != null) {
+        if (match.group(1)!.trim() == _selectedBranch) {
+          sections.add(match.group(2)!.trim());
+        }
+      } else {
+        if (name == _selectedBranch) {
+          sections.add('');
+        }
+      }
+    }
+    return sections..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
+  }
+
+  /// Finds the actual stored class name in _classesData for the given branch+section.
+  /// This avoids bugs where stored name is "CS1" but we reconstruct "CS 1".
+  String _resolveClassName(String? branch, String? section) {
+    if (branch == null || section == null) return '';
+    if (section.isEmpty) return branch;
+    // Try to find by parsing each class name
+    for (var c in _classesData) {
+      final name = c['name'] as String;
+      final match = RegExp(r'^([a-zA-Z\s\-]+?)\s*(\d+)$').firstMatch(name.trim());
+      if (match != null) {
+        if (match.group(1)!.trim() == branch && match.group(2)!.trim() == section) {
+          return name; // Return the original stored name
+        }
+      }
+    }
+    // Fallback: reconstruct (for new classes being added)
+    return '$branch$section';
+  }
 
   Map<int, List<Map<String, dynamic>>> _scheduleData = {
     1: [], 2: [], 3: [], 4: [], 5: [],
@@ -51,7 +101,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
     setState(() => _isLoading = true);
     try {
       final response = await http.get(
-        Uri.parse('${Config.scheduleBaseEndpoint}/${widget.branch}/${widget.semester}?t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse('${Config.scheduleBaseEndpoint}/${widget.semester}?t=${DateTime.now().millisecondsSinceEpoch}'),
       );
 
       if (response.statusCode == 200) {
@@ -60,13 +110,20 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
         if (data['classes'] != null && (data['classes'] as List).isNotEmpty) {
           _classesData = data['classes'];
           _originalClassesData = jsonEncode(_classesData);
-          _selectedSection = _classesData.first['name'];
+          
+          if (_availableBranches.isNotEmpty) {
+            _selectedBranch = _availableBranches.first;
+            if (_availableSections.isNotEmpty) {
+              _selectedSection = _availableSections.first;
+              _loadScheduleForSection(_resolveClassName(_selectedBranch, _selectedSection));
+            }
+          }
           _selectedDay = 1;
           _isExisting = true;
-          _loadScheduleForSection(_selectedSection!);
         } else {
           _classesData = [];
           _originalClassesData = jsonEncode([]);
+          _selectedBranch = null;
           _selectedSection = null;
           _isExisting = false;
         }
@@ -117,12 +174,13 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
         }
       }
       
-      final sectionIndex = _classesData.indexWhere((s) => s['name'] == _selectedSection);
+      final fullClassName = _resolveClassName(_selectedBranch, _selectedSection);
+      final sectionIndex = _classesData.indexWhere((s) => s['name'] == fullClassName);
       if (sectionIndex >= 0) {
         _classesData[sectionIndex]['schedule'] = finalScheduleData;
       } else {
         _classesData.add({
-          'name': _selectedSection,
+          'name': fullClassName,
           'schedule': finalScheduleData,
         });
       }
@@ -140,7 +198,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
     final confirmed = await showConfirmationDialog(
       context: context,
       title: 'Save Changes',
-      description: 'Are you sure you want to save the schedule changes for ${widget.branch} Semester ${widget.semester}?',
+      description: 'Are you sure you want to save the schedule changes for Semester ${widget.semester}?',
       confirmButtonText: 'Save',
       iconData: CupertinoIcons.checkmark_seal_fill,
     );
@@ -153,7 +211,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
     setState(() => _isSaving = true);
     try {
       final token = await SharedPreferencesService.getToken();
-      final url = Uri.parse('${Config.scheduleBaseEndpoint}/${widget.branch}/${widget.semester}');
+      final url = Uri.parse('${Config.scheduleBaseEndpoint}/${widget.semester}');
 
       final payload = jsonEncode({
         'classes': _classesData
@@ -439,29 +497,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
 
 
 
-  Widget _buildSummaryItem(String label, String value, bool isDark) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isDark ? Colors.grey[400] : Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            color: isDark ? Colors.white : Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -484,35 +520,59 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                           child: Row(
                             children: [
                               Expanded(
-                                child: BottomSheetSelector<String>(
-                                  value: _selectedSection,
-                                  items: _classesData.map<String>((s) => s['name'] as String).toList(),
-                                  hint: _classesData.isEmpty ? 'No sections added' : 'Select a section',
-                                  isAdmin: true,
-                                  labelBuilder: (String val) => val,
-                                  onChanged: (val) {
-                                    if (_selectedSection != null) {
-                                      List<Map<String, dynamic>> finalScheduleData = [];
-                                      for (var day in [1, 2, 3, 4, 5]) {
-                                        if (_scheduleData[day]!.isNotEmpty) {
-                                          finalScheduleData.add({
-                                            'day': day,
-                                            'periods': _scheduleData[day],
-                                          });
-                                        }
-                                      }
-                                      
-                                      final idx = _classesData.indexWhere((c) => c['name'] == _selectedSection);
-                                      if (idx != -1) {
-                                        _classesData[idx]['schedule'] = finalScheduleData;
-                                      }
-                                    }
-
-                                    setState(() {
-                                      _selectedSection = val;
-                                      _loadScheduleForSection(val);
-                                    });
-                                  },
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    const Text(
+                                      'Select Class',
+                                      style: TextStyle(
+                                        color: CupertinoColors.systemGrey,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          if (_classesData.isEmpty) return;
+                                          final allClassNames = _classesData.map((c) => c['name'] as String).toList()..sort();
+                                          _showTwoColumnPicker(
+                                            title: 'Select Class',
+                                            items: allClassNames,
+                                            currentValue: _resolveClassName(_selectedBranch, _selectedSection),
+                                            onSelected: (val) {
+                                              final match = RegExp(r'^([a-zA-Z\s\-]+?)\s*(\d+)$').firstMatch(val.trim());
+                                              setState(() {
+                                                if (match != null) {
+                                                  _selectedBranch = match.group(1)!.trim();
+                                                  _selectedSection = match.group(2)!.trim();
+                                                } else {
+                                                  _selectedBranch = val;
+                                                  _selectedSection = '';
+                                                }
+                                                _loadScheduleForSection(val);
+                                              });
+                                            },
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF1E1E1E),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(24),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _selectedBranch == null ? 'Select Class' : _resolveClassName(_selectedBranch, _selectedSection),
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -683,18 +743,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
-                                    _buildSummaryItem('Branch', widget.branch, isDark),
-                                    _buildSummaryItem('Semester', '${widget.semester}', isDark),
-                                    _buildSummaryItem('Section', _selectedSection ?? 'N/A', isDark),
-                                    _buildSummaryItem('Periods', '${_scheduleData[_selectedDay]?.length ?? 0}', isDark),
-                                  ],
-                                ),
-                              ),
+                              // Info removed as requested
                             ],
                           ),
                         ),
@@ -740,6 +789,146 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                   ),
               ],
             ),
+    );
+  }
+
+  void _showTwoColumnPicker({
+    required String title,
+    required List<String> items,
+    required String? currentValue,
+    required ValueChanged<String> onSelected,
+  }) {
+    // Group items by subject and section
+    final Map<String, Map<String, String>> grouped = {};
+    for (final item in items) {
+      final match = RegExp(r'^([a-zA-Z\s\-]+?)\s*(\d+)$').firstMatch(item.trim());
+      if (match != null) {
+        final subject = match.group(1)!.trim();
+        final section = match.group(2)!.trim();
+        grouped.putIfAbsent(subject, () => {})[section] = item;
+      } else {
+        grouped.putIfAbsent(item, () => {})[''] = item;
+      }
+    }
+
+    final subjects = grouped.keys.toList();
+    if (subjects.isEmpty) return;
+
+    // Determine initial indices
+    int initialSubjectIdx = 0;
+    int initialSectionIdx = 0;
+    if (currentValue != null && currentValue.isNotEmpty) {
+      for (int i = 0; i < subjects.length; i++) {
+        final subject = subjects[i];
+        final sections = grouped[subject]!.keys.toList()..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
+        final sectionIdx = sections.indexWhere((sec) => grouped[subject]![sec] == currentValue);
+        if (sectionIdx != -1) {
+          initialSubjectIdx = i;
+          initialSectionIdx = sectionIdx;
+          break;
+        }
+      }
+    }
+
+    String selectedSubject = subjects[initialSubjectIdx];
+    List<String> currentSections = grouped[selectedSubject]!.keys.toList()..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
+    String currentSelectedSection = currentSections.isNotEmpty ? currentSections[initialSectionIdx] : '';
+
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            height: 300,
+            color: const Color(0xFF1C1C1E),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CupertinoButton(
+                          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        Text(title, style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          decoration: TextDecoration.none,
+                        )),
+                        CupertinoButton(
+                          child: const Text('Done', style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: Color(0xFFFF1744), // Admin accent color
+                            fontWeight: FontWeight.bold,
+                          )),
+                          onPressed: () {
+                            final originalValue = grouped[selectedSubject]?[currentSelectedSection];
+                            if (originalValue != null) {
+                              onSelected(originalValue);
+                            }
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: CupertinoPicker(
+                            itemExtent: 40,
+                            magnification: 1.22,
+                            useMagnifier: true,
+                            scrollController: FixedExtentScrollController(initialItem: initialSubjectIdx),
+                            onSelectedItemChanged: (i) {
+                              setModalState(() {
+                                selectedSubject = subjects[i];
+                                currentSections = grouped[selectedSubject]!.keys.toList()..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
+                                currentSelectedSection = currentSections.isNotEmpty ? currentSections[0] : '';
+                                initialSectionIdx = 0; // reset right column
+                              });
+                            },
+                            children: subjects.map((e) => Center(
+                              child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 20)),
+                            )).toList(),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: currentSections.isEmpty
+                              ? const Center(child: Text('-', style: TextStyle(color: Colors.grey, fontSize: 20)))
+                              : CupertinoPicker(
+                                  itemExtent: 40,
+                                  magnification: 1.22,
+                                  useMagnifier: true,
+                                  scrollController: FixedExtentScrollController(initialItem: initialSectionIdx),
+                                  onSelectedItemChanged: (i) {
+                                    setModalState(() {
+                                      currentSelectedSection = currentSections[i];
+                                    });
+                                  },
+                                  children: currentSections.map((e) => Center(
+                                    child: Text(e.isEmpty ? '-' : e, style: const TextStyle(color: Colors.white, fontSize: 20)),
+                                  )).toList(),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

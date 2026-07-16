@@ -432,20 +432,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
 
-  Future<void> _cacheScheduleData(
-    String branch,
-    String classValue,
-    Map<String, dynamic> data,
-  ) async {
-    final cacheKey = 'schedule_${branch}_$classValue';
+  Future<void> _cacheScheduleData(String semester, dynamic data) async {
+    final cacheKey = 'schedule_$semester';
     await SharedPreferencesService.setString(cacheKey, jsonEncode(data));
   }
 
-  Future<Map<String, dynamic>?> _getCachedScheduleData(
-    String branch,
-    String classValue,
-  ) async {
-    final cacheKey = 'schedule_${branch}_$classValue';
+  Future<Map<String, dynamic>?> _getCachedScheduleData(String semester) async {
+    final cacheKey = 'schedule_$semester';
     final cachedData = await SharedPreferencesService.getString(cacheKey);
     if (cachedData != null) {
       try {
@@ -460,11 +453,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   Future<void> _fetchScheduleFromBackend({bool isPolling = false}) async {
     final currentRequestId = ++_lastRequestId;
     final requestedSemester = selectedSemester;
-    final requestedBranch = selectedBranch;
 
     // Load from cache
     final cachedData = await _getCachedScheduleData(
-      requestedBranch,
       requestedSemester.toString(),
     );
     final hasCache = cachedData != null;
@@ -488,7 +479,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     try {
       // 1. Check Metadata Endpoint
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final metaUrl = '${Config.scheduleBaseEndpoint}/$requestedBranch/$requestedSemester/metadata?t=$timestamp';
+      final metaUrl = '${Config.scheduleBaseEndpoint}/$requestedSemester/metadata?t=$timestamp';
       final metaResponse = await TokenRefreshService.authenticatedGet(metaUrl).timeout(const Duration(seconds: 5));
 
       if (metaResponse.statusCode == 200) {
@@ -514,7 +505,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       }
 
       // 2. Fetch full schedule if no cache or outdated
-      final url = '${Config.scheduleBaseEndpoint}/$requestedBranch/$requestedSemester?t=$timestamp';
+      final url = '${Config.scheduleBaseEndpoint}/$requestedSemester?t=$timestamp';
       final response = await TokenRefreshService.authenticatedGet(url).timeout(const Duration(seconds: 7));
 
       if (currentRequestId != _lastRequestId) return; // Discard if user changed tabs
@@ -524,7 +515,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
         if (responseData is Map && responseData.containsKey('data')) {
           final classData = responseData['data'];
-          await _cacheScheduleData(requestedBranch, requestedSemester.toString(), classData);
+          await _cacheScheduleData(requestedSemester.toString(), classData);
 
           if (mounted) {
             setState(() {
@@ -533,7 +524,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             });
           }
         } else {
-          await _cacheScheduleData(requestedBranch, requestedSemester.toString(), responseData);
+          await _cacheScheduleData(requestedSemester.toString(), responseData);
           if (mounted) {
             setState(() {
               scheduleData = responseData;
@@ -1057,16 +1048,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             }, orElse: () => null);
 
             if (section == null && normalizedSaved.startsWith('CSE')) {
-              final correctedSearch = 'CS' + normalizedSaved.substring(3);
+              final correctedSearch = 'CS${normalizedSaved.substring(3)}';
               section = classes.firstWhere((s) {
                 final normName = s['name'].toString().toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
                 return correctedSearch == normName;
               }, orElse: () => null);
             }
 
-            if (section == null) {
-              section = classes.first;
-            }
+            section ??= classes.first;
 
             if (section != null) {
               // Safely update selectedSection in a post-frame callback or schedule future to avoid setState build warnings
@@ -1485,7 +1474,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         initialSemester: selectedSemester,
         initialSection: selectedSection,
         initialSelectedElectives: selectedElectives,
-        branches: classesPerBranch.keys.toList(),
+
         hasPreference: savePreference, // Pass the savePreference flag
         fetchSections: _fetchSectionsList,
         fetchElectives: _getElectivesForSettings,
@@ -1496,23 +1485,23 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
 
 
-  Future<List<String>> _fetchSectionsList(String branch, int semester) async {
+  Future<List<String>> _fetchSectionsList(int semester) async {
     try {
       // 1. Try to load from cache first
-      final cacheKey = 'schedule_${branch}_$semester';
+      final cacheKey = 'schedule_$semester';
       final cachedData = await SharedPreferencesService.getString(cacheKey);
       if (cachedData != null) {
         final decoded = jsonDecode(cachedData);
         if (decoded is Map && decoded.containsKey('classes')) {
           final classesList = decoded['classes'] as List;
-          return _generateSectionNames(branch, semester, classesList.length);
+          return classesList.map((c) => c['name'] as String).toList()..sort();
         }
       }
 
       // 2. Fetch from backend
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
-        Uri.parse('${Config.scheduleBaseEndpoint}/$branch/$semester?t=$timestamp'),
+        Uri.parse('${Config.scheduleBaseEndpoint}/$semester?t=$timestamp'),
       );
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -1521,25 +1510,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           if (classData is Map && classData.containsKey('classes')) {
             final classesList = classData['classes'] as List;
             // Cache it
-            await SharedPreferencesService.setString(cacheKey, jsonEncode(classData));
-            return _generateSectionNames(branch, semester, classesList.length);
+            return classesList.map((c) => c['name'] as String).toList()..sort();
           }
         }
       }
     } catch (e) {
       debugPrint('Error fetching sections list: $e');
     }
-    // Fallback to static list if offline/fails
-    int fallbackCount = 54;
-    if (branch == 'CSE') {
-      if (semester == 5) fallbackCount = 61;
-      else if (semester == 4) fallbackCount = 54;
-    }
-    return _generateSectionNames(branch, semester, fallbackCount);
-  }
-
-  List<String> _generateSectionNames(String branch, int semester, int count) {
-    return List.generate(count, (i) => '$branch-${i + 1}');
+    return [];
   }
 }
 

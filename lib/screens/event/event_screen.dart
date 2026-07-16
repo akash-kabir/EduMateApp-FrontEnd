@@ -151,7 +151,7 @@ class _EventScreenState extends State<EventScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isSocietyHead = userRole?.toLowerCase() == 'society_head';
+    final canPost = userRole != null && ['society', 'society_head', 'contributor', 'admin'].contains(userRole!.toLowerCase());
 
     return CupertinoPageScaffold(
       child: CustomScrollView(
@@ -180,7 +180,7 @@ class _EventScreenState extends State<EventScreen> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (isSocietyHead)
+                if (canPost)
                   CupertinoButton(
                     padding: EdgeInsets.zero,
                     onPressed: () async {

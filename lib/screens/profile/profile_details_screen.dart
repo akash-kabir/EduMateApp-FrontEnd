@@ -252,11 +252,12 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                   ),
                 ]),
                 
-                // Debug section (Only for Society Head)
-                if (profileData?['role']?.toString().toLowerCase() == 'society_head') ...[
+                // Admin Access section
+                if (profileData?['role']?.toString().toLowerCase() == 'contributor' || 
+                    profileData?['role']?.toString().toLowerCase() == 'admin') ...[
                   const SizedBox(height: 24),
                   _buildSectionHeader(
-                    'Debug Mode',
+                    'Admin Access',
                     CupertinoIcons.wrench_fill,
                     isDark,
                   ),
@@ -571,10 +572,12 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
 
   String _formatRole(String role) {
     final r = role.toLowerCase();
-    if (r == 'society_head') {
-      return 'Society Head';
+    if (r == 'society' || r == 'society head' || r == 'society_head') {
+      return 'Society';
     } else if (r == 'admin') {
       return 'Admin';
+    } else if (r == 'contributor') {
+      return 'Contributor';
     } else {
       return 'Student';
     }

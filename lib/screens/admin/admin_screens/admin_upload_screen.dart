@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'admin_elective_management.dart';
 import 'curriculum_management_screen.dart';
 import 'schedule_management_screen.dart';
+import 'admin_poi_management.dart';
 
 class AdminUploadScreen extends StatelessWidget {
   const AdminUploadScreen({super.key});
@@ -21,7 +22,7 @@ class AdminUploadScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 20),
             Text(
-              'Curriculum & Schedule',
+              'Data Management',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -30,7 +31,7 @@ class AdminUploadScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Manage curriculums and schedules for all semesters',
+              'Manage curriculums, schedules, electives and POIs',
               style: TextStyle(
                 fontSize: 16,
                 color: isDark ? CupertinoColors.systemGrey : Colors.grey[600],
@@ -77,6 +78,21 @@ class AdminUploadScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const AdminElectiveManagementScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            _UploadCard(
+              title: 'POI Management',
+              description: 'Manage campus Points of Interest',
+              icon: Icons.map_rounded,
+              isDark: isDark,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminPoiManagementScreen(),
                   ),
                 );
               },

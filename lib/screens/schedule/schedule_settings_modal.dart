@@ -19,9 +19,8 @@ class SettingsBottomSheet extends StatefulWidget {
   final int initialSemester;
   final String initialSection;
   final Map<String, String> initialSelectedElectives;
-  final List<String> branches;
-  final bool hasPreference; // Whether saved prefs exist
-  final Future<List<String>> Function(String branch, int semester) fetchSections;
+  final bool hasPreference;
+  final Future<List<String>> Function(int semester) fetchSections;
   final Future<Map<String, List<String>>> Function(String branch, int semester) fetchElectives;
   final OnSaveSettings onSave;
 
@@ -31,7 +30,6 @@ class SettingsBottomSheet extends StatefulWidget {
     required this.initialSemester,
     required this.initialSection,
     required this.initialSelectedElectives,
-    required this.branches,
     required this.fetchSections,
     required this.fetchElectives,
     required this.onSave,
@@ -82,7 +80,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
 
   Future<void> _loadSections() async {
     setState(() => isLoadingSections = true);
-    final sections = await widget.fetchSections(selectedBranch, selectedSemester);
+    final sections = await widget.fetchSections(selectedSemester);
     if (mounted) {
       setState(() {
         availableSections = sections;
@@ -208,7 +206,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
     if (currentValue != null && currentValue.isNotEmpty) {
       for (int i = 0; i < subjects.length; i++) {
         final subject = subjects[i];
-        final sections = grouped[subject]!.keys.toList();
+        final sections = grouped[subject]!.keys.toList()..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
         final sectionIdx = sections.indexWhere((sec) => grouped[subject]![sec] == currentValue);
         if (sectionIdx != -1) {
           initialSubjectIdx = i;
@@ -219,7 +217,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
     }
 
     String selectedSubject = subjects[initialSubjectIdx];
-    List<String> currentSections = grouped[selectedSubject]!.keys.toList();
+    List<String> currentSections = grouped[selectedSubject]!.keys.toList()..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
     String selectedSection = currentSections.isNotEmpty ? currentSections[initialSectionIdx] : '';
 
     showCupertinoModalPopup<void>(
@@ -279,7 +277,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
                             onSelectedItemChanged: (i) {
                               setModalState(() {
                                 selectedSubject = subjects[i];
-                                currentSections = grouped[selectedSubject]!.keys.toList();
+                                currentSections = grouped[selectedSubject]!.keys.toList()..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
                                 selectedSection = currentSections.isNotEmpty ? currentSections[0] : '';
                                 initialSectionIdx = 0; // reset right column
                               });
@@ -547,38 +545,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
                     ),
                   ),
 
-                  // Branch segment
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: CupertinoSlidingSegmentedControl<String>(
-                        groupValue: selectedBranch,
-                        thumbColor: AuthPalette.coral.withValues(alpha: 0.8),
-                        backgroundColor: Colors.white.withValues(alpha: 0.06),
-                        children: {
-                          for (var b in widget.branches)
-                            b: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(b, style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                                fontSize: 13,
-                              )),
-                            ),
-                        },
-                        onValueChanged: (val) {
-                          if (val != null) {
-                            setState(() { selectedBranch = val; selectedSection = ''; });
-                            _loadDependencies();
-                          }
-                        },
-                      ),
-                    ),
-                  ),
 
-                  const Divider(color: Colors.white10, height: 20),
 
                   // Semester
                   _buildSettingsRow(
@@ -600,19 +567,31 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
                     ),
                   ),
 
-                  // Section
+                  // Section — availableSections contains full class names like "CS1", "IT2"
                   _buildSettingsRow(
                     icon: CupertinoIcons.person_2,
                     label: 'Section',
-                    value: selectedSection,
+                    value: selectedSection.isEmpty ? 'Select' : selectedSection,
                     isLoading: isLoadingSections,
                     onTap: () {
                       if (availableSections.isEmpty) return;
-                      _showPicker(
+                      _showTwoColumnPicker(
                         title: 'Select Section',
                         items: availableSections,
-                        currentValue: selectedSection,
-                        onSelected: (val) => setState(() => selectedSection = val),
+                        currentValue: selectedSection.isEmpty ? null : selectedSection,
+                        onSelected: (val) {
+                          // val is the full class name e.g. "CS1", "IT2"
+                          final match = RegExp(r'^([a-zA-Z\s\-]+?)\s*(\d+)$').firstMatch(val.trim());
+                          setState(() {
+                            selectedSection = val; // store full name directly
+                            if (match != null) {
+                              selectedBranch = match.group(1)!.trim();
+                            } else {
+                              selectedBranch = val;
+                            }
+                          });
+                          _loadElectives(); // Reload electives based on new branch
+                        },
                       );
                     },
                   ),

@@ -9,8 +9,7 @@ import '../../../config.dart';
 import '../../../widgets/toast_manager.dart';
 import '../../../services/shared_preferences_service.dart';
 import 'schedule_editor_screen.dart';
-import '../../../widgets/bottom_sheet_selector.dart';
-
+import '../../../constants/app_constants.dart';
 
 class ScheduleManagementScreen extends StatefulWidget {
   const ScheduleManagementScreen({super.key});
@@ -21,11 +20,11 @@ class ScheduleManagementScreen extends StatefulWidget {
 
 class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
   bool _isLoading = true;
-  String _selectedBranch = 'CSE';
-  final List<String> _branches = ['CSE', 'CSCE', 'IT', 'CSSE'];
-  
   // Map of semester -> schedule data
   Map<int, dynamic> _schedules = {};
+  String _selectedSeason = 'Autumn';
+
+  List<int> get _displayedSemesters => _selectedSeason == 'Autumn' ? [1, 3, 5, 7] : [2, 4, 6, 8];
 
   @override
   void initState() {
@@ -37,7 +36,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
     setState(() => _isLoading = true);
     try {
         final response = await http.get(
-          Uri.parse('${Config.scheduleBaseEndpoint}/branch/$_selectedBranch?t=${DateTime.now().millisecondsSinceEpoch}'),
+          Uri.parse('${Config.scheduleBaseEndpoint}?t=${DateTime.now().millisecondsSinceEpoch}'),
         );
 
       if (response.statusCode == 200) {
@@ -102,7 +101,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
       final token = await SharedPreferencesService.getToken();
       if (token == null) throw Exception('Authentication token not found');
 
-      final url = Uri.parse('${Config.scheduleBaseEndpoint}/$_selectedBranch/$semester');
+      final url = Uri.parse('${Config.scheduleBaseEndpoint}/$semester');
       
       http.Response response;
       if (_schedules[semester] != null) {
@@ -149,10 +148,10 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
             child: _isLoading
                 ? const Center(child: CupertinoActivityIndicator())
                 : ListView.builder(
-                    padding: const EdgeInsets.only(top: 180, bottom: 40, left: 16, right: 16),
-                    itemCount: 8,
+                    padding: const EdgeInsets.only(top: 130, bottom: 40, left: 16, right: 16),
+                    itemCount: _displayedSemesters.length,
                     itemBuilder: (context, index) {
-                      final semester = index + 1;
+                      final semester = _displayedSemesters[index];
                       final data = _schedules[semester];
                       final isConfigured = data != null;
                       
@@ -170,7 +169,6 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
 
                       return _SemesterCard(
                         semester: semester,
-                        branch: _selectedBranch,
                         isConfigured: isConfigured,
                         periodCount: periodCount,
                         isDark: isDark,
@@ -228,19 +226,39 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                          child: BottomSheetSelector<String>(
-                            value: _selectedBranch,
-                            items: _branches,
-                            hint: 'Select Branch',
-                            isAdmin: true,
-                            labelBuilder: (String value) => value,
-                            onChanged: (String newValue) {
-                              setState(() {
-                                _selectedBranch = newValue;
-                              });
-                              _fetchSchedules();
-                            },
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: CupertinoSlidingSegmentedControl<String>(
+                              groupValue: _selectedSeason,
+                              thumbColor: AuthPalette.coral.withValues(alpha: 0.8),
+                              backgroundColor: Colors.white.withValues(alpha: 0.06),
+                              children: {
+                                'Autumn': Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text('Autumn', style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w600,
+                                    color: _selectedSeason == 'Autumn' ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                    fontSize: 13,
+                                  )),
+                                ),
+                                'Spring': Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text('Spring', style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w600,
+                                    color: _selectedSeason == 'Spring' ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                    fontSize: 13,
+                                  )),
+                                ),
+                              },
+                              onValueChanged: (val) {
+                                if (val != null) {
+                                  setState(() => _selectedSeason = val);
+                                }
+                              },
+                            ),
                           ),
                         ),
                       ],
@@ -258,7 +276,6 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
 
 class _SemesterCard extends StatelessWidget {
   final int semester;
-  final String branch;
   final bool isConfigured;
   final int periodCount;
   final bool isDark;
@@ -267,7 +284,6 @@ class _SemesterCard extends StatelessWidget {
 
   const _SemesterCard({
     required this.semester,
-    required this.branch,
     required this.isConfigured,
     required this.periodCount,
     required this.isDark,
@@ -374,7 +390,6 @@ class _SemesterCard extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ScheduleEditorScreen(
-                            branch: branch,
                             semester: semester,
                           ),
                         ),
