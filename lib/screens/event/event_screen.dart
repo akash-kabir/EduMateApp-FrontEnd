@@ -151,7 +151,16 @@ class _EventScreenState extends State<EventScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final canPost = userRole != null && ['society', 'society_head', 'contributor', 'admin'].contains(userRole!.toLowerCase());
+    final canPost =
+        userRole != null &&
+        [
+          'societ',
+          'society',
+          'society_head',
+          'contributer',
+          'contributor',
+          'admin',
+        ].contains(userRole!.toLowerCase());
 
     return CupertinoPageScaffold(
       child: CustomScrollView(

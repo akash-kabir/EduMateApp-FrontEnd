@@ -21,7 +21,7 @@ class SettingsBottomSheet extends StatefulWidget {
   final Map<String, String> initialSelectedElectives;
   final bool hasPreference;
   final Future<List<String>> Function(int semester) fetchSections;
-  final Future<Map<String, List<String>>> Function(String branch, int semester) fetchElectives;
+  final Future<Map<String, List<String>>> Function(int semester) fetchElectives;
   final OnSaveSettings onSave;
 
   const SettingsBottomSheet({
@@ -50,18 +50,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
   Map<String, List<String>> availableElectives = {};
   bool isLoadingSections = false;
   bool isLoadingElectives = false;
-
-  // Shortened UI names for display
-  final Map<int, List<String>> semesterElectiveMap = {
-    1: ['Eng - II', 'Science'],
-    2: ['Eng - I', 'HASS - I'],
-    3: [],
-    4: ['HASS - II'],
-    5: ['Open - I', 'PE - I', 'PE - II'],
-    6: ['PE - III', 'HASS - III', 'Open - II'],
-    7: ['PE - IV'],
-    8: [],
-  };
 
   @override
   void initState() {
@@ -94,35 +82,19 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
 
   Future<void> _loadElectives() async {
     setState(() => isLoadingElectives = true);
-    final electives = await widget.fetchElectives(selectedBranch, selectedSemester);
+    final electives = await widget.fetchElectives(selectedSemester);
     if (mounted) {
       setState(() {
         availableElectives = electives;
+        // Drop selections for groups that no longer exist
+        selectedElectives.removeWhere(
+          (group, _) => !electives.containsKey(group),
+        );
         isLoadingElectives = false;
       });
     }
   }
 
-  // Maps shortened UI name → backend group name
-  String _getBackendGroupName(String uiName) {
-    switch (uiName) {
-      case 'Open - I':   return 'K-Explore';
-      case 'Open - II':  return 'Open Elective - II';
-      case 'PE - I':     return 'PE-1';
-      case 'PE - II':    return 'PE-2';
-      case 'PE - III':   return 'PE-3';
-      case 'PE - IV':    return 'PE-4';
-      case 'Eng - I':    return 'Engineering Elective - I';
-      case 'Eng - II':   return 'Engineering Elective - II';
-      case 'Science':    return 'Science Elective';
-      case 'HASS - I':   return 'HASS Elective - I';
-      case 'HASS - II':  return 'HASS Elective - II';
-      case 'HASS - III': return 'HASS Elective - III';
-      default: return uiName;
-    }
-  }
-
-  // Returns true if current modal state differs from what was initially passed in
   bool get _isEdited {
     if (selectedBranch != widget.initialBranch) return true;
     if (selectedSemester != widget.initialSemester) return true;
@@ -466,7 +438,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final requiredElectives = semesterElectiveMap[selectedSemester] ?? [];
+    final electiveGroups = availableElectives.keys.toList()..sort();
 
     return Material(
       type: MaterialType.transparency,
@@ -590,29 +562,40 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
                               selectedBranch = val;
                             }
                           });
-                          _loadElectives(); // Reload electives based on new branch
                         },
                       );
                     },
                   ),
 
-                  // Dynamic electives
-                  ...requiredElectives.map((uiGroup) {
-                    final backendGroup = _getBackendGroupName(uiGroup);
-                    final options = availableElectives[backendGroup] ?? [];
-                    final current = selectedElectives[backendGroup] ?? '';
+                  // Dynamic electives from uploaded groups
+                  if (electiveGroups.isEmpty && !isLoadingElectives)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: Text(
+                        'No electives available for this semester',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          color: Colors.grey[500],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ...electiveGroups.map((groupName) {
+                    final options = availableElectives[groupName] ?? [];
+                    final current = selectedElectives[groupName] ?? '';
                     return _buildSettingsRow(
                       icon: CupertinoIcons.square_stack_3d_up,
-                      label: uiGroup,
+                      label: groupName,
                       value: current.isEmpty ? 'Select' : current,
                       isLoading: isLoadingElectives,
                       onTap: () {
                         if (options.isEmpty) return;
                         _showTwoColumnPicker(
-                          title: uiGroup,
+                          title: groupName,
                           items: options,
                           currentValue: current,
-                          onSelected: (val) => setState(() => selectedElectives[backendGroup] = val),
+                          onSelected: (val) => setState(() => selectedElectives[groupName] = val),
                         );
                       },
                     );

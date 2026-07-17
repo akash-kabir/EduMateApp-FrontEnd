@@ -39,7 +39,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
       begin: const Offset(0, 0.05),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
-    
+
     _loadEffectiveRole();
     _fetchProfileData();
   }
@@ -47,8 +47,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
   Future<void> _loadEffectiveRole() async {
     final role = await SharedPreferencesService.getUserRole();
     if (role != null && mounted) {
-      setState(() {
-      });
+      setState(() {});
     }
   }
 
@@ -106,9 +105,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Profile',
-                  style: TextStyle(
-                  fontFamily: 'Salena')),
+        middle: const Text('Profile', style: TextStyle(fontFamily: 'Salena')),
         backgroundColor: isDark
             ? CupertinoColors.black.withOpacity(0.7)
             : CupertinoColors.white.withOpacity(0.7),
@@ -251,10 +248,14 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                         : 'Incomplete',
                   ),
                 ]),
-                
+
                 // Admin Access section
-                if (profileData?['role']?.toString().toLowerCase() == 'contributor' || 
-                    profileData?['role']?.toString().toLowerCase() == 'admin') ...[
+                if (profileData?['role']?.toString().toLowerCase() ==
+                        'contributor' ||
+                    profileData?['role']?.toString().toLowerCase() ==
+                        'contributer' ||
+                    profileData?['role']?.toString().toLowerCase() ==
+                        'admin') ...[
                   const SizedBox(height: 24),
                   _buildSectionHeader(
                     'Admin Access',
@@ -284,7 +285,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           colors: [
             accentColor,
             accentColor.withValues(alpha: 0.8),
-            isDark ? accentColor.withValues(alpha: 0.4) : accentColor.withValues(alpha: 0.6),
+            isDark
+                ? accentColor.withValues(alpha: 0.4)
+                : accentColor.withValues(alpha: 0.6),
           ],
         ),
         boxShadow: [
@@ -418,28 +421,28 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           ),
           child: Column(
             children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: accentColor,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.white54 : Colors.black45,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: accentColor,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? Colors.white54 : Colors.black45,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ),
@@ -485,71 +488,73 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           ),
           child: Column(
             children: List.generate(rows.length, (index) {
-          final row = rows[index];
-          final isLast = index == rows.length - 1;
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: AuthPalette.coral.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        row.icon,
-                        size: 17,
-                        color: AuthPalette.coral,
-                      ),
+              final row = rows[index];
+              final isLast = index == rows.length - 1;
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            row.label,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? Colors.white54 : Colors.black45,
-                              fontWeight: FontWeight.w500,
-                            ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: AuthPalette.coral.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            row.value,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: isDark ? Colors.white : Colors.black87,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: Icon(
+                            row.icon,
+                            size: 17,
+                            color: AuthPalette.coral,
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                row.label,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.black45,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                row.value,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              if (!isLast)
-                Padding(
-                  padding: const EdgeInsets.only(left: 64),
-                  child: Divider(
-                    height: 1,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.06)
-                        : Colors.black.withValues(alpha: 0.06),
                   ),
-                ),
-            ],
-          );
-        }),
+                  if (!isLast)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 64),
+                      child: Divider(
+                        height: 1,
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : Colors.black.withValues(alpha: 0.06),
+                      ),
+                    ),
+                ],
+              );
+            }),
           ),
         ),
       ),
@@ -572,12 +577,15 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
 
   String _formatRole(String role) {
     final r = role.toLowerCase();
-    if (r == 'society' || r == 'society head' || r == 'society_head') {
-      return 'Society';
+    if (r == 'society' ||
+        r == 'societ' ||
+        r == 'society head' ||
+        r == 'society_head') {
+      return 'Societ';
     } else if (r == 'admin') {
       return 'Admin';
-    } else if (r == 'contributor') {
-      return 'Contributor';
+    } else if (r == 'contributor' || r == 'contributer') {
+      return 'Contributer';
     } else {
       return 'Student';
     }
@@ -652,11 +660,17 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const AdminMainApp(fromStudentView: true)),
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const AdminMainApp(fromStudentView: true),
+                      ),
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: accentColor,
                       borderRadius: BorderRadius.circular(20),

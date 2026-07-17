@@ -115,7 +115,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   Future<void> _fetchClassesForSemester() async {
     if (_selectedSemester == null) return;
-    
+
     setState(() {
       _loadingSections = true;
       _dynamicSections = [];
@@ -125,15 +125,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     final semNum = _getSemesterNumber(_selectedSemester!);
     try {
-      final url = Uri.parse('${Config.scheduleBaseEndpoint}/$semNum?t=${DateTime.now().millisecondsSinceEpoch}');
+      final url = Uri.parse(
+        '${Config.scheduleBaseEndpoint}/$semNum?t=${DateTime.now().millisecondsSinceEpoch}',
+      );
       final response = await http.get(url);
-      
+
       if (response.statusCode == 200) {
         final resData = jsonDecode(response.body);
         if (resData['data'] != null && resData['data']['classes'] != null) {
           final classesList = resData['data']['classes'] as List;
           setState(() {
-            _dynamicSections = classesList.map((c) => c['name'].toString()).toList()..sort();
+            _dynamicSections =
+                classesList.map((c) => c['name'].toString()).toList()..sort();
           });
         }
       }
@@ -163,91 +166,88 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         builder: (context) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
           return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 64.0,
-                        height: 64.0,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AuthPalette.coral.withOpacity(0.15),
-                          border: Border.all(
-                            color: AuthPalette.coral.withOpacity(0.3),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Icon(
-                          CupertinoIcons.checkmark_seal_fill,
-                          color: AuthPalette.coral,
-                          size: 32.0,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Details Pre-filled',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 20.0,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
-                          letterSpacing: -0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'We\'ve automatically filled in your details based on your KIIT email address.',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14.0,
-                          color: isDark ? Colors.grey[400] : Colors.grey[700],
-                          height: 1.4,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AuthPalette.coral.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Please select your Branch and Semester to complete.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontStyle: FontStyle.italic,
-                            color: AuthPalette.coral,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AuthPalette.coral,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Got it',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64.0,
+                height: 64.0,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AuthPalette.coral.withOpacity(0.15),
+                  border: Border.all(
+                    color: AuthPalette.coral.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Icon(
+                  CupertinoIcons.checkmark_seal_fill,
+                  color: AuthPalette.coral,
+                  size: 32.0,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Details Pre-filled',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                  letterSpacing: -0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'We\'ve automatically filled in your details based on your KIIT email address.',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14.0,
+                  color: isDark ? Colors.grey[400] : Colors.grey[700],
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AuthPalette.coral.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Please select your Branch and Semester to complete.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                    color: AuthPalette.coral,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AuthPalette.coral,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Got it',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
           );
-        }
+        },
       ),
     );
   }
@@ -711,45 +711,74 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                 height: 12,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 1.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.grey,
+                                  ),
                                 ),
                               ),
                             ],
                           ],
                         ),
                         const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: (_selectedSemester != null && !_loadingSections)
-                              ? () => _showTwoColumnPicker(context, isDark)
-                              : null,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+                        Material(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.05)
+                              : Colors.black.withOpacity(0.03),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.1)
+                                  : Colors.black.withOpacity(0.1),
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  _selectedBranch != null && _selectedSection != null
-                                      ? '$_selectedBranch - $_selectedSection'
-                                      : (_loadingSections ? 'Loading...' : 'Select your class'),
-                                  style: TextStyle(
-                                    color: _selectedBranch != null && _selectedSection != null
-                                        ? (isDark ? Colors.white : Colors.black)
-                                        : (isDark ? Colors.grey[500] : Colors.grey[400]),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap:
+                                (_selectedSemester != null && !_loadingSections)
+                                ? () => _showTwoColumnPicker(context, isDark)
+                                : null,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _selectedBranch != null &&
+                                              _selectedSection != null
+                                          ? '$_selectedBranch - $_selectedSection'
+                                          : (_loadingSections
+                                                ? 'Loading...'
+                                                : 'Select your class'),
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color:
+                                            _selectedBranch != null &&
+                                                _selectedSection != null
+                                            ? (isDark
+                                                  ? Colors.white
+                                                  : Colors.black)
+                                            : (isDark
+                                                  ? Colors.grey[500]
+                                                  : Colors.grey[400]),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                Icon(
-                                  CupertinoIcons.chevron_down,
-                                  color: isDark ? Colors.grey[500] : Colors.grey[400],
-                                  size: 16,
-                                ),
-                              ],
+                                  const SizedBox(width: 12),
+                                  Icon(
+                                    CupertinoIcons.chevron_down,
+                                    color: isDark
+                                        ? Colors.grey[500]
+                                        : Colors.grey[400],
+                                    size: 16,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -828,12 +857,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               FocusManager.instance.primaryFocus?.unfocus();
               await Future.delayed(const Duration(milliseconds: 50));
               if (!context.mounted) return;
-              
-              int initialIndex = value != null ? items.indexOf(value).clamp(0, items.length - 1) : 0;
+
+              int initialIndex = value != null
+                  ? items.indexOf(value).clamp(0, items.length - 1)
+                  : 0;
               if (items.isNotEmpty && value == null) {
                 onChanged(items[initialIndex]);
               }
-              
+
               showCupertinoModalPopup(
                 context: context,
                 builder: (context) => Material(
@@ -963,13 +994,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   void _showTwoColumnPicker(BuildContext context, bool isDark) {
     if (_dynamicSections.isEmpty) {
-      EduMateToast.showCompact(context, message: 'No classes found for this semester', isSuccess: false);
+      EduMateToast.showCompact(
+        context,
+        message: 'No classes found for this semester',
+        isSuccess: false,
+      );
       return;
     }
 
     final Map<String, Map<String, String>> grouped = {};
     for (final item in _dynamicSections) {
-      final match = RegExp(r'^([a-zA-Z\s\-]+?)\s*(\d+)$').firstMatch(item.trim());
+      final match = RegExp(
+        r'^([a-zA-Z\s\-]+?)\s*(\d+)$',
+      ).firstMatch(item.trim());
       if (match != null) {
         final subject = match.group(1)!.trim();
         final section = match.group(2)!.trim();
@@ -994,7 +1031,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     if (_selectedBranch != null && _selectedSection != null) {
       initialSubjectIdx = subjects.indexOf(_selectedBranch!);
       if (initialSubjectIdx != -1) {
-        final sections = grouped[_selectedBranch!]!.keys.toList()..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
+        final sections = grouped[_selectedBranch!]!.keys.toList()
+          ..sort(
+            (a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0),
+          );
         initialSectionIdx = sections.indexOf(_selectedSection!);
         if (initialSectionIdx == -1) initialSectionIdx = 0;
       } else {
@@ -1003,8 +1043,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
 
     String tempSubject = subjects[initialSubjectIdx];
-    List<String> tempSections = grouped[tempSubject]!.keys.toList()..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
-    String tempSection = tempSections.isNotEmpty ? tempSections[initialSectionIdx] : '';
+    List<String> tempSections = grouped[tempSubject]!.keys.toList()
+      ..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
+    String tempSection = tempSections.isNotEmpty
+        ? tempSections[initialSectionIdx]
+        : '';
 
     showCupertinoModalPopup(
       context: context,
@@ -1014,7 +1057,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             child: Container(
               height: 280,
               padding: const EdgeInsets.only(top: 6),
-              margin: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
               color: CupertinoColors.systemBackground.resolveFrom(context),
               child: SafeArea(
                 top: false,
@@ -1049,7 +1094,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         ],
                       ),
                     ),
-                    Divider(color: Colors.grey[400], height: 1, indent: 16, endIndent: 16),
+                    Divider(
+                      color: Colors.grey[400],
+                      height: 1,
+                      indent: 16,
+                      endIndent: 16,
+                    ),
                     Expanded(
                       child: Row(
                         children: [
@@ -1059,31 +1109,47 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                               squeeze: 1.2,
                               useMagnifier: true,
                               itemExtent: 32.0,
-                              scrollController: FixedExtentScrollController(initialItem: initialSubjectIdx),
+                              scrollController: FixedExtentScrollController(
+                                initialItem: initialSubjectIdx,
+                              ),
                               onSelectedItemChanged: (index) {
                                 setModalState(() {
                                   tempSubject = subjects[index];
-                                  tempSections = grouped[tempSubject]!.keys.toList()..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
-                                  tempSection = tempSections.isNotEmpty ? tempSections[0] : '';
+                                  tempSections =
+                                      grouped[tempSubject]!.keys.toList()..sort(
+                                        (a, b) => (int.tryParse(a) ?? 0)
+                                            .compareTo(int.tryParse(b) ?? 0),
+                                      );
+                                  tempSection = tempSections.isNotEmpty
+                                      ? tempSections[0]
+                                      : '';
                                 });
                               },
-                              children: subjects.map((s) => Center(child: Text(s))).toList(),
+                              children: subjects
+                                  .map((s) => Center(child: Text(s)))
+                                  .toList(),
                             ),
                           ),
                           Expanded(
-                            key: ValueKey(tempSubject), // Forces rebuild of second picker when subject changes
+                            key: ValueKey(
+                              tempSubject,
+                            ), // Forces rebuild of second picker when subject changes
                             child: CupertinoPicker(
                               magnification: 1.22,
                               squeeze: 1.2,
                               useMagnifier: true,
                               itemExtent: 32.0,
                               scrollController: FixedExtentScrollController(
-                                initialItem: tempSections.indexOf(tempSection).clamp(0, tempSections.length - 1),
+                                initialItem: tempSections
+                                    .indexOf(tempSection)
+                                    .clamp(0, tempSections.length - 1),
                               ),
                               onSelectedItemChanged: (index) {
                                 tempSection = tempSections[index];
                               },
-                              children: tempSections.map((s) => Center(child: Text(s))).toList(),
+                              children: tempSections
+                                  .map((s) => Center(child: Text(s)))
+                                  .toList(),
                             ),
                           ),
                         ],

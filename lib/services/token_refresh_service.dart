@@ -5,7 +5,7 @@ import '../config.dart';
 import 'shared_preferences_service.dart';
 
 /// Service to handle silent token refresh when the access token expires.
-/// 
+///
 /// Usage:
 /// ```dart
 /// // Before making an authenticated request, ensure a valid token:
@@ -30,11 +30,13 @@ class TokenRefreshService {
         return null;
       }
 
-      final response = await http.post(
-        Uri.parse(Config.refreshEndpoint),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse(Config.refreshEndpoint),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refreshToken': refreshToken}),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -101,7 +103,10 @@ class TokenRefreshService {
   }
 
   /// Makes an authenticated POST request with automatic token refresh on 401.
-  static Future<http.Response> authenticatedPost(String url, {Map<String, dynamic>? body}) async {
+  static Future<http.Response> authenticatedPost(
+    String url, {
+    Map<String, dynamic>? body,
+  }) async {
     var token = await SharedPreferencesService.getToken();
 
     var response = await http.post(
@@ -132,7 +137,10 @@ class TokenRefreshService {
   }
 
   /// Makes an authenticated PUT request with automatic token refresh on 401.
-  static Future<http.Response> authenticatedPut(String url, {Map<String, dynamic>? body}) async {
+  static Future<http.Response> authenticatedPut(
+    String url, {
+    Map<String, dynamic>? body,
+  }) async {
     var token = await SharedPreferencesService.getToken();
 
     var response = await http.put(
@@ -149,6 +157,40 @@ class TokenRefreshService {
       final newToken = await refreshToken();
       if (newToken != null) {
         response = await http.put(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $newToken',
+          },
+          body: body != null ? jsonEncode(body) : null,
+        );
+      }
+    }
+
+    return response;
+  }
+
+  /// Makes an authenticated DELETE request with automatic token refresh on 401.
+  static Future<http.Response> authenticatedDelete(
+    String url, {
+    Map<String, dynamic>? body,
+  }) async {
+    var token = await SharedPreferencesService.getToken();
+
+    var response = await http.delete(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: body != null ? jsonEncode(body) : null,
+    );
+
+    // If 401, try refreshing the token and retry once
+    if (response.statusCode == 401) {
+      final newToken = await refreshToken();
+      if (newToken != null) {
+        response = await http.delete(
           Uri.parse(url),
           headers: {
             'Content-Type': 'application/json',

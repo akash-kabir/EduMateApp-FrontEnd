@@ -4,9 +4,33 @@ import 'admin_user_management.dart';
 import 'admin_post_management.dart';
 import '../../../services/shared_preferences_service.dart';
 import '../../../screens/auth/login_screen.dart';
+import '../../../widgets/toast_manager.dart';
 
-class AdminSettingsScreen extends StatelessWidget {
+class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
+
+  @override
+  State<AdminSettingsScreen> createState() => _AdminSettingsScreenState();
+}
+
+class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
+  String? _currentUserRole;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
+  }
+
+  bool get _isAdmin => (_currentUserRole ?? '').toLowerCase() == 'admin';
+
+  Future<void> _loadRole() async {
+    final role = await SharedPreferencesService.getUserRole();
+    if (!mounted) return;
+    setState(() {
+      _currentUserRole = role?.toLowerCase();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,9 +68,19 @@ class AdminSettingsScreen extends StatelessWidget {
               icon: CupertinoIcons.group_solid,
               isDark: isDark,
               onTap: () {
+                if (!_isAdmin) {
+                  EduMateToast.showCompact(
+                    context,
+                    message: 'Only Admin can access User Management',
+                    isSuccess: false,
+                  );
+                  return;
+                }
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AdminUserManagementScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const AdminUserManagementScreen(),
+                  ),
                 );
               },
             ),
@@ -57,28 +91,46 @@ class AdminSettingsScreen extends StatelessWidget {
               icon: CupertinoIcons.bubble_left_bubble_right_fill,
               isDark: isDark,
               onTap: () {
+                if (!_isAdmin) {
+                  EduMateToast.showCompact(
+                    context,
+                    message: 'Only Admin can access Post Management',
+                    isSuccess: false,
+                  );
+                  return;
+                }
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AdminPostManagementScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const AdminPostManagementScreen(),
+                  ),
                 );
               },
             ),
             const SizedBox(height: 40),
             Center(
               child: CupertinoButton(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
                 color: const Color(0xFFFF1744),
                 onPressed: () async {
                   await SharedPreferencesService.clearUserData();
                   if (context.mounted) {
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
                       (route) => false,
                     );
                   }
                 },
-                child: const Text('Log Out', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Log Out',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ),
             const SizedBox(height: 80),
@@ -115,13 +167,17 @@ class _SettingsCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.05),
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
           border: Border.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.transparent,
           ),
         ),
         child: Row(
@@ -132,7 +188,11 @@ class _SettingsCard extends StatelessWidget {
                 color: isDark ? const Color(0xFF2C2C2E) : Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: isDark ? Colors.white : Colors.black, size: 28),
+              child: Icon(
+                icon,
+                color: isDark ? Colors.white : Colors.black,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -152,7 +212,9 @@ class _SettingsCard extends StatelessWidget {
                     description,
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark ? CupertinoColors.systemGrey : Colors.grey[600],
+                      color: isDark
+                          ? CupertinoColors.systemGrey
+                          : Colors.grey[600],
                     ),
                   ),
                 ],

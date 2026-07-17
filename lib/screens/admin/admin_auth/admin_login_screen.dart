@@ -79,8 +79,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
         final user = result['data']['user'];
         final role = user['role'];
 
-        // Check if user is contributor or admin
-        if (role != null && (role.toLowerCase() == 'contributor' || role.toLowerCase() == 'admin' || role.toLowerCase() == 'society_head')) {
+        // Allow admin panel for admin and both contributor spellings.
+        if (role != null &&
+            (role.toLowerCase() == 'contributor' ||
+                role.toLowerCase() == 'contributer' ||
+                role.toLowerCase() == 'admin' ||
+                role.toLowerCase() == 'society_head')) {
           final token = result['data']['token'];
 
           // Save credentials via SharedPreferencesService (single source of truth)
@@ -98,7 +102,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
           if (mounted) {
             EduMateToast.showCompact(
               context,
-              message: 'Access Denied: Admin or Contributor role required',
+              message: 'Access Denied: Admin or Contributer role required',
               isSuccess: false,
             );
           }

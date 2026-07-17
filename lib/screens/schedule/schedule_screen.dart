@@ -138,7 +138,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         // Poll for updates in the background
         if (selectedBranch.isNotEmpty && selectedSemester > 0) {
           _fetchScheduleFromBackend(isPolling: true);
-          _fetchAvailableElectives(selectedBranch, selectedSemester, isPolling: true);
+          _fetchAvailableElectives(selectedSemester, isPolling: true);
         }
       }
     });
@@ -147,7 +147,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   Future<void> _loadSavedElectivePreferences() async {
     final Map<String, String> tempSelected = {};
     for (var group in availableElectives.keys) {
-      final saved = await SharedPreferencesService.getString('selectedElective_${selectedBranch}_${selectedSemester}_$group');
+      final newKey = 'selectedElective_${selectedSemester}_$group';
+      final legacyKey =
+          'selectedElective_${selectedBranch}_${selectedSemester}_$group';
+      final saved =
+          await SharedPreferencesService.getString(newKey) ??
+          await SharedPreferencesService.getString(legacyKey);
       if (saved != null) {
         tempSelected[group] = saved;
       }
@@ -157,8 +162,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     });
   }
 
-  Future<void> _fetchAvailableElectives(String branch, int semester, {bool isPolling = false, bool skipLoadPreferences = false}) async {
-    final cacheKey = 'cached_electives_${branch}_$semester';
+  Future<void> _fetchAvailableElectives(int semester,
+      {bool isPolling = false, bool skipLoadPreferences = false}) async {
+    final cacheKey = 'cached_electives_v2_$semester';
     bool hasCache = false;
     String? localUpdatedAt;
 
@@ -194,7 +200,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     try {
       // 2. Check metadata endpoint
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final metaUrl = '${Config.electiveBaseEndpoint}/$branch/$semester/metadata?t=$timestamp';
+      final metaUrl =
+          '${Config.electiveBaseEndpoint}/$semester/metadata?t=$timestamp';
       final metaResponse = await TokenRefreshService.authenticatedGet(metaUrl).timeout(const Duration(seconds: 5));
 
       if (metaResponse.statusCode == 200) {
@@ -205,14 +212,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           if (localUpdatedAt == serverUpdatedAt) {
             return; // Up to date
           } else if (isPolling && mounted) {
-            _showElectiveUpdateNotification(branch, semester);
+            _showElectiveUpdateNotification(semester);
             return;
           }
         }
       }
 
       // 3. Fetch full electives payload
-      final url = '${Config.electiveBaseEndpoint}/$branch/$semester?t=$timestamp';
+      final url = '${Config.electiveBaseEndpoint}/$semester?t=$timestamp';
       final response = await TokenRefreshService.authenticatedGet(url).timeout(const Duration(seconds: 7));
       
       if (response.statusCode == 200) {
@@ -260,7 +267,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     }
   }
 
-  void _showElectiveUpdateNotification(String branch, int semester) {
+  void _showElectiveUpdateNotification(int semester) {
     if (!mounted) return;
     EduMateToast.showCompact(
       context,
@@ -268,25 +275,26 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       isSuccess: true,
       actionLabel: 'Refresh',
       onActionTap: () {
-        _fetchAvailableElectives(branch, semester, isPolling: false);
+        _fetchAvailableElectives(semester, isPolling: false);
       },
       duration: const Duration(seconds: 10),
     );
   }
 
-  Future<Map<String, List<String>>> _getElectivesForSettings(String branch, int semester) async {
-    final cacheKey = 'electives_settings_${branch}_$semester';
+  Future<Map<String, List<String>>> _getElectivesForSettings(int semester) async {
+    // Use the same unified cache as the main elective fetch
+    final cacheKey = 'cached_electives_v2_$semester';
     try {
       final cached = await SharedPreferencesService.getString(cacheKey);
       if (cached != null) {
         final decoded = jsonDecode(cached);
-        if (decoded is Map) {
+        if (decoded is Map && decoded.containsKey('grouped')) {
           final Map<String, List<String>> grouped = {};
-          decoded.forEach((key, val) {
+          (decoded['grouped'] as Map).forEach((key, val) {
             grouped[key] = List<String>.from(val as List);
           });
-          // Fetch in background to update cache
-          _fetchAndCacheElectivesInBackground(branch, semester, cacheKey);
+          // Kick off a background refresh to keep cache fresh
+          _fetchAndCacheElectivesInBackground(semester);
           return grouped;
         }
       }
@@ -294,26 +302,34 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       debugPrint('Error reading electives cache: $e');
     }
 
-    return _fetchAndCacheElectives(branch, semester, cacheKey);
+    return _fetchAndCacheElectives(semester);
   }
 
-  Future<Map<String, List<String>>> _fetchAndCacheElectives(String branch, int semester, String cacheKey) async {
+  Future<Map<String, List<String>>> _fetchAndCacheElectives(int semester) async {
+    final cacheKey = 'cached_electives_v2_$semester';
     try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
-        Uri.parse('${Config.electiveBaseEndpoint}/$branch/$semester'),
+        Uri.parse('${Config.electiveBaseEndpoint}/$semester?t=$timestamp'),
       );
       if (response.statusCode == 200) {
         final resData = jsonDecode(response.body);
         if (resData['success'] == true && resData['data'] != null) {
           final electivesList = resData['data']['electives'] as List;
+          final serverUpdatedAt = resData['data']['updatedAt'] as String?;
           final Map<String, List<String>> grouped = {};
           for (var item in electivesList) {
             final group = item['electiveGroup'] as String;
             final name = item['name'] as String;
             grouped.putIfAbsent(group, () => []).add(name);
           }
-          // Save to cache
-          await SharedPreferencesService.setString(cacheKey, jsonEncode(grouped));
+          // Save to unified cache
+          final cacheData = {
+            'updatedAt': serverUpdatedAt,
+            'raw': electivesList,
+            'grouped': grouped,
+          };
+          await SharedPreferencesService.setString(cacheKey, jsonEncode(cacheData));
           return grouped;
         }
       }
@@ -323,19 +339,27 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     return {};
   }
 
-  void _fetchAndCacheElectivesInBackground(String branch, int semester, String cacheKey) {
-    http.get(Uri.parse('${Config.electiveBaseEndpoint}/$branch/$semester')).then((response) {
+  void _fetchAndCacheElectivesInBackground(int semester) {
+    final cacheKey = 'cached_electives_v2_$semester';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    http.get(Uri.parse('${Config.electiveBaseEndpoint}/$semester?t=$timestamp')).then((response) {
       if (response.statusCode == 200) {
         final resData = jsonDecode(response.body);
         if (resData['success'] == true && resData['data'] != null) {
           final electivesList = resData['data']['electives'] as List;
+          final serverUpdatedAt = resData['data']['updatedAt'] as String?;
           final Map<String, List<String>> grouped = {};
           for (var item in electivesList) {
             final group = item['electiveGroup'] as String;
             final name = item['name'] as String;
             grouped.putIfAbsent(group, () => []).add(name);
           }
-          SharedPreferencesService.setString(cacheKey, jsonEncode(grouped));
+          final cacheData = {
+            'updatedAt': serverUpdatedAt,
+            'raw': electivesList,
+            'grouped': grouped,
+          };
+          SharedPreferencesService.setString(cacheKey, jsonEncode(cacheData));
         }
       }
     }).catchError((e) {
@@ -344,21 +368,43 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   String? _matchElectiveGroup(String className) {
-    final cleanName = className.toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
-    for (var group in selectedElectives.keys) {
-      final cleanGroup = group.toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
+    final cleanName = className.toUpperCase().replaceAll(RegExp(r'[\s\-_]+'), '');
+
+    // Check against all known elective groups (from API data)
+    final allGroups = {...availableElectives, ...{for (var k in selectedElectives.keys) k: <String>[]}};
+    for (var group in allGroups.keys) {
+      final cleanGroup = group.toUpperCase().replaceAll(RegExp(r'[\s\-_]+'), '');
+      // Exact match after normalization
       if (cleanName == cleanGroup) return group;
-      
-      if ((cleanName.contains('PROFESSIONALELECTIVE1') || cleanName.contains('PE1')) && 
-          (cleanGroup.contains('PROFESSIONALELECTIVE1') || cleanGroup.contains('PE1'))) {
-        return group;
-      }
-      if ((cleanName.contains('PROFESSIONALELECTIVE2') || cleanName.contains('PE2')) && 
-          (cleanGroup.contains('PROFESSIONALELECTIVE2') || cleanGroup.contains('PE2'))) {
-        return group;
+      // Handle common aliases: "Professional Elective 1" -> "PE1", "Open Elective 1" -> "OE1"
+      final aliasMap = <String, List<String>>{
+        cleanGroup: _generateAliases(cleanGroup),
+      };
+      for (var alias in aliasMap[cleanGroup]!) {
+        if (cleanName == alias || cleanName.contains(alias)) return group;
       }
     }
     return null;
+  }
+
+  /// Generate common aliases for an elective group name.
+  /// e.g., PE1 -> [PROFESSIONALELECTIVE1], OE1 -> [OPENELECTIVE1]
+  List<String> _generateAliases(String normalizedGroup) {
+    final aliases = <String>[];
+    final peMatch = RegExp(r'^PE(\d+)$').firstMatch(normalizedGroup);
+    if (peMatch != null) {
+      aliases.add('PROFESSIONALELECTIVE${peMatch.group(1)}');
+    }
+    final oeMatch = RegExp(r'^OE(\d+)$').firstMatch(normalizedGroup);
+    if (oeMatch != null) {
+      aliases.add('OPENELECTIVE${oeMatch.group(1)}');
+    }
+    final kMatch = RegExp(r'^KEXPLORE$').firstMatch(normalizedGroup);
+    if (kMatch != null) {
+      aliases.add('K-EXPLORE');
+      aliases.add('KEXPLORE');
+    }
+    return aliases;
   }
 
   String _getElectiveRoom(String electiveName, int day, String startTime) {
@@ -394,7 +440,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         if (savedSection != null) selectedSection = savedSection;
         savePreference = true;
       });
-      _fetchAvailableElectives(selectedBranch, selectedSemester);
+      _fetchAvailableElectives(selectedSemester);
       // Fetch schedule for saved class
       _fetchScheduleFromBackend();
     } else {
@@ -403,7 +449,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         selectedSemester = 1;
         selectedSection = 'CSE-1';
       });
-      _fetchAvailableElectives(selectedBranch, selectedSemester);
+      _fetchAvailableElectives(selectedSemester);
       // No saved preference, fetch default schedule
       _fetchScheduleFromBackend();
     }
@@ -1011,6 +1057,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         final chosenElective = selectedElectives[matchedGroup];
         if (chosenElective != null) {
           period['className'] = chosenElective;
+          period['_replacedByElective'] = true; // Mark so append section skips this slot
+          period['isElective'] = true;
           final room = _getElectiveRoom(chosenElective, dayOfWeek, period['startTime']?.toString() ?? '');
           if (room.isNotEmpty) {
             period['room'] = room;
@@ -1119,7 +1167,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       dayClasses = _processPeriods(result, dayOfWeek);
     }
 
-    // Append chosen electives for this day
+    // Collect time slots already occupied by substituted electives
+    // to prevent double-display when _processPeriods already replaced a placeholder
+    final Set<String> occupiedSlots = {};
+    for (var cls in dayClasses) {
+      if (cls['_replacedByElective'] == true) {
+        occupiedSlots.add('${cls['startTime']}-${cls['endTime']}');
+      }
+    }
+
+    // Append chosen electives for this day (only for slots NOT already substituted)
     for (var entry in selectedElectives.entries) {
       final electiveName = entry.value;
       final electiveItem = rawElectiveData.firstWhere(
@@ -1131,13 +1188,17 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         for (var p in periods) {
           final pDay = p['day'] is int ? p['day'] as int : int.tryParse(p['day'].toString()) ?? -1;
           if (pDay == dayOfWeek) {
-            dayClasses.add({
-              'startTime': p['startTime'] ?? '',
-              'endTime': p['endTime'] ?? '',
-              'className': electiveName,
-              'room': p['room'] ?? '',
-              'isElective': true,
-            });
+            final slotKey = '${p['startTime']}-${p['endTime']}';
+            if (!occupiedSlots.contains(slotKey)) {
+              dayClasses.add({
+                'startTime': p['startTime'] ?? '',
+                'endTime': p['endTime'] ?? '',
+                'className': electiveName,
+                'room': p['room'] ?? '',
+                'isElective': true,
+              });
+              occupiedSlots.add(slotKey); // Prevent duplicates within raw data too
+            }
           }
         }
       }
@@ -1440,16 +1501,21 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         final group = entry.key;
         final val = entry.value;
         if (val != 'Not Selected') {
-          await SharedPreferencesService.setString('selectedElective_${branch}_${semester}_$group', val);
+          await SharedPreferencesService.setString(
+            'selectedElective_${semester}_$group',
+            val,
+          );
         } else {
-          await SharedPreferencesService.remove('selectedElective_${branch}_${semester}_$group');
+          await SharedPreferencesService.remove(
+            'selectedElective_${semester}_$group',
+          );
         }
       }
     }
 
     // If we are just showing (savePref == false), we skip loading preferences 
     // so we don't overwrite the temporary electives we just set in state.
-    _fetchAvailableElectives(branch, semester, skipLoadPreferences: !savePref);
+    _fetchAvailableElectives(semester, skipLoadPreferences: !savePref);
     _fetchScheduleFromBackend();
     
     if (mounted) {

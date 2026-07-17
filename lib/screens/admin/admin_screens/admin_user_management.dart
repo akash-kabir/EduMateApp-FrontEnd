@@ -10,7 +10,8 @@ class AdminUserManagementScreen extends StatefulWidget {
   const AdminUserManagementScreen({super.key});
 
   @override
-  State<AdminUserManagementScreen> createState() => _AdminUserManagementScreenState();
+  State<AdminUserManagementScreen> createState() =>
+      _AdminUserManagementScreenState();
 }
 
 class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
@@ -19,6 +20,27 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   String? _currentUserRole;
   String _searchQuery = '';
   String _selectedRoleFilter = 'All';
+
+  String _normalizeRole(String? role) {
+    final r = (role ?? 'student').toLowerCase().trim();
+    if (r == 'admin') return 'admin';
+    if (r == 'contributor' || r == 'contributer') return 'contributer';
+    if (r == 'society' || r == 'societ' || r == 'society_head') return 'societ';
+    return 'student';
+  }
+
+  String _roleLabel(String normalizedRole) {
+    switch (normalizedRole) {
+      case 'admin':
+        return 'Admin';
+      case 'contributer':
+        return 'Contributer';
+      case 'societ':
+        return 'Societ';
+      default:
+        return 'Student';
+    }
+  }
 
   @override
   void initState() {
@@ -72,13 +94,25 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       );
 
       if (response.statusCode == 200) {
-        EduMateToast.showCompact(context, message: 'Role updated successfully', isSuccess: true);
+        EduMateToast.showCompact(
+          context,
+          message: 'Role updated successfully',
+          isSuccess: true,
+        );
         _fetchUsers();
       } else {
-        EduMateToast.showCompact(context, message: 'Failed to update role', isSuccess: false);
+        EduMateToast.showCompact(
+          context,
+          message: 'Failed to update role',
+          isSuccess: false,
+        );
       }
     } catch (e) {
-      EduMateToast.showCompact(context, message: 'Error updating role', isSuccess: false);
+      EduMateToast.showCompact(
+        context,
+        message: 'Error updating role',
+        isSuccess: false,
+      );
     }
   }
 
@@ -91,24 +125,44 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       );
 
       if (response.statusCode == 200) {
-        EduMateToast.showCompact(context, message: 'User deleted successfully', isSuccess: true);
+        EduMateToast.showCompact(
+          context,
+          message: 'User deleted successfully',
+          isSuccess: true,
+        );
         _fetchUsers();
       } else {
-        EduMateToast.showCompact(context, message: 'Failed to delete user', isSuccess: false);
+        EduMateToast.showCompact(
+          context,
+          message: 'Failed to delete user',
+          isSuccess: false,
+        );
       }
     } catch (e) {
-      EduMateToast.showCompact(context, message: 'Error deleting user', isSuccess: false);
+      EduMateToast.showCompact(
+        context,
+        message: 'Error deleting user',
+        isSuccess: false,
+      );
     }
   }
 
   void _showUserOptions(BuildContext context, Map<String, dynamic> user) {
     if (_currentUserRole != 'admin') {
-      EduMateToast.showCompact(context, message: 'Only Admins can modify users', isSuccess: false);
+      EduMateToast.showCompact(
+        context,
+        message: 'Only Admins can modify users',
+        isSuccess: false,
+      );
       return;
     }
 
-    if (user['role']?.toString().toLowerCase() == 'admin') {
-      EduMateToast.showCompact(context, message: 'Cannot modify another Admin', isSuccess: false);
+    if (_normalizeRole(user['role']?.toString()) == 'admin') {
+      EduMateToast.showCompact(
+        context,
+        message: 'Cannot modify another Admin',
+        isSuccess: false,
+      );
       return;
     }
 
@@ -118,7 +172,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       isScrollControlled: true,
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final currentRole = user['role']?.toString().toLowerCase() ?? 'student';
+        final currentRole = _normalizeRole(user['role']?.toString());
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -161,7 +215,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   '${user['firstName']} ${user['lastName']} • ${user['email']}',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? CupertinoColors.systemGrey : Colors.grey[600],
+                    color: isDark
+                        ? CupertinoColors.systemGrey
+                        : Colors.grey[600],
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -189,34 +245,34 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     },
                   ),
                 if (currentRole != 'student') const SizedBox(height: 12),
-                if (currentRole != 'society')
+                if (currentRole != 'societ')
                   _buildRoleOption(
                     context: context,
-                    title: 'Society',
+                    title: 'Societ',
                     description: 'Can create posts and events.',
                     icon: CupertinoIcons.group,
                     color: CupertinoColors.activeBlue,
                     isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
-                      _updateUserRole(user['_id'], 'Society');
+                      _updateUserRole(user['_id'], 'societ');
                     },
                   ),
-                if (currentRole != 'society') const SizedBox(height: 12),
-                if (currentRole != 'contributor')
+                if (currentRole != 'societ') const SizedBox(height: 12),
+                if (currentRole != 'contributer')
                   _buildRoleOption(
                     context: context,
-                    title: 'Contributor',
+                    title: 'Contributer',
                     description: 'Can upload data to the system.',
                     icon: CupertinoIcons.wrench,
                     color: CupertinoColors.activeOrange,
                     isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
-                      _updateUserRole(user['_id'], 'Contributor');
+                      _updateUserRole(user['_id'], 'contributer');
                     },
                   ),
-                if (currentRole != 'contributor') const SizedBox(height: 12),
+                if (currentRole != 'contributer') const SizedBox(height: 12),
                 const SizedBox(height: 20),
                 GestureDetector(
                   onTap: () {
@@ -226,14 +282,24 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: CupertinoColors.destructiveRed.withValues(alpha: 0.1),
+                      color: CupertinoColors.destructiveRed.withValues(
+                        alpha: 0.1,
+                      ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: CupertinoColors.destructiveRed.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: CupertinoColors.destructiveRed.withValues(
+                          alpha: 0.3,
+                        ),
+                      ),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(CupertinoIcons.trash, color: CupertinoColors.destructiveRed, size: 20),
+                        Icon(
+                          CupertinoIcons.trash,
+                          color: CupertinoColors.destructiveRed,
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Remove User Account',
@@ -261,7 +327,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Remove User'),
-        content: Text('Are you sure you want to permanently delete ${user['firstName']} ${user['lastName']}? This cannot be undone.'),
+        content: Text(
+          'Are you sure you want to permanently delete ${user['firstName']} ${user['lastName']}? This cannot be undone.',
+        ),
         actions: [
           CupertinoDialogAction(
             child: const Text('Cancel'),
@@ -326,7 +394,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     description,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? CupertinoColors.systemGrey : Colors.grey[600],
+                      color: isDark
+                          ? CupertinoColors.systemGrey
+                          : Colors.grey[600],
                     ),
                   ),
                 ],
@@ -348,20 +418,28 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final filteredUsers = _users.where((user) {
-      final role = (user['role']?.toString() ?? 'student').toLowerCase();
+      final role = _normalizeRole(user['role']?.toString());
       final email = (user['email']?.toString() ?? '').toLowerCase();
       final name = '${user['firstName']} ${user['lastName']}'.toLowerCase();
-      
-      final matchesSearch = email.contains(_searchQuery.toLowerCase()) || name.contains(_searchQuery.toLowerCase());
-      final matchesFilter = _selectedRoleFilter == 'All' || role == _selectedRoleFilter.toLowerCase();
-      
+
+      final matchesSearch =
+          email.contains(_searchQuery.toLowerCase()) ||
+          name.contains(_searchQuery.toLowerCase());
+      final matchesFilter =
+          _selectedRoleFilter == 'All' ||
+          role == _selectedRoleFilter.toLowerCase();
+
       return matchesSearch && matchesFilter;
     }).toList();
 
     return CupertinoPageScaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.systemGroupedBackground,
+      backgroundColor: isDark
+          ? CupertinoColors.black
+          : CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
-        backgroundColor: isDark ? CupertinoColors.black.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
+        backgroundColor: isDark
+            ? CupertinoColors.black.withValues(alpha: 0.8)
+            : Colors.white.withValues(alpha: 0.8),
         middle: const Text('User Management'),
         previousPageTitle: 'Settings',
       ),
@@ -373,7 +451,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               // Search and Filter Header
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                color: isDark ? CupertinoColors.black : CupertinoColors.systemGroupedBackground,
+                color: isDark
+                    ? CupertinoColors.black
+                    : CupertinoColors.systemGroupedBackground,
                 child: Column(
                   children: [
                     Container(
@@ -393,7 +473,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         children: [
                           const Padding(
                             padding: EdgeInsets.only(left: 16, right: 12),
-                            child: Icon(CupertinoIcons.search, color: CupertinoColors.systemGrey),
+                            child: Icon(
+                              CupertinoIcons.search,
+                              color: CupertinoColors.systemGrey,
+                            ),
                           ),
                           Expanded(
                             child: CupertinoTextField(
@@ -403,7 +486,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                   _searchQuery = value;
                                 });
                               },
-                              style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 16),
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black,
+                                fontSize: 16,
+                              ),
                               decoration: null, // removes default border
                             ),
                           ),
@@ -415,39 +501,61 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                       scrollDirection: Axis.horizontal,
                       physics: const BouncingScrollPhysics(),
                       child: Row(
-                        children: ['All', 'Admin', 'Contributor', 'Society', 'Student'].map((role) {
-                          final isSelected = _selectedRoleFilter == role;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedRoleFilter = role;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: isSelected 
-                                      ? CupertinoColors.activeBlue 
-                                      : (isDark ? const Color(0xFF2C2C2E) : Colors.white),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: isSelected ? CupertinoColors.activeBlue : (isDark ? Colors.white12 : Colors.black12),
+                        children:
+                            [
+                              'All',
+                              'Admin',
+                              'Contributer',
+                              'Societ',
+                              'Student',
+                            ].map((role) {
+                              final isSelected = _selectedRoleFilter == role;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedRoleFilter = role;
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? CupertinoColors.activeBlue
+                                          : (isDark
+                                                ? const Color(0xFF2C2C2E)
+                                                : Colors.white),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? CupertinoColors.activeBlue
+                                            : (isDark
+                                                  ? Colors.white12
+                                                  : Colors.black12),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      role,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : (isDark
+                                                  ? Colors.white70
+                                                  : Colors.black87),
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        fontSize: 14,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                child: Text(
-                                  role,
-                                  style: TextStyle(
-                                    color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                              );
+                            }).toList(),
                       ),
                     ),
                   ],
@@ -461,107 +569,126 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         itemCount: filteredUsers.length,
                         itemBuilder: (context, index) {
                           final user = filteredUsers[index];
-                    final role = user['role']?.toString() ?? 'Student';
-                    final firstName = user['firstName']?.toString() ?? '';
-                    final lastName = user['lastName']?.toString() ?? '';
-                    final initials = '${firstName.isNotEmpty ? firstName[0].toUpperCase() : ''}${lastName.isNotEmpty ? lastName[0].toUpperCase() : ''}';
-                    
-                    Color roleColor;
-                    switch (role.toLowerCase()) {
-                      case 'admin':
-                        roleColor = CupertinoColors.systemRed;
-                        break;
-                      case 'contributor':
-                        roleColor = CupertinoColors.activeOrange;
-                        break;
-                      case 'society':
-                        roleColor = CupertinoColors.activeBlue;
-                        break;
-                      default:
-                        roleColor = CupertinoColors.systemGrey;
-                    }
+                          final normalizedRole = _normalizeRole(
+                            user['role']?.toString(),
+                          );
+                          final role = _roleLabel(normalizedRole);
+                          final firstName = user['firstName']?.toString() ?? '';
+                          final lastName = user['lastName']?.toString() ?? '';
+                          final initials =
+                              '${firstName.isNotEmpty ? firstName[0].toUpperCase() : ''}${lastName.isNotEmpty ? lastName[0].toUpperCase() : ''}';
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () => _showUserOptions(context, user),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 24,
-                                backgroundColor: roleColor.withValues(alpha: 0.2),
-                                child: Text(
-                                  initials.isEmpty ? '?' : initials,
-                                  style: TextStyle(
-                                    color: roleColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          Color roleColor;
+                          switch (normalizedRole) {
+                            case 'admin':
+                              roleColor = CupertinoColors.systemRed;
+                              break;
+                            case 'contributer':
+                              roleColor = CupertinoColors.activeOrange;
+                              break;
+                            case 'societ':
+                              roleColor = CupertinoColors.activeBlue;
+                              break;
+                            default:
+                              roleColor = CupertinoColors.systemGrey;
+                          }
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1C1C1E)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: isDark
+                                      ? Colors.black.withValues(alpha: 0.3)
+                                      : Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                              ],
+                            ),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () => _showUserOptions(context, user),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
                                   children: [
-                                    Text(
-                                      '$firstName $lastName',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: isDark ? Colors.white : Colors.black,
+                                    CircleAvatar(
+                                      radius: 24,
+                                      backgroundColor: roleColor.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      child: Text(
+                                        initials.isEmpty ? '?' : initials,
+                                        style: TextStyle(
+                                          color: roleColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      user['email'] ?? '',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: isDark ? CupertinoColors.systemGrey : Colors.grey[600],
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '$firstName $lastName',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            user['email'] ?? '',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: isDark
+                                                  ? CupertinoColors.systemGrey
+                                                  : Colors.grey[600],
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: roleColor.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        role,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: roleColor,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: roleColor.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  role,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: roleColor,
-                                  ),
-                                ),
-                              ),
-
-                            ],
-                          ),
-                        ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           ),
