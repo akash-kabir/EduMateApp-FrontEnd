@@ -424,15 +424,29 @@ class SharedPreferencesService {
       await setString('selectedClass', user['section']);
     }
     if (user['year'] != null) {
-      await setString(_yearKey, user['year']);
+      await setString(_yearKey, user['year'].toString());
     }
     if (user['semester'] != null) {
-      await setString(_semesterKey, user['semester']);
+      await setString(_semesterKey, user['semester'].toString());
     }
     final isCompleted = user['isProfileCompleted'] ?? false;
     await setBool(_isProfileCompletedKey, isCompleted);
     if (isCompleted) {
       await setProfileSetupComplete(true);
+      // Auto-configure timesheet defaults
+      if (user['branch'] != null) {
+        await setString('timesheet_branch', user['branch'].toString());
+      }
+      if (user['semester'] != null) {
+        await setString('timesheet_semester', user['semester'].toString());
+      }
+      if (user['section'] != null) {
+        await setString('timesheet_section', user['section'].toString());
+      }
+      if (user['year'] != null) {
+        await setString('timesheet_year', user['year'].toString());
+      }
+      await setBool('timesheet_save_preference', true);
     }
   }
 

@@ -107,20 +107,7 @@ class _LoginScreenState extends State<LoginScreen>
         // Save full user profile to SharedPreferences
         await SharedPreferencesService.saveFullUserProfile(user);
 
-        // If profile is completed, also save branch as selectedBranch for timesheet
-        if (user['isProfileCompleted'] == true && user['branch'] != null) {
-          await SharedPreferencesService.setString(
-            'selectedBranch',
-            user['branch'],
-          );
-          if (user['section'] != null) {
-            await SharedPreferencesService.setString(
-              'selectedClass',
-              user['section'],
-            );
-            await SharedPreferencesService.setBool('savePreference', true);
-          }
-        }
+
 
         if (mounted) {
           Navigator.pushReplacement(

@@ -422,16 +422,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Future<void> _loadSavedPreferenceAndFetchSchedule() async {
-    final savedClass = await SharedPreferencesService.getString(
-      'selectedSemester.toString()',
-    );
-    final savedBranch = await SharedPreferencesService.getString(
-      'selectedBranch',
-    );
-    final savedSection = await SharedPreferencesService.getString(
-      'selectedSection',
-    );
-    final saved = await SharedPreferencesService.getBool('savePreference');
+    final savedClass = await SharedPreferencesService.getString('timesheet_semester');
+    final savedBranch = await SharedPreferencesService.getString('timesheet_branch');
+    final savedSection = await SharedPreferencesService.getString('timesheet_section');
+    final saved = await SharedPreferencesService.getBool('timesheet_save_preference');
 
     if (saved && savedClass != null) {
       setState(() {
@@ -439,6 +433,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         selectedSemester = int.tryParse(savedClass.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
         if (savedSection != null) selectedSection = savedSection;
         savePreference = true;
+        
+        // Dynamically add the section to the dropdown list if it's not present
+        if (selectedBranch.isNotEmpty && selectedSection.isNotEmpty) {
+          classesPerBranch.putIfAbsent(selectedBranch, () => []);
+          if (!classesPerBranch[selectedBranch]!.contains(selectedSection)) {
+            classesPerBranch[selectedBranch]!.add(selectedSection);
+          }
+        }
       });
       _fetchAvailableElectives(selectedSemester);
       // Fetch schedule for saved class
@@ -463,17 +465,17 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     bool shouldSave,
   ) async {
     if (shouldSave) {
-      await SharedPreferencesService.setString('selectedBranch', branch);
-      await SharedPreferencesService.setString('selectedSemester.toString()', classValue);
-      await SharedPreferencesService.setString('selectedSection', sectionValue);
-      await SharedPreferencesService.setString('selectedYear', yearValue);
-      await SharedPreferencesService.setBool('savePreference', true);
+      await SharedPreferencesService.setString('timesheet_branch', branch);
+      await SharedPreferencesService.setString('timesheet_semester', classValue);
+      await SharedPreferencesService.setString('timesheet_section', sectionValue);
+      await SharedPreferencesService.setString('timesheet_year', yearValue);
+      await SharedPreferencesService.setBool('timesheet_save_preference', true);
     } else {
-      await SharedPreferencesService.remove('selectedBranch');
-      await SharedPreferencesService.remove('selectedSemester.toString()');
-      await SharedPreferencesService.remove('selectedSection');
-      await SharedPreferencesService.remove('selectedYear');
-      await SharedPreferencesService.setBool('savePreference', false);
+      await SharedPreferencesService.remove('timesheet_branch');
+      await SharedPreferencesService.remove('timesheet_semester');
+      await SharedPreferencesService.remove('timesheet_section');
+      await SharedPreferencesService.remove('timesheet_year');
+      await SharedPreferencesService.setBool('timesheet_save_preference', false);
     }
   }
 
@@ -1103,6 +1105,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               }, orElse: () => null);
             }
 
+            // Fix for when section is saved as just a number (e.g., "22") instead of "CS 22"
+            if (section == null && RegExp(r'^\d+$').hasMatch(normalizedSaved)) {
+              final correctedSearch = '${selectedBranch.toUpperCase()}$normalizedSaved';
+              section = classes.firstWhere((s) {
+                final normName = s['name'].toString().toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
+                return correctedSearch == normName;
+              }, orElse: () => null);
+            }
+
             section ??= classes.first;
 
             if (section != null) {
@@ -1110,22 +1121,22 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               final dbName = section['name'] as String;
               String uiFormattedName = dbName.trim();
               if (dbName.startsWith('CS') && !dbName.startsWith('CSCE') && !dbName.startsWith('CSSE')) {
-                final numberPart = dbName.substring(2);
+                final numberPart = dbName.substring(2).trim();
                 if (int.tryParse(numberPart) != null) {
                   uiFormattedName = 'CSE-$numberPart';
                 }
               } else if (dbName.startsWith('CSCE')) {
-                final numberPart = dbName.substring(4);
+                final numberPart = dbName.substring(4).trim();
                 if (int.tryParse(numberPart) != null) {
                   uiFormattedName = 'CSCE-$numberPart';
                 }
               } else if (dbName.startsWith('CSSE')) {
-                final numberPart = dbName.substring(4);
+                final numberPart = dbName.substring(4).trim();
                 if (int.tryParse(numberPart) != null) {
                   uiFormattedName = 'CSSE-$numberPart';
                 }
               } else if (dbName.startsWith('IT')) {
-                final numberPart = dbName.substring(2);
+                final numberPart = dbName.substring(2).trim();
                 if (int.tryParse(numberPart) != null) {
                   uiFormattedName = 'IT-$numberPart';
                 }
