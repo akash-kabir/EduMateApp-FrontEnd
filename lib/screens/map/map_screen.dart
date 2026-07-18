@@ -436,11 +436,39 @@ class _MapScreenState extends State<MapScreen> {
                                       itemCount: _filteredPois.length,
                                       itemBuilder: (context, index) {
                                         final poi = _filteredPois[index];
-                                        return CupertinoListTile(
-                                          title: Text(poi.name, style: TextStyle(color: isDark ? Colors.white : Colors.black)),
-                                          subtitle: Text(poi.type, style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600])),
-                                          leading: Icon(CupertinoIcons.map_pin_ellipse, color: _getColorForType(poi.type)),
-                                          onTap: () => _navigateToPoi(poi),
+                                        return Container(
+                                          margin: const EdgeInsets.only(bottom: 8),
+                                          decoration: BoxDecoration(
+                                            color: isDark ? Colors.grey[850] : Colors.white,
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                                          ),
+                                          child: Material(
+                                            type: MaterialType.transparency,
+                                            child: InkWell(
+                                              borderRadius: BorderRadius.circular(12),
+                                              onTap: () => _navigateToPoi(poi),
+                                              child: Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(CupertinoIcons.map_pin_ellipse, color: _getColorForType(poi.type)),
+                                                    const SizedBox(width: 16),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(poi.name, style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+                                                          const SizedBox(height: 4),
+                                                          Text(poi.type, style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 13)),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         );
                                       },
                                     ),
