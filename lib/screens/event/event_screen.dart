@@ -8,6 +8,7 @@ import 'event_card.dart';
 import 'create_post_screen.dart';
 
 import '../../widgets/toast_manager.dart';
+import '../../widgets/skeleton_event_card.dart';
 
 class EventScreen extends StatefulWidget {
   const EventScreen({super.key});
@@ -163,83 +164,89 @@ class _EventScreenState extends State<EventScreen> {
         ].contains(userRole!.toLowerCase());
 
     return CupertinoPageScaffold(
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          CupertinoSliverNavigationBar(
-            automaticallyImplyLeading: false,
-            largeTitle: Text(
-              'Events & News',
-              style: TextStyle(
-                fontFamily: 'Salena',
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            backgroundColor: isDark
-                ? CupertinoColors.black.withOpacity(0.6)
-                : CupertinoColors.white.withOpacity(0.6),
-            leading: CupertinoButton(
+      navigationBar: CupertinoNavigationBar(
+        automaticallyImplyLeading: false,
+        middle: const Text(
+          'Events & News',
+          style: TextStyle(
+            fontFamily: 'Salena',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDark
+            ? CupertinoColors.black.withOpacity(0.6)
+            : CupertinoColors.white.withOpacity(0.6),
+        leading: canPost
+            ? CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (_) => const CreatePostScreen(),
+                    ),
+                  );
+                  if (result == true) {
+                    _fetchPosts();
+                  }
+                },
+                child: const Icon(
+                  CupertinoIcons.add_circled_solid,
+                  color: Color(0xFFFF9B7A),
+                ),
+              )
+            : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CupertinoButton(
               padding: EdgeInsets.zero,
-              onPressed: _fetchPosts,
+              onPressed: _showFilterDialog,
               child: Icon(
-                CupertinoIcons.refresh,
+                CupertinoIcons.slider_horizontal_3,
                 color: isDark ? Colors.white : Colors.black,
               ),
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (canPost)
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        CupertinoPageRoute(
-                          builder: (_) => const CreatePostScreen(),
-                        ),
-                      );
-                      if (result == true) {
-                        _fetchPosts();
-                      }
-                    },
-                    child: const Icon(
-                      CupertinoIcons.add_circled_solid,
-                      color: Color(0xFFFF9B7A),
-                    ),
-                  ),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: _showFilterDialog,
-                  child: Icon(
-                    CupertinoIcons.slider_horizontal_3,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
+        ),
+      ),
+      child: RefreshIndicator(
+        onRefresh: () async {
+          await _fetchPosts();
+        },
+        edgeOffset: MediaQuery.of(context).padding.top + 44.0,
+        color: const Color(0xFFFF9B7A),
+        child: CustomScrollView(
+          physics: const ClampingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          slivers: [
           if (isLoading)
-            SliverFillRemaining(
-              child: Center(
-                child: CupertinoActivityIndicator(radius: 15, animating: true),
+            SliverPadding(
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60.0),
+              sliver: const SliverFillRemaining(
+                child: SkeletonEventList(),
               ),
             )
           else if (posts.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Text(
-                  'No posts available',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDark ? Colors.white70 : Colors.black54,
+            SliverPadding(
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60.0),
+              sliver: SliverFillRemaining(
+                child: Center(
+                  child: Text(
+                    'No posts available',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: isDark ? Colors.white70 : Colors.black54,
+                    ),
                   ),
                 ),
               ),
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.only(bottom: 100),
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 60.0,
+                bottom: 100,
+              ),
               sliver: SliverList.builder(
                 itemCount: posts.length,
                 itemBuilder: (context, index) {
@@ -248,6 +255,7 @@ class _EventScreenState extends State<EventScreen> {
               ),
             ),
         ],
+      ),
       ),
     );
   }

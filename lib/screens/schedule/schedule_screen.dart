@@ -10,6 +10,7 @@ import '../../services/shared_preferences_service.dart';
 import '../../services/token_refresh_service.dart';
 
 import '../../widgets/toast_manager.dart';
+import '../../widgets/skeleton_loading_card.dart';
 import 'schedule_settings_modal.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -627,96 +628,97 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final weekDates = getWeekDates();
     final now = DateTime.now();
 
-    return CupertinoPageScaffold(
-      child: GestureDetector(
-        onHorizontalDragStart: (_) {
+    return GestureDetector(
+      onHorizontalDragStart: (_) {
+        setState(() {
+          _dragOffset = 0.0;
+        });
+      },
+      onHorizontalDragUpdate: (details) {
+        setState(() {
+          _dragOffset += details.delta.dx;
+        });
+      },
+      onHorizontalDragEnd: (details) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final swipeThreshold = screenWidth * 0.25;
+        final velocityThreshold = 200.0;
+        final velocity = details.primaryVelocity ?? 0;
+        final weekDatesLocal = getWeekDates();
+        final currentIndex = weekDatesLocal.indexWhere(
+          (date) =>
+              date.year == selectedDate.year &&
+              date.month == selectedDate.month &&
+              date.day == selectedDate.day,
+        );
+        bool didSwipe = false;
+        // Swipe left (negative drag or velocity) → next day
+        if (_dragOffset < -swipeThreshold || velocity < -velocityThreshold) {
+          // Mon(1)→Sat(6)
+          if (currentIndex < 6) {
+            final nextIndex = currentIndex + 1 <= 6
+                ? currentIndex + 1
+                : currentIndex;
+            setState(() {
+              _slideFromRight = true;
+              _dragOffset = 0.0;
+              selectedDate = weekDatesLocal[nextIndex];
+            });
+            didSwipe = true;
+          }
+        }
+        // Swipe right (positive drag or velocity) → previous day
+        else if (_dragOffset > swipeThreshold ||
+            velocity > velocityThreshold) {
+          if (currentIndex > 1) {
+            final prevIndex = currentIndex - 1 >= 1
+                ? currentIndex - 1
+                : currentIndex;
+            setState(() {
+              _slideFromRight = false;
+              _dragOffset = 0.0;
+              selectedDate = weekDatesLocal[prevIndex];
+            });
+            didSwipe = true;
+          }
+        }
+        if (!didSwipe) {
+          // Snap back
           setState(() {
             _dragOffset = 0.0;
           });
-        },
-        onHorizontalDragUpdate: (details) {
-          setState(() {
-            _dragOffset += details.delta.dx;
-          });
-        },
-        onHorizontalDragEnd: (details) {
-          final screenWidth = MediaQuery.of(context).size.width;
-          final swipeThreshold = screenWidth * 0.25;
-          final velocityThreshold = 200.0;
-          final velocity = details.primaryVelocity ?? 0;
-          final weekDatesLocal = getWeekDates();
-          final currentIndex = weekDatesLocal.indexWhere(
-            (date) =>
-                date.year == selectedDate.year &&
-                date.month == selectedDate.month &&
-                date.day == selectedDate.day,
-          );
-          bool didSwipe = false;
-          // Swipe left (negative drag or velocity) → next day
-          if (_dragOffset < -swipeThreshold || velocity < -velocityThreshold) {
-            // Mon(1)→Sat(6)
-            if (currentIndex < 6) {
-              final nextIndex = currentIndex + 1 <= 6
-                  ? currentIndex + 1
-                  : currentIndex;
-              setState(() {
-                _slideFromRight = true;
-                _dragOffset = 0.0;
-                selectedDate = weekDatesLocal[nextIndex];
-              });
-              didSwipe = true;
-            }
-          }
-          // Swipe right (positive drag or velocity) → previous day
-          else if (_dragOffset > swipeThreshold ||
-              velocity > velocityThreshold) {
-            if (currentIndex > 1) {
-              final prevIndex = currentIndex - 1 >= 1
-                  ? currentIndex - 1
-                  : currentIndex;
-              setState(() {
-                _slideFromRight = false;
-                _dragOffset = 0.0;
-                selectedDate = weekDatesLocal[prevIndex];
-              });
-              didSwipe = true;
-            }
-          }
-          if (!didSwipe) {
-            // Snap back
-            setState(() {
-              _dragOffset = 0.0;
-            });
-          }
-        },
+        }
+      },
+      child: CupertinoPageScaffold(
+        navigationBar: CupertinoNavigationBar(
+          automaticallyImplyLeading: false,
+          middle: const Text(
+            'Timesheet',
+            style: TextStyle(
+              fontFamily: 'Salena',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: isDark
+              ? CupertinoColors.black.withOpacity(0.6)
+              : CupertinoColors.white.withOpacity(0.6),
+          trailing: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: _showSettingsBottomSheet,
+            child: const Icon(
+              Icons.settings,
+              color: AuthPalette.coral,
+              size: 22,
+            ),
+          ),
+        ),
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            CupertinoSliverNavigationBar(
-              automaticallyImplyLeading: false,
-              largeTitle: Text(
-                'Timesheet',
-                style: TextStyle(
-                  fontFamily: 'Salena',
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              backgroundColor: isDark
-                  ? CupertinoColors.black.withValues(alpha: 0.6)
-                  : CupertinoColors.white.withValues(alpha: 0.6),
-              trailing: CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: _showSettingsBottomSheet,
-                child: const Icon(
-                  CupertinoIcons.settings,
-                  color: AuthPalette.coral,
-                  size: 22,
-                ),
-              ),
-            ),
             SliverPersistentHeader(
               pinned: true,
               delegate: _DaySelectorHeaderDelegate(
+                topPadding: MediaQuery.of(context).padding.top + 44.0,
                 height: 118.0,
                 child: ClipRect(
                   child: BackdropFilter(
@@ -817,22 +819,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 ),
               )
             else if (isLoading)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const CupertinoActivityIndicator(),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Loading schedule for $selectedSemester.toString()...',
-                        style: TextStyle(
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
+              const SliverFillRemaining(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 16.0),
+                  child: SkeletonLoadingList(),
                 ),
               )
             else if (scheduleData == null)
@@ -1601,14 +1591,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 class _DaySelectorHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final double height;
+  final double topPadding;
 
-  _DaySelectorHeaderDelegate({required this.child, required this.height});
-
-  @override
-  double get minExtent => height;
+  _DaySelectorHeaderDelegate({required this.child, required this.height, this.topPadding = 0.0});
 
   @override
-  double get maxExtent => height;
+  double get minExtent => height + topPadding;
+
+  @override
+  double get maxExtent => height + topPadding;
 
   @override
   Widget build(
@@ -1616,7 +1607,10 @@ class _DaySelectorHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return child;
+    return Padding(
+      padding: EdgeInsets.only(top: topPadding),
+      child: child,
+    );
   }
 
   @override
