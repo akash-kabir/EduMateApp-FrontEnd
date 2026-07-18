@@ -185,14 +185,24 @@ class _EventCardState extends State<EventCard>
                         ),
                       ),
                       const SizedBox(height: 1),
-                      Text(
-                        isEvent ? 'Event' : 'News',
-                        style: TextStyle(
-                          fontFamily: 'Salena',
-                          fontSize: 12,
-                          color: typeColor,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            isEvent ? CupertinoIcons.calendar : CupertinoIcons.news,
+                            size: 12,
+                            color: typeColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isEvent ? 'Event' : 'News',
+                            style: TextStyle(
+                              fontFamily: 'Salena',
+                              fontSize: 12,
+                              color: typeColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -212,87 +222,135 @@ class _EventCardState extends State<EventCard>
 
           // ── Post image (if any) ──
           if (hasImage)
-            GestureDetector(
-              onTap: _toggleExpanded,
-              child: AspectRatio(
-                aspectRatio: 4 / 3,
-                child: Image.network(
-                  widget.post['imageUrl'],
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: isDark
-                          ? Colors.white10
-                          : Colors.black.withOpacity(0.04),
-                      child: const Center(child: CupertinoActivityIndicator()),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: isDark
-                          ? Colors.white10
-                          : Colors.black.withOpacity(0.04),
-                      child: Center(
-                        child: Icon(
-                          CupertinoIcons.photo,
-                          size: 40,
-                          color: isDark ? Colors.white24 : Colors.black26,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _toggleExpanded,
+                child: AspectRatio(
+                  aspectRatio: 4 / 3,
+                  child: Image.network(
+                    widget.post['imageUrl'],
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        color: isDark
+                            ? Colors.white10
+                            : Colors.black.withOpacity(0.04),
+                        child: const Center(child: CupertinoActivityIndicator()),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: isDark
+                            ? Colors.white10
+                            : Colors.black.withOpacity(0.04),
+                        child: Center(
+                          child: Icon(
+                            CupertinoIcons.photo,
+                            size: 40,
+                            color: isDark ? Colors.white24 : Colors.black26,
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
 
           // ── Content banner with gradient ──
-          GestureDetector(
-            onTap: _toggleExpanded,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isEvent
-                      ? [
-                          AuthPalette.teal.withOpacity(isDark ? 0.4 : 0.15),
-                          AuthPalette.deepTeal.withOpacity(isDark ? 0.5 : 0.2),
-                        ]
-                      : [
-                          AuthPalette.blush.withOpacity(isDark ? 0.3 : 0.1),
-                          AuthPalette.coral.withOpacity(isDark ? 0.4 : 0.15),
-                        ],
-                ),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    heading,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
-                      height: 1.3,
-                    ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _toggleExpanded,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isEvent
+                        ? [
+                            AuthPalette.teal.withOpacity(isDark ? 0.4 : 0.15),
+                            AuthPalette.deepTeal.withOpacity(isDark ? 0.5 : 0.2),
+                          ]
+                        : [
+                            AuthPalette.blush.withOpacity(isDark ? 0.3 : 0.1),
+                            AuthPalette.coral.withOpacity(isDark ? 0.4 : 0.15),
+                          ],
                   ),
-                  // Show body below heading when there's no image
-                  if (!hasImage && body.isNotEmpty) ...[
-                    const SizedBox(height: 10),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                     Text(
-                      body,
+                      heading,
                       style: TextStyle(
-                        fontSize: 14,
-                        height: 1.5,
-                        color: isDark ? Colors.white70 : Colors.black54,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                        height: 1.3,
                       ),
                     ),
+                    if (hasEventDetails) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Icon(CupertinoIcons.calendar, size: 14, color: isDark ? AuthPalette.teal : AuthPalette.deepTeal),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              widget.post['eventDetails']['isDateRange'] == true
+                                  ? '${_formatDate(widget.post['eventDetails']['startDate'])} — ${_formatDate(widget.post['eventDetails']['endDate'])}'
+                                  : _formatDate(widget.post['eventDetails']['startDate']),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? AuthPalette.teal : AuthPalette.deepTeal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(CupertinoIcons.clock, size: 14, color: isDark ? AuthPalette.teal : AuthPalette.deepTeal),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              widget.post['eventDetails']['isTimeRange'] == true
+                                  ? '${widget.post['eventDetails']['startTime']} — ${widget.post['eventDetails']['endTime']}'
+                                  : widget.post['eventDetails']['startTime'] ?? '',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? AuthPalette.teal : AuthPalette.deepTeal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    // Show body below heading when there's no image
+                    if (!hasImage && body.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        body,
+                        maxLines: isExpanded ? null : 2,
+                        overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

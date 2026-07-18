@@ -643,19 +643,23 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFFFF3366), Color(0xFFFF7733)],
+                        colors: [
+                          Color(0xFFFF3366), // Vibrant Pink-Red
+                          Color(0xFFFF7733), // Vibrant Orange
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(16), // Softer, more standard border radius
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFF3366).withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+                          color: const Color(0xFFFF3366).withValues(alpha: 0.25), // Subtle, elegant shadow
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
@@ -663,13 +667,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'HOLIDAY',
+                          'OFFICIAL HOLIDAY',
                           style: TextStyle(
-                            fontFamily: 'Salena',
                             color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 3,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -680,13 +683,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                             color: Colors.white,
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black26,
-                                offset: Offset(0, 2),
-                                blurRadius: 4,
-                              ),
-                            ],
+                            height: 1.2,
                           ),
                         ),
                       ],
