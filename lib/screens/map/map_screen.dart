@@ -7,6 +7,11 @@ import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mapbox;
 
 import '../../models/poi_model.dart';
+import '../../widgets/custom_glass_dialog.dart';
+import '../../services/shared_preferences_service.dart';
+import 'map_route_service.dart';
+import 'navigation_manager.dart';
+import 'widgets/navigation_status_card.dart';
 import '../../services/poi_service.dart';
 import '../../services/map_service.dart';
 import '../../constants/app_constants.dart';
@@ -50,15 +55,24 @@ class _MapScreenState extends State<MapScreen> {
   bool _isPoiCardExpanded = false;
   final TextEditingController _searchController = TextEditingController();
 
+  final NavigationManager _navigationManager = NavigationManager();
+
   Map<String, PoiModel> _annotationIdToPoi = {};
   PoiAnnotationClickListener? _poiClickListener;
 
   @override
   void initState() {
     super.initState();
+    _navigationManager.addListener(_onNavigationStateChanged);
     _initializeMapbox();
     _requestLocationPermission();
     _loadPOIs();
+  }
+  
+  void _onNavigationStateChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _loadPOIs() async {
@@ -78,6 +92,8 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
+    _navigationManager.removeListener(_onNavigationStateChanged);
+    _navigationManager.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -193,10 +209,16 @@ class _MapScreenState extends State<MapScreen> {
         distanceFilter: 5,
       ),
     ).listen((geolocator.Position position) {
-      setState(() {
-        currentLatitude = position.latitude;
-        currentLongitude = position.longitude;
-      });
+      if (mounted) {
+        setState(() {
+          currentLatitude = position.latitude;
+          currentLongitude = position.longitude;
+        });
+        
+        if (mapboxMap != null) {
+          _navigationManager.onLocationUpdated(mapboxMap!, position.latitude, position.longitude);
+        }
+      }
     });
   }
 
@@ -576,6 +598,31 @@ class _MapScreenState extends State<MapScreen> {
               right: 10,
               child: _selectedPoi == null ? const SizedBox() : _buildPoiDetailCard(_selectedPoi!, isDark),
             ),
+            
+            // Navigation Status Card overlay
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              bottom: _navigationManager.isNavigating ? 40 : -150, // Pushed to 40 so it sits nicely when nav bar is hidden
+              left: 16,
+              right: 16,
+              child: _navigationManager.isNavigating && _navigationManager.target != null 
+                  ? NavigationStatusCard(
+                      isDark: isDark,
+                      poiName: _navigationManager.target!.name,
+                      distanceInMeters: _navigationManager.distanceRemaining,
+                      onStopNavigation: () {
+                        if (mapboxMap != null) {
+                          _navigationManager.stopNavigation(mapboxMap!);
+                        }
+                        if (widget.onNavBarVisibilityChange != null) {
+                          widget.onNavBarVisibilityChange!(true); // show nav bar again
+                        }
+                        _recenterToCurrentLocation();
+                      },
+                    )
+                  : const SizedBox(),
+            ),
           ],
         ),
       ),
@@ -706,9 +753,64 @@ class _MapScreenState extends State<MapScreen> {
                               color: AuthPalette.teal,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               borderRadius: BorderRadius.circular(12),
-                              onPressed: () {},
+                              onPressed: () async {
+                                if (currentLatitude == null || currentLongitude == null || mapboxMap == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Current location not available')),
+                                  );
+                                  return;
+                                }
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Generating route...')),
+                                );
+
+                                await _navigationManager.startNavigation(
+                                  mapboxMap!,
+                                  poi,
+                                  currentLatitude!,
+                                  currentLongitude!,
+                                );
+                                
+                                // Adjust camera to fit route (roughly)
+                                final bounds = mapbox.CoordinateBounds(
+                                  southwest: mapbox.Point(
+                                    coordinates: mapbox.Position(
+                                      currentLongitude! < poi.lng ? currentLongitude! : poi.lng,
+                                      currentLatitude! < poi.lat ? currentLatitude! : poi.lat,
+                                    )
+                                  ),
+                                  northeast: mapbox.Point(
+                                    coordinates: mapbox.Position(
+                                      currentLongitude! > poi.lng ? currentLongitude! : poi.lng,
+                                      currentLatitude! > poi.lat ? currentLatitude! : poi.lat,
+                                    )
+                                  ),
+                                  infiniteBounds: false,
+                                );
+                                
+                                mapboxMap?.cameraForCoordinateBounds(
+                                  bounds,
+                                  mapbox.MbxEdgeInsets(top: 100, left: 50, bottom: 200, right: 50),
+                                  null, null, null, null,
+                                ).then((cameraOptions) {
+                                  mapboxMap?.easeTo(
+                                    cameraOptions,
+                                    mapbox.MapAnimationOptions(duration: 1000),
+                                  );
+                                });
+                                
+                                setState(() {
+                                  _isPoiCardExpanded = false;
+                                  _selectedPoi = null; // hide the POI card
+                                });
+                                
+                                if (widget.onNavBarVisibilityChange != null) {
+                                  widget.onNavBarVisibilityChange!(false); // hide nav bar while navigating
+                                }
+                              },
                               child: const Text(
-                                'Navigate',
+                                'Navigate (In-App)',
                                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                               ),
                             ),
