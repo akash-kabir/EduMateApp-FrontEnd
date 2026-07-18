@@ -63,17 +63,39 @@ class _AppNavigatorState extends State<AppNavigator> {
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         transitionBuilder: (child, animation) {
-          final offsetBegin = _slideFromRight
-              ? const Offset(1.0, 0.0)
-              : const Offset(-1.0, 0.0);
-          final offsetAnimation = Tween<Offset>(
-            begin: offsetBegin,
-            end: Offset.zero,
-          ).animate(animation);
-          return SlideTransition(
-            position: offsetAnimation,
-            child: FadeTransition(opacity: animation, child: child),
-          );
+          final isIncoming = child.key == ValueKey<int>(_selectedIndex);
+          
+          if (isIncoming) {
+            final offsetBegin = _slideFromRight
+                ? const Offset(1.0, 0.0)
+                : const Offset(-1.0, 0.0);
+            final offsetAnimation = Tween<Offset>(
+              begin: offsetBegin,
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            ));
+            
+            return SlideTransition(
+              position: offsetAnimation,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 15,
+                      spreadRadius: -2,
+                    ),
+                  ],
+                ),
+                child: child,
+              ),
+            );
+          } else {
+            // Outgoing screen remains stationary and fully visible underneath
+            return child;
+          }
         },
         layoutBuilder: (currentChild, previousChildren) {
           return Stack(
