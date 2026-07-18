@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 
 class SkeletonEventList extends StatefulWidget {
   const SkeletonEventList({super.key});
@@ -53,7 +52,7 @@ class _SkeletonEventListState extends State<SkeletonEventList>
 }
 
 class _SkeletonEventCard extends StatelessWidget {
-  const _SkeletonEventCard({super.key});
+  const _SkeletonEventCard();
 
   @override
   Widget build(BuildContext context) {

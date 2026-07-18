@@ -23,6 +23,9 @@ class Config {
   // Admin endpoints
   static const String adminStatsEndpoint = "$BASE_URL/api/admin/stats";
 
+  // Holiday endpoints
+  static const String holidayBaseEndpoint = "$BASE_URL/api/holidays";
+
   // Upload endpoints
   static const String uploadSignatureEndpoint =
       "$BASE_URL/api/upload/signature";

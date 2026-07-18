@@ -5,6 +5,7 @@ import 'admin_elective_management.dart';
 import 'curriculum_management_screen.dart';
 import 'schedule_management_screen.dart';
 import 'admin_poi_management.dart';
+import 'admin_holiday_management.dart';
 
 class AdminUploadScreen extends StatelessWidget {
   const AdminUploadScreen({super.key});
@@ -93,6 +94,21 @@ class AdminUploadScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const AdminPoiManagementScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            _UploadCard(
+              title: 'Holiday Management',
+              description: 'Manage academic holidays',
+              icon: Icons.calendar_today_rounded,
+              isDark: isDark,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminHolidayManagementScreen(),
                   ),
                 );
               },

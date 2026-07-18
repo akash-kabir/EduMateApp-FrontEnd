@@ -700,8 +700,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             ),
           ),
           backgroundColor: isDark
-              ? CupertinoColors.black.withOpacity(0.6)
-              : CupertinoColors.white.withOpacity(0.6),
+              ? CupertinoColors.black.withValues(alpha: 0.6)
+              : CupertinoColors.white.withValues(alpha: 0.6),
           trailing: CupertinoButton(
             padding: EdgeInsets.zero,
             onPressed: _showSettingsBottomSheet,
@@ -819,7 +819,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 ),
               )
             else if (isLoading)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 child: Padding(
                   padding: EdgeInsets.only(top: 16.0),
                   child: SkeletonLoadingList(),

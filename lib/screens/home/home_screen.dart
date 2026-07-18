@@ -11,7 +11,7 @@ import '../profile/profile_details_screen.dart';
 import '../profile_setup/profile_setup_screen.dart';
 import '../auth/getting_started_screen.dart';
 import 'cgpa_calculator/cgpa_calculator_screen.dart';
-
+import 'holiday_list/holiday_list_screen.dart';
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToEvent;
   final VoidCallback? onNavigateToSchedule;
@@ -449,6 +449,82 @@ class _HomeScreenState extends State<HomeScreen> {
                                     const SizedBox(height: 4),
                                     Text(
                                       'Calculate your GPA for any semester',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.white.withOpacity(0.7),
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Holiday List Card
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const HolidayListScreen(),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF5AB69F), Color(0xFF2E8B57)], // A green gradient for holidays
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 20,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.calendar_month,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Holiday List',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'View academic holidays',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.9),
                                         fontSize: 12,
