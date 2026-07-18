@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../../config.dart';
 import '../../services/shared_preferences_service.dart';
@@ -19,6 +20,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
   bool savePreference = false;
   Map<String, dynamic>? scheduleData;
   bool isLoading = false;
+  List<dynamic> currentYearHolidays = [];
   
   List<dynamic> rawElectiveData = [];
   Map<String, List<String>> availableElectives = {};
@@ -94,7 +96,26 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       Duration(days: selectedDate.weekday % 7),
     );
     loadSavedPreferenceAndFetchSchedule();
+    _fetchCurrentYearHolidays();
     startRefreshTimer();
+  }
+
+  Future<void> _fetchCurrentYearHolidays() async {
+    try {
+      final response = await http.get(Uri.parse('${Config.holidayBaseEndpoint}/${DateTime.now().year}'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          if (mounted) {
+            setState(() {
+              currentYearHolidays = data['data'] as List<dynamic>;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching holidays for schedule: $e');
+    }
   }
 
   void startRefreshTimer() {
@@ -114,6 +135,23 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
 
   void disposeScheduleState() {
     refreshTimer?.cancel();
+  }
+
+  Map<String, dynamic>? getHolidayForSelectedDate() {
+    if (currentYearHolidays.isEmpty) return null;
+    final date = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    for (var holiday in currentYearHolidays) {
+      if (holiday['startDate'] == null || holiday['endDate'] == null) continue;
+      final startDate = DateTime.parse(holiday['startDate']);
+      final start = DateTime(startDate.year, startDate.month, startDate.day);
+      final endDate = DateTime.parse(holiday['endDate']);
+      final end = DateTime(endDate.year, endDate.month, endDate.day);
+      
+      if (date.isAtSameMomentAs(start) || date.isAtSameMomentAs(end) || (date.isAfter(start) && date.isBefore(end))) {
+        return holiday;
+      }
+    }
+    return null;
   }
 
   Future<void> loadSavedElectivePreferences() async {
@@ -447,7 +485,14 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
     return merged;
   }
 
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
+
   bool isClassOngoing(String startTimeStr, String endTimeStr) {
+    if (!_isToday(selectedDate)) return false;
+    
     final now = DateTime.now();
     
     // Parse start time
@@ -473,6 +518,8 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
   }
 
   bool isClassPassed(String endTimeStr) {
+    if (!_isToday(selectedDate)) return false;
+    
     final now = DateTime.now();
     final parts = endTimeStr.split(':');
     if (parts.length != 2) return false;
