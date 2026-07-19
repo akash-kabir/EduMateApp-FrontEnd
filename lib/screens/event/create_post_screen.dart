@@ -20,14 +20,10 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   String postType = 'news';
 
-  final TextEditingController _headingController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
   final TextEditingController _websiteLinkController = TextEditingController();
-  final TextEditingController _registrationLinkController =
-      TextEditingController();
-  final TextEditingController _campusController = TextEditingController();
-  final TextEditingController _floorController = TextEditingController();
-  final TextEditingController _roomController = TextEditingController();
+  final TextEditingController _registrationLinkController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
 
   DateTime? startDate;
   DateTime? endDate;
@@ -43,13 +39,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   void dispose() {
-    _headingController.dispose();
     _bodyController.dispose();
     _websiteLinkController.dispose();
     _registrationLinkController.dispose();
-    _campusController.dispose();
-    _floorController.dispose();
-    _roomController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -273,14 +266,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   void _submitPost() async {
-    if (_headingController.text.trim().isEmpty) {
-      EduMateToast.showCompact(
-        context,
-        message: 'Heading is required',
-        isSuccess: false,
-      );
-      return;
-    }
+
     if (_bodyController.text.trim().isEmpty) {
       EduMateToast.showCompact(
         context,
@@ -323,14 +309,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         );
         return;
       }
-      if (_campusController.text.trim().isEmpty) {
-        EduMateToast.showCompact(
-          context,
-          message: 'Campus is required for events',
-          isSuccess: false,
-        );
-        return;
-      }
+
     }
 
     setState(() => isLoading = true);
@@ -349,19 +328,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
       final token = await SharedPreferencesService.getToken();
 
-      final body = {
+      final Map<String, dynamic> body = {
         'postType': postType,
-        'heading': _headingController.text.trim(),
         'body': _bodyController.text.trim(),
-        'links': {
-          'website': _websiteLinkController.text.trim(),
-          'registration': _registrationLinkController.text.trim(),
-        },
-        'location': {
-          'campus': _campusController.text.trim(),
-          'floor': _floorController.text.trim(),
-          'roomNo': _roomController.text.trim(),
-        },
+        'websiteLink': _websiteLinkController.text.trim(),
+        'registrationLink': _registrationLinkController.text.trim(),
+        'location': _locationController.text.trim(),
       };
 
       if (imageUrl != null) {
@@ -403,11 +375,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           Navigator.pop(context, true);
         }
       } else {
-        final error = jsonDecode(response.body)['message'];
+        String errorMsg = 'Failed to create post (${response.statusCode})';
+        try {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map<String, dynamic> && decoded.containsKey('message')) {
+            errorMsg = decoded['message'];
+          } else if (decoded is String) {
+            errorMsg = decoded;
+          }
+        } catch (_) {}
+        
         if (mounted) {
           EduMateToast.showCompact(
             context,
-            message: error,
+            message: errorMsg,
             isSuccess: false,
           );
         }
@@ -425,636 +406,433 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          letterSpacing: -0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectorCard({required String title, String? value, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: value != null ? const Color(0xFFFF9B7A).withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.05)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value ?? title,
+              style: TextStyle(
+                color: value != null ? Colors.white : Colors.white54,
+                fontSize: 15,
+                fontWeight: value != null ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.white,
+      backgroundColor: Colors.black, // Sleek solid dark background
       body: CustomScrollView(
         slivers: [
           CupertinoSliverNavigationBar(
             automaticallyImplyLeading: false,
-            backgroundColor: isDark
-                ? CupertinoColors.black.withOpacity(0.9)
-                : CupertinoColors.white.withOpacity(0.9),
-            largeTitle: const Text('Create Post'),
+            backgroundColor: CupertinoColors.black.withValues(alpha: 0.9),
+            largeTitle: const Text('Create Post', style: TextStyle(color: Colors.white)),
             leading: CupertinoButton(
               padding: EdgeInsets.zero,
               onPressed: () => Navigator.pop(context),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [Icon(CupertinoIcons.chevron_back), Text('Back')],
+                children: [
+                  Icon(CupertinoIcons.chevron_back, color: Color(0xFFFF9B7A)),
+                  Text('Back', style: TextStyle(color: Color(0xFFFF9B7A))),
+                ],
               ),
             ),
           ),
           SliverSafeArea(
             top: false,
             sliver: SliverPadding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Post Type Selector
-                      SizedBox(
+                      // Modern Toggle Selector (matching WeekCalendarGrid style)
+                      Container(
                         width: double.infinity,
-                        child: CupertinoSlidingSegmentedControl<String>(
-                          backgroundColor: CupertinoColors.systemGrey6
-                              .resolveFrom(context),
-                          thumbColor: CupertinoColors.systemBackground
-                              .resolveFrom(context),
-                          groupValue: postType,
-                          onValueChanged: (String? value) {
-                            if (value != null) {
-                              setState(() => postType = value);
-                            }
-                          },
-                          children: {
-                            'news': Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 40,
-                                vertical: 12,
-                              ),
-                              child: const Text(
-                                'News',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            'event': Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 40,
-                                vertical: 12,
-                              ),
-                              child: const Text(
-                                'Event',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Title Field
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Text(
-                              'Title',
-                              style: TextStyle(
-                                color: CupertinoColors.secondaryLabel
-                                    .resolveFrom(context),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              ' *',
-                              style: TextStyle(
-                                color: CupertinoColors.systemRed,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
+                        height: 55,
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: CupertinoColors.systemGrey6.resolveFrom(
-                            context,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: const Color(0xFFFF9B7A).withValues(alpha: 0.4),
+                            width: 1.5,
                           ),
-                          borderRadius: BorderRadius.circular(8),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: CupertinoTextField.borderless(
-                          controller: _headingController,
-                          placeholder: 'Enter heading',
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Body Field
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Text(
-                              'Body',
-                              style: TextStyle(
-                                color: CupertinoColors.secondaryLabel
-                                    .resolveFrom(context),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              ' *',
-                              style: TextStyle(
-                                color: CupertinoColors.systemRed,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemGrey6.resolveFrom(
-                            context,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: CupertinoTextField.borderless(
-                          controller: _bodyController,
-                          placeholder: 'Enter body text',
-                          maxLines: 5,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Image Section
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Text(
-                          'Image',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ),
-                      if (_selectedImage != null) ...[
-                        Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: AspectRatio(
-                                aspectRatio: 4 / 3,
-                                child: Image.file(
-                                  File(_selectedImage!.path),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
+                            Expanded(
                               child: GestureDetector(
-                                onTap: _removeImage,
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    CupertinoIcons.xmark,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Center(
-                          child: CupertinoButton(
-                            padding: EdgeInsets.zero,
-                            onPressed: _pickImage,
-                            child: const Text('Change Image'),
-                          ),
-                        ),
-                      ] else ...[
-                        GestureDetector(
-                          onTap: _pickImage,
-                          child: Container(
-                            height: 150,
-                            decoration: BoxDecoration(
-                              color: CupertinoColors.systemGrey6.resolveFrom(
-                                context,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: CupertinoColors.systemGrey4.resolveFrom(
-                                  context,
-                                ),
-                              ),
-                            ),
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    CupertinoIcons.photo,
-                                    size: 40,
-                                    color: CupertinoColors.secondaryLabel
-                                        .resolveFrom(context),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Add Image (Optional)',
-                                    style: TextStyle(
-                                      color: CupertinoColors.secondaryLabel
-                                          .resolveFrom(context),
-                                      fontSize: 14,
+                                onTap: () => setState(() => postType = 'news'),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeInOut,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: postType == 'news' ? const Color(0xFFFF9B7A) : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Colors.transparent,
+                                      width: 1.5,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '4:3 ratio • Max 5MB',
-                                    style: TextStyle(
-                                      color: CupertinoColors.tertiaryLabel
-                                          .resolveFrom(context),
-                                      fontSize: 12,
+                                  child: Center(
+                                    child: Text(
+                                      'News',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: postType == 'news' ? Colors.white : Colors.grey[300],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => postType = 'event'),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeInOut,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: postType == 'event' ? const Color(0xFFFF9B7A) : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Colors.transparent,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      'Event',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: postType == 'event' ? Colors.white : Colors.grey[300],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+
+
+                      SleekTextField(
+                        title: 'Body',
+                        controller: _bodyController,
+                        placeholder: 'Enter body text',
+                        icon: CupertinoIcons.text_alignleft,
+                        maxLines: 5,
+                        maxLength: postType == 'news' ? 200 : 50,
+                        isRequired: true,
+                      ),
+                      const SizedBox(height: 32),
+
+                      if (postType == 'event') ...[
+                        _buildSectionTitle('Image'),
+                        if (_selectedImage != null) ...[
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Stack(
+                                children: [
+                                  AspectRatio(
+                                    aspectRatio: 4 / 3,
+                                    child: Image.file(
+                                      File(_selectedImage!.path),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 12,
+                                    right: 12,
+                                    child: GestureDetector(
+                                      onTap: _removeImage,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.6),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                        ),
+                                        child: const Icon(CupertinoIcons.xmark, color: Colors.white, size: 16),
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          Center(
+                            child: TextButton(
+                              onPressed: _pickImage,
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFFFF9B7A),
+                              ),
+                              child: const Text('Change Image', style: TextStyle(fontWeight: FontWeight.w600)),
+                            ),
+                          ),
+                        ] else ...[
+                          GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              height: 160,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E1E1E),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFF9B7A).withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      CupertinoIcons.photo_on_rectangle,
+                                      size: 32,
+                                      color: Color(0xFFFF9B7A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'Tap to add an image',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    '4:3 ratio • Optional',
+                                    style: TextStyle(
+                                      color: Colors.white54,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 32),
                       ],
-                      const SizedBox(height: 24),
 
-                      // Links Section
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Text(
-                          'Links',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
+                      _buildSectionTitle('Links'),
+                      SleekTextField(
+                        title: postType == 'event' ? 'Event Website' : 'Related Link',
+                        controller: _websiteLinkController,
+                        placeholder: 'Enter URL (Optional)',
+                        icon: CupertinoIcons.link,
                       ),
-
-                      // Website Link
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'Website Link',
-                          style: TextStyle(
-                            color: CupertinoColors.secondaryLabel.resolveFrom(
-                              context,
-                            ),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemGrey6.resolveFrom(
-                            context,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: CupertinoTextField.borderless(
-                          controller: _websiteLinkController,
-                          placeholder: 'Enter website link (Optional)',
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Registration Link
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'Registration Link',
-                          style: TextStyle(
-                            color: CupertinoColors.secondaryLabel.resolveFrom(
-                              context,
-                            ),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemGrey6.resolveFrom(
-                            context,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: CupertinoTextField.borderless(
-                          controller: _registrationLinkController,
-                          placeholder: 'Enter registration link (Optional)',
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Location Section
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Text(
-                          'Location',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ),
-
-                      // Campus
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Text(
-                              'Campus',
-                              style: TextStyle(
-                                color: CupertinoColors.secondaryLabel
-                                    .resolveFrom(context),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            if (postType == 'event')
-                              Text(
-                                ' *',
-                                style: TextStyle(
-                                  color: CupertinoColors.systemRed,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemGrey6.resolveFrom(
-                            context,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: CupertinoTextField.borderless(
-                          controller: _campusController,
-                          placeholder:
-                              'Enter campus name${postType == 'event' ? '' : ' (Optional)'}',
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Floor
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'Floor',
-                          style: TextStyle(
-                            color: CupertinoColors.secondaryLabel.resolveFrom(
-                              context,
-                            ),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemGrey6.resolveFrom(
-                            context,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: CupertinoTextField.borderless(
-                          controller: _floorController,
-                          placeholder: 'Enter floor number (Optional)',
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Room Number
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'Room Number',
-                          style: TextStyle(
-                            color: CupertinoColors.secondaryLabel.resolveFrom(
-                              context,
-                            ),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemGrey6.resolveFrom(
-                            context,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: CupertinoTextField.borderless(
-                          controller: _roomController,
-                          placeholder: 'Enter room number (Optional)',
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Event Details
+                      
                       if (postType == 'event') ...[
-                        // Date Section
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Date',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                              ),
-                              Text(
-                                ' *',
-                                style: TextStyle(
-                                  color: CupertinoColors.systemRed,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
+                        const SizedBox(height: 24),
+                        SleekTextField(
+                          title: 'Registration Link',
+                          controller: _registrationLinkController,
+                          placeholder: 'Enter registration URL (Optional)',
+                          icon: CupertinoIcons.ticket,
                         ),
+                        const SizedBox(height: 32),
 
-                        // Date Range Toggle
+                        _buildSectionTitle('Location'),
+                        SleekTextField(
+                          title: 'Location',
+                          controller: _locationController,
+                          placeholder: 'Enter location (Max 25 words)',
+                          icon: CupertinoIcons.location_solid,
+                        ),
+                        const SizedBox(height: 32),
+
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Date Range',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
-                              ),
-                            ),
-                            const Spacer(),
-                            CupertinoSwitch(
-                              value: isDateRange,
-                              onChanged: (val) =>
-                                  setState(() => isDateRange = val),
+                            _buildSectionTitle('Date'),
+                            Row(
+                              children: [
+                                const Text('Multiple Days', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                const SizedBox(width: 8),
+                                CupertinoSwitch(
+                                  value: isDateRange,
+                                  activeTrackColor: const Color(0xFFFF9B7A),
+                                  onChanged: (val) => setState(() => isDateRange = val),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-
+                        
                         // Date Selection
                         Row(
                           children: [
                             Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => _selectDate(true),
-                                icon: const Icon(Icons.calendar_today),
-                                label: Text(
-                                  startDate == null
-                                      ? 'Start Date *'
-                                      : '${startDate!.day}/${startDate!.month}/${startDate!.year}',
+                                child: _buildSelectorCard(
+                                  title: 'Start Date *',
+                                  value: startDate == null ? null : "${startDate!.day.toString().padLeft(2, '0')}/${startDate!.month.toString().padLeft(2, '0')}/${startDate!.year}",
+                                  onTap: () => _selectDate(true),
                                 ),
-                              ),
                             ),
                             if (isDateRange) ...[
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 12),
                               Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () => _selectDate(false),
-                                  icon: const Icon(Icons.calendar_today),
-                                  label: Text(
-                                    endDate == null
-                                        ? 'End Date *'
-                                        : '${endDate!.day}/${endDate!.month}/${endDate!.year}',
+                                  child: _buildSelectorCard(
+                                    title: 'End Date *',
+                                    value: endDate == null ? null : "${endDate!.day.toString().padLeft(2, '0')}/${endDate!.month.toString().padLeft(2, '0')}/${endDate!.year}",
+                                    onTap: () => _selectDate(false),
                                   ),
-                                ),
                               ),
                             ],
                           ],
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 32),
 
-                        // Time Section
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Time',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                              ),
-                              Text(
-                                ' *',
-                                style: TextStyle(
-                                  color: CupertinoColors.systemRed,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Time Range Toggle
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Time Range',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
-                              ),
-                            ),
-                            const Spacer(),
-                            CupertinoSwitch(
-                              value: isTimeRange,
-                              onChanged: (val) =>
-                                  setState(() => isTimeRange = val),
+                            _buildSectionTitle('Time'),
+                            Row(
+                              children: [
+                                const Text('Time Range', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                const SizedBox(width: 8),
+                                CupertinoSwitch(
+                                  value: isTimeRange,
+                                  activeTrackColor: const Color(0xFFFF9B7A),
+                                  onChanged: (val) => setState(() => isTimeRange = val),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-
-                        // Time Selection
                         Row(
                           children: [
                             Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => _selectTime(true),
-                                icon: const Icon(Icons.access_time),
-                                label: Text(
-                                  startTime == null
-                                      ? 'Start Time *'
-                                      : '${startTime!.hour.toString().padLeft(2, '0')}:${startTime!.minute.toString().padLeft(2, '0')}',
+                                child: _buildSelectorCard(
+                                  title: 'Start Time *',
+                                  value: startTime == null ? null : "${startTime!.hour.toString().padLeft(2, '0')}:${startTime!.minute.toString().padLeft(2, '0')}",
+                                  onTap: () => _selectTime(true),
                                 ),
-                              ),
                             ),
                             if (isTimeRange) ...[
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 12),
                               Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () => _selectTime(false),
-                                  icon: const Icon(Icons.access_time),
-                                  label: Text(
-                                    endTime == null
-                                        ? 'End Time *'
-                                        : '${endTime!.hour.toString().padLeft(2, '0')}:${endTime!.minute.toString().padLeft(2, '0')}',
+                                  child: _buildSelectorCard(
+                                    title: 'End Time *',
+                                    value: endTime == null ? null : "${endTime!.hour.toString().padLeft(2, '0')}:${endTime!.minute.toString().padLeft(2, '0')}",
+                                    onTap: () => _selectTime(false),
                                   ),
-                                ),
                               ),
                             ],
                           ],
                         ),
-                        const SizedBox(height: 24),
+
+                        const SizedBox(height: 32),
                       ],
 
                       // Submit Button
                       SizedBox(
                         width: double.infinity,
-                        child: FilledButton(
-                          onPressed: isLoading ? null : _submitPost,
-                          child: isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF9B7A).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: isLoading ? null : _submitPost,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF9B7A),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Text(
+                                    'Create Post',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
-                                )
-                              : const Text('Create Post'),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 48),
                     ],
                   ),
                 ]),
@@ -1063,6 +841,135 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class SleekTextField extends StatefulWidget {
+  final String title;
+  final TextEditingController controller;
+  final String placeholder;
+  final int maxLines;
+  final bool isRequired;
+  final IconData icon;
+  final int? maxLength;
+
+  const SleekTextField({
+    super.key,
+    required this.title,
+    required this.controller,
+    required this.placeholder,
+    required this.icon,
+    this.maxLines = 1,
+    this.isRequired = false,
+    this.maxLength,
+  });
+
+  @override
+  State<SleekTextField> createState() => _SleekTextFieldState();
+}
+
+class _SleekTextFieldState extends State<SleekTextField> {
+  late FocusNode _focusNode;
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(() {
+      setState(() {
+        _isFocused = _focusNode.hasFocus;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              widget.title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (widget.isRequired)
+              const Text(
+                ' *',
+                style: TextStyle(
+                  color: Color(0xFFE63946),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _isFocused ? const Color(0xFFFF9B7A) : Colors.white.withValues(alpha: 0.05),
+              width: _isFocused ? 1.5 : 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _isFocused ? const Color(0xFFFF9B7A).withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.3),
+                blurRadius: _isFocused ? 12 : 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: widget.maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(left: 16, top: widget.maxLines > 1 ? 16 : 14, right: 8, bottom: widget.maxLines > 1 ? 0 : 14),
+                child: Icon(
+                  widget.icon,
+                  color: _isFocused ? const Color(0xFFFF9B7A) : Colors.grey[500],
+                  size: 20,
+                ),
+              ),
+              Expanded(
+                child: TextFormField(
+                  controller: widget.controller,
+                  focusNode: _focusNode,
+                  maxLines: widget.maxLines,
+                  maxLength: widget.maxLength,
+                  style: const TextStyle(fontSize: 15, color: Colors.white),
+                  decoration: InputDecoration(
+                    counterStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                    hintText: widget.placeholder,
+                    hintStyle: TextStyle(color: Colors.grey[600], fontSize: 15),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.only(
+                      right: 16,
+                      top: widget.maxLines > 1 ? 14 : 14,
+                      bottom: widget.maxLines > 1 ? 14 : 14,
+                    ),
+                    isDense: true,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
