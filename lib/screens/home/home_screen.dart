@@ -10,8 +10,10 @@ import '../../widgets/custom_glass_dialog.dart';
 import '../../constants/app_constants.dart';
 import '../../services/shared_preferences_service.dart';
 import '../profile_setup/profile_setup_screen.dart';
-import 'cgpa_calculator/cgpa_calculator_screen.dart';
 import 'holiday_list/holiday_list_screen.dart';
+import 'widgets/todays_schedule_card.dart';
+import '../profile/profile_details_screen.dart';
+import '../admin/admin_main_app.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToEvent;
@@ -219,85 +221,421 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return CupertinoPageScaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+      backgroundColor: isDark ? CupertinoColors.black : const Color(0xFFF5F5F7),
       child: SafeArea(
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // Quick Actions Header
+            // Top Welcome Header
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 40, 24, 16),
-                child: Text(
-                  'Quick Actions',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-              ),
-            ),
-
-            // Quick Actions Grid
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                padding: const EdgeInsets.fromLTRB(12, 24, 12, 24),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: DashboardActionCard(
-                        title: 'Settings',
-                        subtitle: 'Account',
-                        icon: CupertinoIcons.settings,
-                        gradientColors: const [Color(0xFF6A11CB), Color(0xFF2575FC)],
-                        onTap: () {
-                          Navigator.of(context).push(
-                            CupertinoPageRoute(
-                              builder: (context) => const SettingsScreen(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome back,',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              fontWeight: FontWeight.w500,
                             ),
-                          );
-                        },
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            userFirstName.isEmpty ? 'User' : userFirstName,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DashboardActionCard(
-                        title: 'CGPA',
-                        subtitle: 'Calculator',
-                        icon: CupertinoIcons.plus_slash_minus,
-                        gradientColors: const [Color(0xFFF2709C), Color(0xFFFF9472)], // Replaced AuthPalette references just in case
-                        onTap: () {
-                          Navigator.of(context).push(
-                            CupertinoPageRoute(
-                              builder: (context) => const CGPACalculatorScreen(),
+                    const SizedBox(width: 16),
+                    // Trailing Drawer Toggle Button
+                    Hero(
+                      tag: 'drawer_button',
+                      child: CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          // Open full screen drawer route
+                          Navigator.of(context, rootNavigator: true).push(
+                            PageRouteBuilder(
+                              opaque: false,
+                              transitionDuration: const Duration(milliseconds: 400),
+                              reverseTransitionDuration: const Duration(milliseconds: 400),
+                              pageBuilder: (context, animation, secondaryAnimation) {
+                                return FullScreenDrawer(animation: animation, isDark: isDark, userFirstName: userFirstName);
+                              },
                             ),
                           );
                         },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DashboardActionCard(
-                        title: 'Holidays',
-                        subtitle: 'Calendar',
-                        icon: CupertinoIcons.calendar,
-                        gradientColors: const [Color(0xFF5AB69F), Color(0xFF2E8B57)],
-                        onTap: () {
-                          Navigator.of(context).push(
-                            CupertinoPageRoute(
-                              builder: (context) => const HolidayListScreen(),
-                            ),
-                          );
-                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            CupertinoIcons.ellipsis,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
+
+            // Today's Schedule Card
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: TodaysScheduleCard(isDark: isDark),
+              ),
+            ),
+
+            // Quick Actions Grid
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.85,
+                ),
+                delegate: SliverChildListDelegate([
+                  DashboardActionCard(
+                    title: 'Settings',
+                    subtitle: 'Account',
+                    icon: CupertinoIcons.settings,
+                    gradientColors: const [Color(0xFF6A11CB), Color(0xFF2575FC)],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(
+                          builder: (context) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  DashboardActionCard(
+                    title: 'CGPA',
+                    subtitle: 'Calculator',
+                    icon: CupertinoIcons.plus_slash_minus,
+                    gradientColors: const [Color(0xFFF2709C), Color(0xFFFF9472)],
+                    onTap: () {
+                      // Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const CGPACalculatorScreen()));
+                    },
+                  ),
+                  DashboardActionCard(
+                    title: 'Holidays',
+                    subtitle: 'Calendar',
+                    icon: CupertinoIcons.calendar,
+                    gradientColors: const [Color(0xFF5AB69F), Color(0xFF2E8B57)],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(
+                          builder: (context) => const HolidayListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  // Placeholder for future action
+                  DashboardActionCard(
+                    title: 'More',
+                    subtitle: 'Coming soon',
+                    icon: CupertinoIcons.app_badge,
+                    gradientColors: isDark 
+                        ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
+                        : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+                    onTap: () {},
+                  ),
+                ]),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class FullScreenDrawer extends StatefulWidget {
+  final Animation<double> animation;
+  final bool isDark;
+  final String userFirstName;
+
+  const FullScreenDrawer({
+    super.key,
+    required this.animation,
+    required this.isDark,
+    required this.userFirstName,
+  });
+
+  @override
+  State<FullScreenDrawer> createState() => _FullScreenDrawerState();
+}
+
+class _FullScreenDrawerState extends State<FullScreenDrawer> {
+  String _userEmail = '';
+  String _userRole = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final email = await SharedPreferencesService.getUserEmail();
+    final role = await SharedPreferencesService.getUserRole();
+    if (mounted) {
+      setState(() {
+        _userEmail = email ?? 'user@edumate.com';
+        _userRole = role ?? 'Student';
+      });
+    }
+  }
+
+  Widget _buildDrawerItem({required IconData icon, required String title, required VoidCallback onTap, Color? color}) {
+    return ListTile(
+      visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+      leading: Icon(icon, color: color ?? (widget.isDark ? Colors.white70 : Colors.black87), size: 24),
+      title: Text(
+        title, 
+        style: TextStyle(
+          color: color ?? (widget.isDark ? Colors.white : Colors.black87),
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        )
+      ),
+      onTap: onTap,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
+    final bool isAdminOrContributor = _userRole.toLowerCase() == 'admin' || _userRole.toLowerCase() == 'contributor';
+    
+    return Scaffold(
+      backgroundColor: Colors.transparent, // Let underlying app show through
+      body: Stack(
+        children: [
+          // Slide-in Drawer Background & Content
+          SlideTransition(
+            position: Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero)
+                .animate(CurvedAnimation(parent: widget.animation, curve: Curves.easeInOutCubic)),
+            child: ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
+                  color: widget.isDark 
+                      ? Colors.black.withValues(alpha: 0.8) 
+                      : Colors.white.withValues(alpha: 0.85),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Padding(
+                      padding: EdgeInsets.only(top: topPadding),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Edumate Brand Title
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+                            child: Text(
+                              'EduMate',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -1,
+                                color: widget.isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          
+                          // Drawer Items List
+                          Expanded(
+                            child: ListView(
+                              padding: EdgeInsets.zero,
+                              physics: const BouncingScrollPhysics(),
+                              children: [
+                                _buildDrawerItem(
+                                  icon: CupertinoIcons.person, 
+                                  title: 'Profile', 
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.of(context).push(CupertinoPageRoute(builder: (_) => const ProfileDetailsScreen()));
+                                  }
+                                ),
+                                _buildDrawerItem(
+                                  icon: CupertinoIcons.settings, 
+                                  title: 'Settings', 
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.of(context).push(CupertinoPageRoute(builder: (_) => const SettingsScreen()));
+                                  }
+                                ),
+                                _buildDrawerItem(
+                                  icon: CupertinoIcons.info_circle, 
+                                  title: 'About', 
+                                  onTap: () => Navigator.pop(context)
+                                ),
+                                _buildDrawerItem(
+                                  icon: CupertinoIcons.doc_text, 
+                                  title: 'Privacy Policy', 
+                                  onTap: () => Navigator.pop(context)
+                                ),
+                                _buildDrawerItem(
+                                  icon: CupertinoIcons.doc_checkmark, 
+                                  title: 'Terms of Service', 
+                                  onTap: () => Navigator.pop(context)
+                                ),
+                                if (isAdminOrContributor)
+                                  _buildDrawerItem(
+                                    icon: CupertinoIcons.shield, 
+                                    title: 'Admin Dashboard', 
+                                    color: AuthPalette.teal,
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      Navigator.of(context).push(CupertinoPageRoute(builder: (_) => const AdminMainApp(fromStudentView: true)));
+                                    }
+                                  ),
+                                _buildDrawerItem(
+                                  icon: CupertinoIcons.square_arrow_right, 
+                                  title: 'Logout', 
+                                  color: Colors.red,
+                                  onTap: () async {
+                                    await SharedPreferencesService.clearAll();
+                                    if (context.mounted) {
+                                      Navigator.of(context).pushReplacementNamed('/login');
+                                    }
+                                  }
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          // User Info Card at bottom (Sleek, transparent)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(CupertinoIcons.person_solid, size: 20, color: widget.isDark ? Colors.white70 : Colors.black54),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Logged in as',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: widget.isDark ? Colors.white54 : Colors.black54,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _userEmail,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: widget.isDark ? Colors.white : Colors.black87,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _userRole.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 1,
+                                          color: widget.isDark ? Colors.white38 : Colors.black38,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          
+          // Floating Button (Top Layer) perfectly positioned to cover the underlying button
+          Positioned(
+            top: topPadding + 24, // Matches the padding in the header (24) + safe area
+            right: 12, // Matches the padding in the header (12)
+            child: Hero(
+              tag: 'drawer_button',
+              child: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: AnimatedBuilder(
+                  animation: widget.animation,
+                  builder: (context, child) {
+                    // Interpolate colors based on animation value
+                    final bgColor = Color.lerp(
+                      widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                      Colors.red.withValues(alpha: 0.1),
+                      widget.animation.value,
+                    );
+                    final iconColor = Color.lerp(
+                      widget.isDark ? Colors.white : Colors.black87,
+                      Colors.red,
+                      widget.animation.value,
+                    );
+                    
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Transform.rotate(
+                        angle: widget.animation.value * 3.14159 / 2, // Rotate 90 degrees as it changes
+                        child: Icon(
+                          widget.animation.value > 0.5 ? CupertinoIcons.clear : CupertinoIcons.ellipsis,
+                          color: iconColor,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

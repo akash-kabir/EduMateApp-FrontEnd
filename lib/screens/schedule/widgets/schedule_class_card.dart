@@ -9,6 +9,7 @@ class ScheduleClassCard extends StatelessWidget {
   final bool isOngoing;
   final bool isPassed;
   final int classCount;
+  final bool isHoliday;
 
   const ScheduleClassCard({
     super.key,
@@ -17,24 +18,28 @@ class ScheduleClassCard extends StatelessWidget {
     required this.isOngoing,
     required this.isPassed,
     required this.classCount,
+    this.isHoliday = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool effectivelyPassed = isPassed || isHoliday;
+    final bool effectivelyOngoing = isOngoing && !isHoliday;
+
     final Color accentColor;
-    if (isOngoing) {
+    if (effectivelyOngoing) {
       accentColor = CupertinoColors.systemGreen;
-    } else if (isPassed) {
+    } else if (effectivelyPassed) {
       accentColor = isDark ? Colors.grey[700]! : Colors.grey[400]!;
     } else {
       accentColor = AuthPalette.coral;
     }
 
-    final double cardOpacity = isPassed ? 0.5 : 1.0;
+    final double cardOpacity = effectivelyPassed ? 0.4 : 1.0;
 
     // Glass base decoration
     final BoxDecoration cardDecoration;
-    if (isOngoing) {
+    if (effectivelyOngoing) {
       cardDecoration = BoxDecoration(
         color: const Color.fromARGB(255, 2, 56, 38).withValues(alpha: 0.14), // Glass Emerald Green Tint
         borderRadius: BorderRadius.circular(16),

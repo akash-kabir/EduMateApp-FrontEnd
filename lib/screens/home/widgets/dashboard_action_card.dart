@@ -19,6 +19,7 @@ class DashboardActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -29,14 +30,16 @@ class DashboardActionCard extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: gradientColors,
+              colors: isDark 
+                  ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
+                  : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: gradientColors.first.withValues(alpha: 0.2),
+                color: (isDark ? Colors.black : Colors.grey).withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -47,10 +50,19 @@ class DashboardActionCard extends StatelessWidget {
               Positioned(
                 bottom: -8,
                 right: -8,
-                child: Icon(
-                  icon,
-                  size: 64,
-                  color: Colors.black.withValues(alpha: 0.15), // Darker watermark
+                child: ShaderMask(
+                  shaderCallback: (Rect bounds) {
+                    return LinearGradient(
+                      colors: gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds);
+                  },
+                  child: Icon(
+                    icon,
+                    size: 64,
+                    color: Colors.white, // Color is replaced by ShaderMask
+                  ),
                 ),
               ),
               Padding(
@@ -60,8 +72,8 @@ class DashboardActionCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.3,
@@ -73,7 +85,7 @@ class DashboardActionCard extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: isDark ? Colors.white70 : Colors.black54,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),

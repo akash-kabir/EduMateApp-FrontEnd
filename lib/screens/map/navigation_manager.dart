@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
-import 'dart:math' as math;
 
 import '../../models/poi_model.dart';
 import 'map_route_service.dart';

@@ -7,9 +7,6 @@ import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mapbox;
 
 import '../../models/poi_model.dart';
-import '../../widgets/custom_glass_dialog.dart';
-import '../../services/shared_preferences_service.dart';
-import 'map_route_service.dart';
 import 'navigation_manager.dart';
 import 'widgets/navigation_status_card.dart';
 import '../../services/poi_service.dart';

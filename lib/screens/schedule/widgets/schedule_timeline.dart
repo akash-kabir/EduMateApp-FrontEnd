@@ -6,6 +6,8 @@ class ScheduleTimeline extends StatelessWidget {
   final bool isDark;
   final bool Function(String, String) isOngoing;
   final bool Function(String) isPassed;
+  final bool isHoliday;
+  final String emptyMessage;
 
   const ScheduleTimeline({
     super.key,
@@ -13,6 +15,8 @@ class ScheduleTimeline extends StatelessWidget {
     required this.isDark,
     required this.isOngoing,
     required this.isPassed,
+    this.isHoliday = false,
+    this.emptyMessage = 'No classes scheduled for this day',
   });
 
   @override
@@ -22,10 +26,12 @@ class ScheduleTimeline extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 40),
           child: Text(
-            'No classes scheduled for this day',
+            emptyMessage,
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: isDark ? Colors.grey[400] : Colors.grey[600],
               fontSize: 14,
+              height: 1.5,
             ),
           ),
         ),
@@ -45,6 +51,7 @@ class ScheduleTimeline extends StatelessWidget {
           isOngoing: ongoing,
           isPassed: passed,
           classCount: classPeriod['count'] as int,
+          isHoliday: isHoliday,
         );
       }),
     );

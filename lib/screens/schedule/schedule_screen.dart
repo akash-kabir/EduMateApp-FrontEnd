@@ -809,6 +809,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                               isDark: isDark,
                               isOngoing: isClassOngoing,
                               isPassed: isClassPassed,
+                              isHoliday: getHolidayForSelectedDate() != null,
+                              emptyMessage: (selectedDate.weekday == 6 || selectedDate.weekday == 7)
+                                  ? 'No classes scheduled for this day.\nEnjoy your day!'
+                                  : 'No classes scheduled for this day',
                             ),
                           ),
                         ),
