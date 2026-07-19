@@ -98,16 +98,18 @@ class NavigationStatusCard extends StatelessWidget {
               
               // Stop Button
               CupertinoButton(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: Colors.red.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(20),
+                padding: EdgeInsets.zero,
                 onPressed: onStopNavigation,
-                child: const Text(
-                  'Stop',
-                  style: TextStyle(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    CupertinoIcons.xmark,
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    size: 20,
                   ),
                 ),
               ),

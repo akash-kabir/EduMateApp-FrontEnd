@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/home_schedule_service.dart';
@@ -253,6 +252,29 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
     );
   }
 
+  DateTime? _getNextClassStartTime() {
+    final now = DateTime.now();
+    DateTime? nextStart;
+    
+    for (var c in _scheduleData!.classes) {
+      final startTimeStr = c['startTime']?.toString() ?? '';
+      if (startTimeStr.isNotEmpty) {
+        final sParts = startTimeStr.split(':');
+        if (sParts.length == 2) {
+          final startHour = int.tryParse(sParts[0]) ?? 0;
+          final startMin = int.tryParse(sParts[1]) ?? 0;
+          final start = DateTime(now.year, now.month, now.day, startHour, startMin);
+          if (start.isAfter(now)) {
+            if (nextStart == null || start.isBefore(nextStart)) {
+              nextStart = start;
+            }
+          }
+        }
+      }
+    }
+    return nextStart;
+  }
+
   Widget _buildHeader() {
     final titleColor = widget.isDark ? Colors.white : Colors.black87;
     final subtitleColor = widget.isDark ? Colors.white70 : Colors.black54;
@@ -329,6 +351,48 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
       );
     }
 
+    if (ongoingClassEndTime != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Today\'s schedule',
+            style: TextStyle(color: subtitleColor, fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '$classesLeft',
+                    style: TextStyle(
+                      color: titleColor, 
+                      fontSize: 56, 
+                      fontWeight: FontWeight.bold, 
+                      height: 1.0,
+                      letterSpacing: -2,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'classes left',
+                    style: TextStyle(color: titleColor, fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              _OngoingTimeIndicator(endTimeStr: ongoingClassEndTime),
+            ],
+          ),
+        ],
+      );
+    }
+
+    final nextClassStart = _getNextClassStartTime();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -337,36 +401,34 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
           style: TextStyle(color: subtitleColor, fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  '$classesLeft',
-                  style: TextStyle(
-                    color: titleColor, 
-                    fontSize: 56, 
-                    fontWeight: FontWeight.bold, 
-                    height: 1.0,
-                    letterSpacing: -2,
-                  ),
+        if (nextClassStart != null)
+          _NextClassRotator(
+            classesLeft: classesLeft,
+            nextClassStart: nextClassStart,
+            titleColor: titleColor,
+          )
+        else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '$classesLeft',
+                style: TextStyle(
+                  color: titleColor, 
+                  fontSize: 56, 
+                  fontWeight: FontWeight.bold, 
+                  height: 1.0,
+                  letterSpacing: -2,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'classes left',
-                  style: TextStyle(color: titleColor, fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            if (ongoingClassEndTime != null) ...[
-              const Spacer(),
-              _OngoingTimeIndicator(endTimeStr: ongoingClassEndTime),
-            ]
-          ],
-        ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'classes left',
+                style: TextStyle(color: titleColor, fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -489,6 +551,140 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
           );
         },
       ),
+    );
+  }
+}
+
+class _NextClassRotator extends StatefulWidget {
+  final int classesLeft;
+  final DateTime nextClassStart;
+  final Color titleColor;
+
+  const _NextClassRotator({
+    required this.classesLeft,
+    required this.nextClassStart,
+    required this.titleColor,
+  });
+
+  @override
+  State<_NextClassRotator> createState() => _NextClassRotatorState();
+}
+
+class _NextClassRotatorState extends State<_NextClassRotator> {
+  Timer? _rotationTimer;
+  Timer? _secondTimer;
+  bool _showCountdown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _rotationTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (mounted) {
+        setState(() {
+          _showCountdown = !_showCountdown;
+        });
+      }
+    });
+    // Ensure the countdown text updates smoothly every second.
+    _secondTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+       if (mounted && _showCountdown) {
+           setState((){}); 
+       }
+    });
+  }
+
+  @override
+  void dispose() {
+    _rotationTimer?.cancel();
+    _secondTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final diff = widget.nextClassStart.difference(now);
+    
+    // Fallback if we accidentally surpassed the start time
+    if (diff.isNegative) {
+      _showCountdown = false;
+    }
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 600),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+      },
+      child: _showCountdown && !diff.isNegative
+          ? _buildCountdown(diff)
+          : _buildClassesLeft(),
+    );
+  }
+
+  Widget _buildClassesLeft() {
+    return Row(
+      key: const ValueKey('classesLeft'),
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          '${widget.classesLeft}',
+          style: TextStyle(
+            color: widget.titleColor, 
+            fontSize: 56, 
+            fontWeight: FontWeight.bold, 
+            height: 1.0,
+            letterSpacing: -2,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'classes left',
+          style: TextStyle(color: widget.titleColor, fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCountdown(Duration diff) {
+    final hours = diff.inHours;
+    final mins = diff.inMinutes % 60;
+    
+    String mainNum = '';
+    String subText = '';
+    
+    if (hours > 0) {
+      mainNum = '$hours';
+      subText = 'hr${hours > 1 ? 's' : ''} ${mins > 0 ? '$mins min${mins > 1 ? 's' : ''}' : ''} till class';
+    } else {
+      mainNum = '$mins';
+      subText = 'min${mins != 1 ? 's' : ''} till class';
+    }
+
+    return Row(
+      key: const ValueKey('countdown'),
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          mainNum,
+          style: TextStyle(
+            color: widget.titleColor, 
+            fontSize: 56, 
+            fontWeight: FontWeight.bold, 
+            height: 1.0,
+            letterSpacing: -2,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          subText,
+          style: TextStyle(color: widget.titleColor, fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 }

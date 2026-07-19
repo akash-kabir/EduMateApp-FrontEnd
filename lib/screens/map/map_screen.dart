@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mapbox;
 
@@ -14,6 +15,7 @@ import '../../services/map_service.dart';
 import '../../constants/app_constants.dart';
 import 'map_action_buttons.dart';
 import 'map_search_bar.dart';
+import '../../widgets/toast_manager.dart';
 
 class PoiAnnotationClickListener extends mapbox.OnPointAnnotationClickListener {
   final Function(mapbox.PointAnnotation) onAnnotationClickCallback;
@@ -48,6 +50,7 @@ class _MapScreenState extends State<MapScreen> {
   bool _mapReady = false;
 
   List<PoiModel> _filteredPois = [];
+  List<PoiModel> _recentSearches = [];
   PoiModel? _selectedPoi;
   bool _isPoiCardExpanded = false;
   final TextEditingController _searchController = TextEditingController();
@@ -65,6 +68,18 @@ class _MapScreenState extends State<MapScreen> {
     _requestLocationPermission();
     _loadPOIs();
   }
+
+  Future<void> _saveRecentSearch(PoiModel poi) async {
+    setState(() {
+      _recentSearches.removeWhere((p) => p.id == poi.id);
+      _recentSearches.insert(0, poi);
+      if (_recentSearches.length > 5) {
+        _recentSearches = _recentSearches.sublist(0, 5);
+      }
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('recent_pois', _recentSearches.map((p) => p.id).toList());
+  }
   
   void _onNavigationStateChanged() {
     if (mounted) {
@@ -78,8 +93,20 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) {
         setState(() {
           _pois = pois;
-          _filteredPois = pois;
+          _filteredPois = [];
         });
+        
+        // Resolve recent searches now that POIs are loaded
+        final prefs = await SharedPreferences.getInstance();
+        final recentIds = prefs.getStringList('recent_pois') ?? [];
+        setState(() {
+          _recentSearches = recentIds
+              .map((id) => _pois.cast<PoiModel?>().firstWhere((p) => p?.id == id, orElse: () => null))
+              .where((p) => p != null)
+              .cast<PoiModel>()
+              .toList();
+        });
+        
         _renderPOIs();
       }
     } catch (e) {
@@ -98,7 +125,7 @@ class _MapScreenState extends State<MapScreen> {
   void _onSearchChanged(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredPois = List.from(_pois);
+        _filteredPois = [];
       } else {
         _filteredPois = _pois
             .where((poi) =>
@@ -112,11 +139,13 @@ class _MapScreenState extends State<MapScreen> {
   void _navigateToPoi(PoiModel poi) {
     if (mapboxMap == null) return;
     
+    _saveRecentSearch(poi);
+
     // Close search and set selected POI
     setState(() {
       isFullScreenSearch = false;
       _searchController.clear();
-      _filteredPois = List.from(_pois);
+      _filteredPois = [];
       _selectedPoi = poi;
       _isPoiCardExpanded = false;
     });
@@ -161,7 +190,7 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) {
         setState(() {
           _mapReady = true;
-          _isMapLoading = false;
+          // Note: _isMapLoading remains true until onMapCreated fires.
         });
       }
     } catch (e) {
@@ -407,17 +436,22 @@ class _MapScreenState extends State<MapScreen> {
                     _getCurrentLocation();
 
                     if (mounted) {
-                      setState(() {
-                        _isMapLoading = false;
+                      // Slight delay to allow native view to render its surface
+                      Future.delayed(const Duration(milliseconds: 300), () {
+                        if (mounted) {
+                          setState(() {
+                            _isMapLoading = false;
+                          });
+                        }
                       });
                     }
                   },
                 ),
-              )
-            else if (_isMapLoading)
+              ),
+            if (_isMapLoading)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black26,
+                  color: isDark ? Colors.black : Colors.white,
                   child: const Center(
                     child: CupertinoActivityIndicator(
                       radius: 15,
@@ -443,54 +477,116 @@ class _MapScreenState extends State<MapScreen> {
                           children: [
                             const SizedBox(height: 66),
                             Expanded(
-                              child: _filteredPois.isEmpty
-                                  ? Center(
-                                      child: Text(
-                                        'No results found',
-                                        style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
-                                      ),
-                                    )
-                                  : ListView.builder(
-                                      padding: const EdgeInsets.all(16),
-                                      itemCount: _filteredPois.length,
-                                      itemBuilder: (context, index) {
-                                        final poi = _filteredPois[index];
-                                        return Container(
-                                          margin: const EdgeInsets.only(bottom: 8),
-                                          decoration: BoxDecoration(
-                                            color: isDark ? Colors.grey[850] : Colors.white,
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                              child: Builder(
+                                builder: (context) {
+                                  final isSearchEmpty = _searchController.text.isEmpty;
+                                  
+                                  if (isSearchEmpty) {
+                                    if (_recentSearches.isEmpty) {
+                                      return Center(
+                                        child: Text(
+                                          'Search for a location',
+                                          style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 16),
+                                        ),
+                                      );
+                                    } else {
+                                      return Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(left: 20, top: 16, bottom: 8),
+                                            child: Text(
+                                              'Recent Searches',
+                                              style: TextStyle(
+                                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
                                           ),
-                                          child: Material(
-                                            type: MaterialType.transparency,
-                                            child: InkWell(
-                                              borderRadius: BorderRadius.circular(12),
-                                              onTap: () => _navigateToPoi(poi),
-                                              child: Padding(
-                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                                child: Row(
-                                                  children: [
-                                                    Icon(CupertinoIcons.map_pin_ellipse, color: _getColorForType(poi.type)),
-                                                    const SizedBox(width: 16),
-                                                    Expanded(
+                                          Expanded(
+                                            child: ListView.separated(
+                                              padding: const EdgeInsets.symmetric(horizontal: 0),
+                                              itemCount: _recentSearches.length,
+                                              separatorBuilder: (context, index) => Divider(
+                                                height: 1, 
+                                                indent: 20, 
+                                                endIndent: 20, 
+                                                color: isDark ? Colors.white12 : Colors.black12,
+                                              ),
+                                              itemBuilder: (context, index) {
+                                                final poi = _recentSearches[index];
+                                                return Material(
+                                                  type: MaterialType.transparency,
+                                                  child: InkWell(
+                                                    onTap: () => _navigateToPoi(poi),
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                                                       child: Column(
                                                         crossAxisAlignment: CrossAxisAlignment.start,
                                                         children: [
-                                                          Text(poi.name, style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
-                                                          const SizedBox(height: 4),
-                                                          Text(poi.type, style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 13)),
+                                                          Text(poi.name, style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600, fontSize: 16)),
+                                                          const SizedBox(height: 2),
+                                                          Text(poi.type, style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 13)),
                                                         ],
                                                       ),
                                                     ),
-                                                  ],
-                                                ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                  } else if (_filteredPois.isEmpty) {
+                                    return Center(
+                                      child: Text(
+                                        'No results found',
+                                        style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 16),
+                                      ),
+                                    );
+                                  } else {
+                                    return ListView.separated(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      itemCount: _filteredPois.length,
+                                      separatorBuilder: (context, index) => Divider(
+                                        height: 1, 
+                                        indent: 20, 
+                                        endIndent: 20, 
+                                        color: isDark ? Colors.white12 : Colors.black12,
+                                      ),
+                                      itemBuilder: (context, index) {
+                                        final poi = _filteredPois[index];
+                                        return Material(
+                                          type: MaterialType.transparency,
+                                          child: InkWell(
+                                            onTap: () => _navigateToPoi(poi),
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(poi.name, style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600, fontSize: 16)),
+                                                        const SizedBox(height: 2),
+                                                        Text(poi.type, style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 13)),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ),
                                         );
                                       },
-                                    ),
+                                    );
+                                  }
+                                },
+                              ),
                             ),
                           ],
                         ),
@@ -752,14 +848,18 @@ class _MapScreenState extends State<MapScreen> {
                               borderRadius: BorderRadius.circular(12),
                               onPressed: () async {
                                 if (currentLatitude == null || currentLongitude == null || mapboxMap == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Current location not available')),
+                                  EduMateToast.showCompact(
+                                    context,
+                                    message: 'Current location not available',
+                                    isSuccess: false,
                                   );
                                   return;
                                 }
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Generating route...')),
+                                EduMateToast.showCompact(
+                                  context,
+                                  message: 'Generating route...',
+                                  isSuccess: true,
                                 );
 
                                 await _navigationManager.startNavigation(
