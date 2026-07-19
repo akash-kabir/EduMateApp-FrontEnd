@@ -1,7 +1,93 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/home_schedule_service.dart';
+import 'todays_schedule_skeleton.dart';
+
+class _OngoingTimeIndicator extends StatefulWidget {
+  final String endTimeStr;
+
+  const _OngoingTimeIndicator({required this.endTimeStr});
+
+  @override
+  State<_OngoingTimeIndicator> createState() => _OngoingTimeIndicatorState();
+}
+
+class _OngoingTimeIndicatorState extends State<_OngoingTimeIndicator> {
+  Timer? _timer;
+  int _minsLeft = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateTime();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateTime());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _updateTime() {
+    final eParts = widget.endTimeStr.split(':');
+    if (eParts.length == 2) {
+      final now = DateTime.now();
+      final end = DateTime(now.year, now.month, now.day, int.parse(eParts[0]), int.parse(eParts[1]));
+      final diff = end.difference(now);
+      final seconds = diff.inSeconds;
+      final newMinsLeft = seconds > 0 ? (seconds / 60.0).ceil() : 0;
+      if (newMinsLeft != _minsLeft && mounted) {
+        setState(() {
+          _minsLeft = newMinsLeft;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_minsLeft <= 0) return const SizedBox.shrink();
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$_minsLeft',
+            style: const TextStyle(
+              color: Color(0xFF10B981), 
+              fontSize: 32, 
+              fontWeight: FontWeight.w400,
+              height: 1.0,
+              letterSpacing: -1,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text(
+                'mins',
+                style: TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w500, height: 1.1),
+              ),
+              Text(
+                'left',
+                style: TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w500, height: 1.1),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class TodaysScheduleCard extends StatefulWidget {
   final bool isDark;
@@ -15,11 +101,52 @@ class TodaysScheduleCard extends StatefulWidget {
 class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
   bool _isLoading = true;
   HomeScheduleData? _scheduleData;
+  late ScrollController _scrollController;
+  Timer? _cardRefreshTimer;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _fetchSchedule();
+    // Refresh card UI every second but only rebuild when minute changes
+    int lastMinute = DateTime.now().minute;
+    _cardRefreshTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && _scheduleData != null) {
+        final currentMinute = DateTime.now().minute;
+        if (currentMinute != lastMinute) {
+          lastMinute = currentMinute;
+          setState(() {}); // Trigger UI update for ongoing/done checks
+          _scrollToOngoingClass();
+        }
+      }
+    });
+  }
+
+  void _scrollToOngoingClass() {
+    if (_scheduleData == null) return;
+    int ongoingIndex = -1;
+    for (int i = 0; i < _scheduleData!.classes.length; i++) {
+      if (_isClassOngoing(_scheduleData!.classes[i])) {
+        ongoingIndex = i;
+        break;
+      }
+    }
+    if (ongoingIndex > 0 && _scrollController.hasClients) {
+      final offset = (ongoingIndex * (220.0 + 12.0));
+      _scrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _cardRefreshTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchSchedule() async {
@@ -28,6 +155,9 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
       setState(() {
         _scheduleData = data;
         _isLoading = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToOngoingClass();
       });
     }
   }
@@ -106,10 +236,7 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
         ],
       ),
       child: _isLoading
-          ? Padding(
-              padding: const EdgeInsets.all(40.0),
-              child: Center(child: CupertinoActivityIndicator(color: widget.isDark ? Colors.white : Colors.black54)),
-            )
+          ? TodaysScheduleSkeleton(isDark: widget.isDark)
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -173,6 +300,14 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
     }
 
     final classesLeft = _calculateClassesLeft(_scheduleData!.classes);
+    String? ongoingClassEndTime;
+    for (var c in _scheduleData!.classes) {
+      if (_isClassOngoing(c)) {
+        ongoingClassEndTime = c['endTime']?.toString();
+        break;
+      }
+    }
+
     if (classesLeft == 0) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,24 +338,33 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
         ),
         const SizedBox(height: 8),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              '$classesLeft',
-              style: TextStyle(
-                color: titleColor, 
-                fontSize: 56, 
-                fontWeight: FontWeight.bold, 
-                height: 1.0,
-                letterSpacing: -2,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  '$classesLeft',
+                  style: TextStyle(
+                    color: titleColor, 
+                    fontSize: 56, 
+                    fontWeight: FontWeight.bold, 
+                    height: 1.0,
+                    letterSpacing: -2,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'classes left',
+                  style: TextStyle(color: titleColor, fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              'classes left',
-              style: TextStyle(color: titleColor, fontSize: 18, fontWeight: FontWeight.w600),
-            ),
+            if (ongoingClassEndTime != null) ...[
+              const Spacer(),
+              _OngoingTimeIndicator(endTimeStr: ongoingClassEndTime),
+            ]
           ],
         ),
       ],
@@ -232,10 +376,16 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
       return const SizedBox.shrink(); // Hide carousel if holiday or weekend
     }
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    // The card is 220px wide, and we want 24px padding on the left.
+    // The right padding should push the last card to the left side of the screen.
+    final rightPadding = (screenWidth - 24 - 220).clamp(24.0, double.infinity);
+
     return SizedBox(
       height: 120,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        controller: _scrollController,
+        padding: EdgeInsets.only(left: 24, right: rightPadding),
         scrollDirection: Axis.horizontal,
         itemCount: _scheduleData!.classes.length,
         separatorBuilder: (context, index) => const SizedBox(width: 12),
@@ -244,21 +394,29 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
           final isOngoing = _isClassOngoing(c);
           final isDone = _isClassDone(c);
           
-          final bgColor = isOngoing 
-              ? (widget.isDark ? Colors.white : Colors.black87)
-              : (widget.isDark ? Colors.white : Colors.black).withValues(alpha: 0.1);
+          final bgColor = isDone 
+              ? (widget.isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03))
+              : isOngoing 
+                  ? (widget.isDark ? Colors.white : Colors.black87)
+                  : (widget.isDark ? Colors.white : Colors.black).withValues(alpha: 0.1);
               
-          final borderColor = isOngoing 
-              ? Colors.transparent 
-              : (widget.isDark ? Colors.white : Colors.black).withValues(alpha: 0.2);
+          final borderColor = isDone
+              ? Colors.transparent
+              : isOngoing 
+                  ? Colors.transparent 
+                  : (widget.isDark ? Colors.white : Colors.black).withValues(alpha: 0.2);
               
-          final primaryTextColor = isOngoing 
-              ? (widget.isDark ? Colors.black87 : Colors.white)
-              : (widget.isDark ? Colors.white : Colors.black87);
+          final primaryTextColor = isDone
+              ? (widget.isDark ? Colors.white38 : Colors.black38)
+              : isOngoing 
+                  ? (widget.isDark ? Colors.black87 : Colors.white)
+                  : (widget.isDark ? Colors.white : Colors.black87);
               
-          final secondaryTextColor = isOngoing 
-              ? (widget.isDark ? Colors.black54 : Colors.white70)
-              : (widget.isDark ? Colors.white70 : Colors.black54);
+          final secondaryTextColor = isDone
+              ? (widget.isDark ? Colors.white24 : Colors.black26)
+              : isOngoing 
+                  ? (widget.isDark ? Colors.black54 : Colors.white70)
+                  : (widget.isDark ? Colors.white70 : Colors.black54);
           
           return Container(
             width: 220,
@@ -281,7 +439,6 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
                         color: secondaryTextColor,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        decoration: isDone ? TextDecoration.lineThrough : null,
                       ),
                     ),
                     if (isOngoing)
@@ -305,7 +462,6 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
                     color: primaryTextColor,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    decoration: isDone ? TextDecoration.lineThrough : null,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

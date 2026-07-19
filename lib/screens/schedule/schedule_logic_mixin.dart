@@ -118,16 +118,25 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
     }
   }
 
+  int? _lastMinute;
+  
   void startRefreshTimer() {
     refreshTimer?.cancel();
-    refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    _lastMinute = DateTime.now().minute;
+    refreshTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
-        setState(() {}); // Updates the current time indicator
+        final currentMinute = DateTime.now().minute;
+        if (currentMinute != _lastMinute) {
+          _lastMinute = currentMinute;
+          setState(() {}); // Updates the current time indicator
+        }
         
-        // Poll for updates in the background
-        if (selectedBranch.isNotEmpty && selectedSemester > 0) {
-          fetchScheduleFromBackend(isPolling: true);
-          fetchAvailableElectives(selectedSemester, isPolling: true);
+        // Poll for updates in the background every 30 seconds
+        if (DateTime.now().second % 30 == 0) {
+          if (selectedBranch.isNotEmpty && selectedSemester > 0) {
+            fetchScheduleFromBackend(isPolling: true);
+            fetchAvailableElectives(selectedSemester, isPolling: true);
+          }
         }
       }
     });

@@ -758,9 +758,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             else
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    Opacity(
+                sliver: SliverFillRemaining(
+                  hasScrollBody: false,
+                  fillOverscroll: true,
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Opacity(
                       opacity: (1.0 - (dragOffset.abs() / 400.0)).clamp(
                         0.4,
                         1.0,
@@ -779,6 +782,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           duration: const Duration(milliseconds: 300),
                           switchInCurve: Curves.easeOut,
                           switchOutCurve: Curves.easeIn,
+                          layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+                            return Stack(
+                              alignment: Alignment.topCenter,
+                              children: <Widget>[
+                                ...previousChildren,
+                                if (currentChild != null) currentChild,
+                              ],
+                            );
+                          },
                           transitionBuilder: (child, animation) {
                             final isIncoming = child.key == ValueKey(selectedDate);
                             final Offset offsetBegin;
@@ -818,7 +830,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                         ),
                       ),
                     ),
-                  ]),
+                  ),
                 ),
               ),
           ],

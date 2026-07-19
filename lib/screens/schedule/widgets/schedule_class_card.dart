@@ -37,18 +37,25 @@ class ScheduleClassCard extends StatelessWidget {
 
     final double cardOpacity = effectivelyPassed ? 0.4 : 1.0;
 
-    // Glass base decoration
+    // Base decoration
     final BoxDecoration cardDecoration;
     if (effectivelyOngoing) {
       cardDecoration = BoxDecoration(
-        color: const Color.fromARGB(255, 2, 56, 38).withValues(alpha: 0.14), // Glass Emerald Green Tint
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF0F3E28), // Deep green
+            Color(0xFF1B6A45), // Lighter emerald green
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
         border: const Border(
           left: BorderSide(color: Color(0xFF10B981), width: 5),
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF10B981).withValues(alpha: 0.20),
+            color: const Color(0xFF10B981).withValues(alpha: 0.25),
             blurRadius: 18.0,
             spreadRadius: 2.0,
           ),
@@ -80,12 +87,16 @@ class ScheduleClassCard extends StatelessWidget {
       opacity: cardOpacity,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 12),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
+        child: AnimatedScale(
+          scale: effectivelyOngoing ? 1.04 : 1.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutBack,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
             filter: ui.ImageFilter.blur(
-              sigmaX: isOngoing ? 18.0 : 10.0,
-              sigmaY: isOngoing ? 18.0 : 10.0,
+              sigmaX: effectivelyOngoing ? 0.0 : 10.0,
+              sigmaY: effectivelyOngoing ? 0.0 : 10.0,
             ),
             child: Container(
               decoration: cardDecoration,
@@ -103,8 +114,8 @@ class ScheduleClassCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: isOngoing
-                              ? const Color(0xFF10B981)
+                          color: effectivelyOngoing
+                              ? Colors.white
                               : (isDark ? Colors.grey[400] : Colors.grey[600]),
                         ),
                       ),
@@ -120,7 +131,7 @@ class ScheduleClassCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : Colors.black,
+                            color: effectivelyOngoing ? Colors.white : (isDark ? Colors.white : Colors.black),
                           ),
                         ),
                       ),
@@ -133,8 +144,8 @@ class ScheduleClassCard extends StatelessWidget {
                             Icon(
                               CupertinoIcons.location_solid,
                               size: 14,
-                              color: isOngoing
-                                  ? const Color(0xFF10B981).withValues(alpha: 0.7)
+                              color: effectivelyOngoing
+                                  ? Colors.white70
                                   : (isDark ? Colors.grey[500] : Colors.grey[500]),
                             ),
                             const SizedBox(width: 4),
@@ -143,8 +154,8 @@ class ScheduleClassCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isOngoing
-                                    ? const Color(0xFF10B981).withValues(alpha: 0.9)
+                                color: effectivelyOngoing
+                                    ? Colors.white
                                     : (isDark ? Colors.grey[400] : Colors.grey[600]),
                               ),
                             ),
@@ -182,6 +193,6 @@ class ScheduleClassCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 }
