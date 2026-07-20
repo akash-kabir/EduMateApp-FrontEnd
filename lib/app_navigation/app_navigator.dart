@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../screens/schedule/schedule_screen.dart';
 import '../screens/map/map_screen.dart';
 import '../screens/event/event_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../services/shared_preferences_service.dart';
+import '../widgets/custom_glass_dialog.dart';
+import '../constants/app_constants.dart';
 import 'nav_bar.dart';
 
 class AppNavigator extends StatefulWidget {
@@ -17,6 +20,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   int _selectedIndex = 0;
   bool _slideFromRight = true;
   bool _isMapNavBarVisible = true;
+  String _userRole = '';
 
   late final List<Widget> _pages;
 
@@ -40,13 +44,111 @@ class _AppNavigatorState extends State<AppNavigator> {
 
   void _onItemTapped(int index) {
     if (index == _selectedIndex) return;
+    
+    // Restrict Guests from Events (2) and Map (3)
+    if (_userRole == 'guest' && (index == 2 || index == 3)) {
+      _showGuestRestrictionDialog();
+      return;
+    }
+
     setState(() {
       _slideFromRight = index > _selectedIndex;
       _selectedIndex = index;
     });
   }
 
+  void _showGuestRestrictionDialog() {
+    showGlassmorphicDialog(
+      context: context,
+      barrierDismissible: true,
+      child: Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64.0,
+                height: 64.0,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AuthPalette.coral.withValues(alpha: 0.15),
+                  border: Border.all(
+                    color: AuthPalette.coral.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: const Icon(
+                  CupertinoIcons.lock_fill,
+                  color: AuthPalette.coral,
+                  size: 32.0,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Access Restricted',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                  letterSpacing: -0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Map and Events are only available to registered students. Sign up to unlock full access!',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14.0,
+                  color: isDark ? Colors.grey[400] : Colors.grey[700],
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AuthPalette.coral,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.0),
+                    ),
+                  ),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   void _loadInitialPage() async {
+    final role = await SharedPreferencesService.getUserRole();
+    if (mounted) {
+      setState(() {
+        _userRole = role?.toLowerCase() ?? '';
+      });
+    }
+
     final openTimesheet = await SharedPreferencesService.getBool('openToTimesheet');
     if (openTimesheet && mounted) {
       setState(() {

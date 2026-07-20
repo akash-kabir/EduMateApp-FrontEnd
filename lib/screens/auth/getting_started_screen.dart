@@ -4,10 +4,13 @@ import 'package:provider/provider.dart';
 import 'dart:io';
 import 'dart:ui' show ImageFilter;
 import 'signup_screen1.dart';
-import '../admin/adminsplash/admin_splash_screen.dart';
 import '../../animated_background/animated_circle_gradient.dart';
 import '../../provider/animation_provider.dart';
 import '../../constants/app_constants.dart';
+import '../../services/api_service.dart';
+import '../../services/shared_preferences_service.dart';
+import '../../widgets/toast_manager.dart';
+import '../splash/splash_screen_loading.dart';
 
 class GettingStartedScreen extends StatefulWidget {
   const GettingStartedScreen({super.key});
@@ -17,6 +20,8 @@ class GettingStartedScreen extends StatefulWidget {
 }
 
 class _GettingStartedScreenState extends State<GettingStartedScreen> {
+  bool _loadingGuest = false;
+
   @override
   void initState() {
     super.initState();
@@ -27,6 +32,49 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
         provider.startPageEntranceAnimations();
       }
     });
+  }
+
+  Future<void> _guestLogin() async {
+    setState(() => _loadingGuest = true);
+    try {
+      final result = await ApiService.guestLogin();
+      if (result['success'] ?? false) {
+        final data = result['data'];
+        final token = data['token'];
+        
+        await SharedPreferencesService.setToken(token);
+        await SharedPreferencesService.setIsLoggedIn(true);
+        // We only have basic info from guest login, save it
+        await SharedPreferencesService.saveFullUserProfile(data['user']);
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const SplashScreenWithApiLoading(),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          EduMateToast.showCompact(
+            context,
+            message: result['message'] ?? 'Guest Login failed',
+            isSuccess: false,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        EduMateToast.showCompact(
+          context,
+          message: 'Error: $e',
+          isSuccess: false,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingGuest = false);
+    }
   }
 
   void _showExitConfirmationDialog(BuildContext context) {
@@ -180,7 +228,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                               GlassButton(
                                 text: 'Get Started',
                                 isGradient: true,
-                                onPressed: () {
+                                onPressed: _loadingGuest ? () {} : () {
                                   Navigator.push(
                                     context,
                                     PageRouteBuilder(
@@ -210,45 +258,18 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                                 },
                               ),
                               const SizedBox(height: 16),
-                              // Admin Login Button with Glass Effect
+                              // Continue as Guest Button with Glass Effect
                               GlassButton(
-                                text: 'Admin Login',
+                                text: _loadingGuest ? 'Setting Up...' : 'Continue as Guest',
                                 isGradient: false,
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    PageRouteBuilder(
-                                      pageBuilder:
-                                          (
-                                            context,
-                                            animation,
-                                            secondaryAnimation,
-                                          ) => const AdminSplashScreen(),
-                                      transitionsBuilder:
-                                          (
-                                            context,
-                                            animation,
-                                            secondaryAnimation,
-                                            child,
-                                          ) {
-                                            return FadeTransition(
-                                              opacity: animation,
-                                              child: child,
-                                            );
-                                          },
-                                      transitionDuration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                    ),
-                                  );
-                                },
+                                onPressed: _loadingGuest ? () {} : _guestLogin,
                               ),
                               const SizedBox(height: 16),
                               // Sign In Button with Glass Effect
                               GlassButton(
                                 text: 'Exit',
                                 isGradient: false,
-                                onPressed: () {
+                                onPressed: _loadingGuest ? () {} : () {
                                   _showExitConfirmationDialog(context);
                                 },
                               ),

@@ -14,6 +14,7 @@ import 'holiday_list/holiday_list_screen.dart';
 import 'widgets/todays_schedule_card.dart';
 import '../profile/profile_details_screen.dart';
 import '../admin/admin_main_app.dart';
+import '../splash/splash_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToEvent;
@@ -34,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? userId;
   String? token;
   bool openAppToTimesheet = false;
+  String _userRole = '';
 
   @override
   void initState() {
@@ -54,16 +56,31 @@ class _HomeScreenState extends State<HomeScreen> {
     final newUserId = await SharedPreferencesService.getUserId();
     final newToken = await SharedPreferencesService.getToken();
     final openTimesheetPref = await SharedPreferencesService.getBool('openToTimesheet');
+    final role = await SharedPreferencesService.getUserRole();
 
     setState(() {
       userFirstName = newFirstName;
       userId = newUserId;
       token = newToken;
       openAppToTimesheet = openTimesheetPref;
+      _userRole = role ?? '';
     });
   }
 
   Future<void> _checkAndShowProfileSetupDialog() async {
+    final role = await SharedPreferencesService.getUserRole();
+    if (role?.toLowerCase() == 'guest') {
+      final hasSeenDialog = await SharedPreferencesService.getBool('hasSeenGuestDialog');
+      if (hasSeenDialog != true) {
+        if (!mounted) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _showGuestWelcomeDialog();
+        });
+      }
+      return;
+    }
+
     final isComplete = await SharedPreferencesService.isProfileSetupComplete();
     final neverAsk = await SharedPreferencesService.isNeverAskProfileSetup();
     final isProfileCompleted =
@@ -216,6 +233,91 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _showGuestWelcomeDialog() {
+    SharedPreferencesService.setBool('hasSeenGuestDialog', true);
+    showGlassmorphicDialog(
+      context: context,
+      barrierDismissible: false,
+      child: Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64.0,
+                height: 64.0,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AuthPalette.coral.withValues(alpha: 0.15),
+                  border: Border.all(
+                    color: AuthPalette.coral.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: const Icon(
+                  CupertinoIcons.person_crop_circle_badge_exclam,
+                  color: AuthPalette.coral,
+                  size: 32.0,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Welcome, Guest!',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                  letterSpacing: -0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'You are logged in as a Guest. You have access to the Home and Schedule screens for 7 days. Map and Events are restricted.',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14.0,
+                  color: isDark ? Colors.grey[400] : Colors.grey[700],
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AuthPalette.coral,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.0),
+                    ),
+                  ),
+                  child: const Text(
+                    'Got it!',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -239,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Welcome back,',
+                            _userRole.toLowerCase() == 'guest' ? 'Welcome' : 'Welcome back,',
                             style: TextStyle(
                               fontSize: 14,
                               color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -248,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            userFirstName.isEmpty ? 'User' : userFirstName,
+                            _userRole.toLowerCase() == 'guest' ? 'Guest' : (userFirstName.isEmpty ? 'User' : userFirstName),
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -521,7 +623,11 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                   onTap: () async {
                                     await SharedPreferencesService.clearAll();
                                     if (context.mounted) {
-                                      Navigator.of(context).pushReplacementNamed('/login');
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        CupertinoPageRoute(builder: (_) => const SplashScreen()),
+                                        (route) => false,
+                                      );
                                     }
                                   }
                                 ),
@@ -557,7 +663,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        _userEmail,
+                                        _userRole.toLowerCase() == 'guest' ? 'Guest' : _userEmail,
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
@@ -565,16 +671,18 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        _userRole.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 1,
-                                          color: widget.isDark ? Colors.white38 : Colors.black38,
+                                      if (_userRole.toLowerCase() != 'guest') ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _userRole.toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            letterSpacing: 1.2,
+                                            fontWeight: FontWeight.w700,
+                                            color: AuthPalette.coral,
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ],
                                   ),
                                 ),

@@ -99,6 +99,27 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> guestLogin() async {
+    try {
+      final response = await _httpClient.post(
+        Uri.parse(Config.guestLoginEndpoint),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'data': data};
+      } else {
+        return {
+          'success': false,
+          'message': jsonDecode(response.body)['message'] ?? 'Guest Login failed',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
     try {
       final response = await _httpClient.post(

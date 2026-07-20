@@ -4,6 +4,7 @@ class Config {
   // Auth endpoints
   static const String registerEndpoint = "$BASE_URL/api/users/register";
   static const String loginEndpoint = "$BASE_URL/api/users/login";
+  static const String guestLoginEndpoint = "$BASE_URL/api/users/guest-login";
   static const String refreshEndpoint = "$BASE_URL/api/users/refresh";
   static const String forgotPasswordEndpoint = "$BASE_URL/api/users/forgot-password";
   static const String verifyOTPEndpoint = "$BASE_URL/api/users/verify-otp";
