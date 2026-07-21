@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config.dart';
 import 'shared_preferences_service.dart';
+import 'package:flutter/material.dart';
+import '../main.dart';
+import '../screens/auth/getting_started_screen.dart';
 
 /// Service to handle silent token refresh when the access token expires.
 ///
@@ -73,6 +76,18 @@ class TokenRefreshService {
     return token;
   }
 
+  /// Forces the user to logout and navigates to the login screen.
+  static Future<void> _forceLogout() async {
+    await SharedPreferencesService.clearUserData();
+    if (navigatorKey.currentContext != null) {
+      Navigator.pushAndRemoveUntil(
+        navigatorKey.currentContext!,
+        MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
+        (route) => false,
+      );
+    }
+  }
+
   /// Makes an authenticated GET request with automatic token refresh on 401.
   static Future<http.Response> authenticatedGet(String url) async {
     var token = await SharedPreferencesService.getToken();
@@ -97,6 +112,10 @@ class TokenRefreshService {
           },
         );
       }
+    }
+
+    if (response.statusCode == 401) {
+      _forceLogout();
     }
 
     return response;
@@ -133,6 +152,10 @@ class TokenRefreshService {
       }
     }
 
+    if (response.statusCode == 401) {
+      _forceLogout();
+    }
+
     return response;
   }
 
@@ -167,6 +190,10 @@ class TokenRefreshService {
       }
     }
 
+    if (response.statusCode == 401) {
+      _forceLogout();
+    }
+
     return response;
   }
 
@@ -199,6 +226,10 @@ class TokenRefreshService {
           body: body != null ? jsonEncode(body) : null,
         );
       }
+    }
+
+    if (response.statusCode == 401) {
+      _forceLogout();
     }
 
     return response;

@@ -45,7 +45,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           children: [
             const SizedBox(height: 20),
             Text(
-              'Settings',
+              'Admin Settings',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -163,8 +163,14 @@ class _SettingsCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: isDark 
+                ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
+                : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: isDark
@@ -185,7 +191,7 @@ class _SettingsCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF2C2C2E) : Colors.grey[100],
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(

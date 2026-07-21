@@ -121,10 +121,11 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final curriculums = (data['data'] as List).cast<Map<String, dynamic>>();
+        final List<dynamic> curriculums = data['data'] ?? [];
 
         final branchList = curriculums
-            .map((c) => c['branch'].toString())
+            .map((c) => (c['branch'] ?? '').toString())
+            .where((b) => b.isNotEmpty)
             .toList();
 
         setState(() {
@@ -163,14 +164,13 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final List<dynamic> semestersData = data['data'];
-        final semesterList = List<Map<String, dynamic>>.from(
-          semestersData.map(
-            (s) => {
-              'semesterNumber': s['semester'],
-              'subjects': s['subjects'],
-            },
-          ),
-        );
+        final List<Map<String, dynamic>> semesterList = [];
+        for (var s in semestersData) {
+          semesterList.add({
+            'semesterNumber': s['semester'],
+            'subjects': s['subjects'],
+          });
+        }
 
         setState(() {
           semesters = semesterList;

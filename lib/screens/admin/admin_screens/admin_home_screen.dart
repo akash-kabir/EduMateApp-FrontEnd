@@ -60,7 +60,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CupertinoActivityIndicator())
+            ? AdminDashboardSkeleton(isDark: isDark)
             : RefreshIndicator(
                 onRefresh: _fetchStats,
                 child: SingleChildScrollView(
@@ -158,8 +158,14 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: isDark 
+              ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
+              : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.05),
@@ -241,14 +247,31 @@ class _DemographicsCard extends StatefulWidget {
 
 class _DemographicsCardState extends State<_DemographicsCard> {
   int touchedIndex = -1;
+  bool _isExpanded = false;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isExpanded = !_isExpanded;
+        });
+      },
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        alignment: Alignment.topCenter,
+        child: Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: widget.isDark ? const Color(0xFF1C1C1E) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: widget.isDark 
+              ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
+              : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           if (!widget.isDark)
             BoxShadow(
@@ -262,48 +285,69 @@ class _DemographicsCardState extends State<_DemographicsCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                '${widget.totalUsers}',
-                style: TextStyle(fontSize: 36, color: widget.isDark ? Colors.white : Colors.black, fontWeight: FontWeight.bold),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${widget.totalUsers}',
+                      style: TextStyle(
+                        fontSize: 56, 
+                        color: widget.isDark ? Colors.white : Colors.black, 
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.totalUsers == 1 ? 'user' : 'users',
+                      style: TextStyle(
+                        fontSize: 18, 
+                        color: widget.isDark ? Colors.grey[400] : Colors.grey[600], 
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+
+                  ],
+                ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                widget.totalUsers == 1 ? 'user' : 'users',
-                style: TextStyle(fontSize: 16, color: widget.isDark ? Colors.grey[400] : Colors.grey[600], fontWeight: FontWeight.w500),
+              Expanded(
+                flex: 3,
+                child: SizedBox(
+                  height: 180,
+                  child: widget.totalUsers > 0 
+                    ? PieChart(
+                        PieChartData(
+                          pieTouchData: PieTouchData(
+                            touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                              setState(() {
+                                if (!event.isInterestedForInteractions || pieTouchResponse == null || pieTouchResponse.touchedSection == null) {
+                                  touchedIndex = -1;
+                                  return;
+                                }
+                                touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                              });
+                            },
+                          ),
+                          borderData: FlBorderData(show: false),
+                          sectionsSpace: 2,
+                          centerSpaceRadius: 35,
+                          sections: _showingSections(),
+                        ),
+                      )
+                    : const Center(child: Text('No Data')),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          if (widget.totalUsers > 0) ...[
-            SizedBox(
-              height: 180,
-              child: Center(
-                child: PieChart(
-                  PieChartData(
-                    pieTouchData: PieTouchData(
-                      touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                        setState(() {
-                          if (!event.isInterestedForInteractions || pieTouchResponse == null || pieTouchResponse.touchedSection == null) {
-                            touchedIndex = -1;
-                            return;
-                          }
-                          touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                        });
-                      },
-                    ),
-                    borderData: FlBorderData(show: false),
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 40,
-                    sections: _showingSections(),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+          if (_isExpanded && widget.totalUsers > 0) ...[
+            const SizedBox(height: 32),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
@@ -312,6 +356,14 @@ class _DemographicsCardState extends State<_DemographicsCard> {
                       _Indicator(color: Colors.blue, text: 'Students', isSquare: false, isDark: widget.isDark, value: widget.students),
                       const SizedBox(height: 12),
                       _Indicator(color: Colors.orange, text: 'Society', isSquare: false, isDark: widget.isDark, value: widget.societyHeads),
+                      const SizedBox(height: 12),
+                      _Indicator(
+                        color: Colors.teal, 
+                        text: 'Guests', 
+                        isSquare: false, 
+                        isDark: widget.isDark, 
+                        value: (widget.totalUsers - (widget.students + widget.societyHeads + widget.admins + widget.contributors) > 0) ? widget.totalUsers - (widget.students + widget.societyHeads + widget.admins + widget.contributors) : 0
+                      ),
                     ],
                   ),
                 ),
@@ -327,22 +379,30 @@ class _DemographicsCardState extends State<_DemographicsCard> {
                 ),
               ],
             ),
-          ] else ...[
-            const Center(child: Text('No user data available')),
-          ]
+            const SizedBox(height: 16),
+            Center(
+              child: Icon(
+                CupertinoIcons.chevron_up,
+                size: 20,
+                color: widget.isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          ],
         ],
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
-  List<PieChartSectionData> _showingSections() {
+List<PieChartSectionData> _showingSections() {
     return [
       if (widget.students > 0)
         PieChartSectionData(
           color: Colors.blue,
           value: widget.students.toDouble(),
           title: '${((widget.students / widget.totalUsers) * 100).toStringAsFixed(0)}%',
-          radius: touchedIndex == 0 ? 60.0 : 50.0,
+          radius: touchedIndex == 0 ? 50.0 : 40.0,
           titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       if (widget.societyHeads > 0)
@@ -350,7 +410,7 @@ class _DemographicsCardState extends State<_DemographicsCard> {
           color: Colors.orange,
           value: widget.societyHeads.toDouble(),
           title: '${((widget.societyHeads / widget.totalUsers) * 100).toStringAsFixed(0)}%',
-          radius: touchedIndex == 1 ? 60.0 : 50.0,
+          radius: touchedIndex == 1 ? 50.0 : 40.0,
           titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       if (widget.contributors > 0)
@@ -358,7 +418,7 @@ class _DemographicsCardState extends State<_DemographicsCard> {
           color: Colors.purple,
           value: widget.contributors.toDouble(),
           title: '${((widget.contributors / widget.totalUsers) * 100).toStringAsFixed(0)}%',
-          radius: touchedIndex == 2 ? 60.0 : 50.0,
+          radius: touchedIndex == 2 ? 50.0 : 40.0,
           titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       if (widget.admins > 0)
@@ -366,7 +426,15 @@ class _DemographicsCardState extends State<_DemographicsCard> {
           color: Colors.red,
           value: widget.admins.toDouble(),
           title: '${((widget.admins / widget.totalUsers) * 100).toStringAsFixed(0)}%',
-          radius: touchedIndex == 3 ? 60.0 : 50.0,
+          radius: touchedIndex == 3 ? 50.0 : 40.0,
+          titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      if (widget.totalUsers - (widget.students + widget.societyHeads + widget.admins + widget.contributors) > 0)
+        PieChartSectionData(
+          color: Colors.teal,
+          value: (widget.totalUsers - (widget.students + widget.societyHeads + widget.admins + widget.contributors)).toDouble(),
+          title: '${(((widget.totalUsers - (widget.students + widget.societyHeads + widget.admins + widget.contributors)) / widget.totalUsers) * 100).toStringAsFixed(0)}%',
+          radius: touchedIndex == 4 ? 50.0 : 40.0,
           titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
         ),
     ];
@@ -408,8 +476,104 @@ class _Indicator extends StatelessWidget {
             fontWeight: FontWeight.w500,
             color: isDark ? Colors.grey[300] : Colors.grey[700],
           ),
-        )
+        ),
       ],
+    );
+  }
+}
+
+class AdminDashboardSkeleton extends StatefulWidget {
+  final bool isDark;
+  const AdminDashboardSkeleton({super.key, required this.isDark});
+
+  @override
+  State<AdminDashboardSkeleton> createState() => _AdminDashboardSkeletonState();
+}
+
+class _AdminDashboardSkeletonState extends State<AdminDashboardSkeleton> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    
+    _animation = Tween<double>(begin: 0.2, end: 0.6).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _buildSkeletonCard({required double height, required bool isDark, required Color baseColor}) {
+    return Container(
+      height: height,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark 
+              ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
+              : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
+    final titleColor = widget.isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.1);
+    
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                Center(
+                  child: Container(
+                    width: 200,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: titleColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                
+                // Demographics Card Skeleton
+                _buildSkeletonCard(height: 350, isDark: widget.isDark, baseColor: baseColor),
+                
+                // Stat Card Skeletons
+                _buildSkeletonCard(height: 120, isDark: widget.isDark, baseColor: baseColor),
+                _buildSkeletonCard(height: 120, isDark: widget.isDark, baseColor: baseColor),
+                _buildSkeletonCard(height: 120, isDark: widget.isDark, baseColor: baseColor),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -4,6 +4,8 @@ import 'admin_screens/admin_home_screen.dart';
 import 'admin_screens/admin_upload_screen.dart';
 import 'admin_screens/admin_settings_screen.dart';
 
+import '../../widgets/custom_glass_dialog.dart';
+
 class AdminMainApp extends StatefulWidget {
   final bool fromStudentView;
   const AdminMainApp({super.key, this.fromStudentView = false});
@@ -21,24 +23,40 @@ class _AdminMainAppState extends State<AdminMainApp> {
 
     return CupertinoPageScaffold(
       backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-      child: Scaffold(
-        backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-        body: SafeArea(
-          bottom: false,
-          child: IndexedStack(
-            index: _selectedIndex,
-            children: [
-              const AdminUploadScreen(),
-              AdminHomeScreen(fromStudentView: widget.fromStudentView),
-              const AdminSettingsScreen(),
-            ],
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, dynamic result) async {
+          if (didPop) return;
+          final bool? confirm = await showConfirmationDialog(
+            context: context,
+            title: 'Exit Admin Panel',
+            description: 'Return to Student View?',
+            confirmButtonText: 'Yes',
+            iconData: CupertinoIcons.arrow_turn_up_left,
+          );
+          if (confirm == true && context.mounted) {
+            Navigator.pop(context);
+          }
+        },
+        child: Scaffold(
+          backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+          body: SafeArea(
+            bottom: false,
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: [
+                const AdminUploadScreen(),
+                AdminHomeScreen(fromStudentView: widget.fromStudentView),
+                const AdminSettingsScreen(),
+              ],
+            ),
           ),
-        ),
-        bottomNavigationBar: _AdminNavBar(
-          selectedIndex: _selectedIndex,
-          onItemTapped: (index) {
-            setState(() => _selectedIndex = index);
-          },
+          bottomNavigationBar: _AdminNavBar(
+            selectedIndex: _selectedIndex,
+            onItemTapped: (index) {
+              setState(() => _selectedIndex = index);
+            },
+          ),
         ),
       ),
     );

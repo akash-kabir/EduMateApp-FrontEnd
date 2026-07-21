@@ -6,6 +6,8 @@ import 'provider/animation_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/pwa_install_screen.dart';
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -41,6 +43,7 @@ class _EduMateAppState extends State<EduMateApp> with TickerProviderStateMixin {
     return ChangeNotifierProvider.value(
       value: _animationProvider,
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'EduMate',
         theme: AppTheme.darkTheme,

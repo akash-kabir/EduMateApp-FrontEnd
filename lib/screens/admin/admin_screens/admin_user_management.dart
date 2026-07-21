@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../config.dart';
 import '../../../services/shared_preferences_service.dart';
 import '../../../widgets/toast_manager.dart';
+import 'admin_user_details_screen.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
   const AdminUserManagementScreen({super.key});
@@ -20,12 +21,15 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   String? _currentUserRole;
   String _searchQuery = '';
   String _selectedRoleFilter = 'All';
+  String _sortBy = 'Role';
+  bool _sortAsc = true;
 
   String _normalizeRole(String? role) {
     final r = (role ?? 'student').toLowerCase().trim();
     if (r == 'admin') return 'admin';
     if (r == 'contributor' || r == 'contributer') return 'contributer';
     if (r == 'society' || r == 'societ' || r == 'society_head') return 'societ';
+    if (r == 'guest') return 'guest';
     return 'student';
   }
 
@@ -36,9 +40,28 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       case 'contributer':
         return 'Contributer';
       case 'societ':
-        return 'Societ';
+        return 'Society Head';
+      case 'guest':
+        return 'Guest';
       default:
         return 'Student';
+    }
+  }
+
+  int _getRoleWeight(String normalizedRole) {
+    switch (normalizedRole) {
+      case 'admin':
+        return 4;
+      case 'contributer':
+        return 3;
+      case 'societ':
+        return 2;
+      case 'student':
+        return 1;
+      case 'guest':
+        return 0;
+      default:
+        return 0;
     }
   }
 
@@ -94,6 +117,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       );
 
       if (response.statusCode == 200) {
+        if (!mounted) return;
         EduMateToast.showCompact(
           context,
           message: 'Role updated successfully',
@@ -101,6 +125,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         );
         _fetchUsers();
       } else {
+        if (!mounted) return;
         EduMateToast.showCompact(
           context,
           message: 'Failed to update role',
@@ -108,6 +133,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       EduMateToast.showCompact(
         context,
         message: 'Error updating role',
@@ -125,6 +151,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       );
 
       if (response.statusCode == 200) {
+        if (!mounted) return;
         EduMateToast.showCompact(
           context,
           message: 'User deleted successfully',
@@ -132,6 +159,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         );
         _fetchUsers();
       } else {
+        if (!mounted) return;
         EduMateToast.showCompact(
           context,
           message: 'Failed to delete user',
@@ -139,6 +167,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       EduMateToast.showCompact(
         context,
         message: 'Error deleting user',
@@ -147,180 +176,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     }
   }
 
-  void _showUserOptions(BuildContext context, Map<String, dynamic> user) {
-    if (_currentUserRole != 'admin') {
-      EduMateToast.showCompact(
-        context,
-        message: 'Only Admins can modify users',
-        isSuccess: false,
-      );
-      return;
-    }
-
-    if (_normalizeRole(user['role']?.toString()) == 'admin') {
-      EduMateToast.showCompact(
-        context,
-        message: 'Cannot modify another Admin',
-        isSuccess: false,
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        final currentRole = _normalizeRole(user['role']?.toString());
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E24) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 20,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.black12,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Manage User',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${user['firstName']} ${user['lastName']} • ${user['email']}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark
-                        ? CupertinoColors.systemGrey
-                        : Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 32),
-                const Text(
-                  'CHANGE ROLE',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                    color: CupertinoColors.systemGrey,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (currentRole != 'student')
-                  _buildRoleOption(
-                    context: context,
-                    title: 'Student',
-                    description: 'Read-only access to community.',
-                    icon: CupertinoIcons.person,
-                    color: CupertinoColors.systemGrey,
-                    isDark: isDark,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _updateUserRole(user['_id'], 'Student');
-                    },
-                  ),
-                if (currentRole != 'student') const SizedBox(height: 12),
-                if (currentRole != 'societ')
-                  _buildRoleOption(
-                    context: context,
-                    title: 'Societ',
-                    description: 'Can create posts and events.',
-                    icon: CupertinoIcons.group,
-                    color: CupertinoColors.activeBlue,
-                    isDark: isDark,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _updateUserRole(user['_id'], 'societ');
-                    },
-                  ),
-                if (currentRole != 'societ') const SizedBox(height: 12),
-                if (currentRole != 'contributer')
-                  _buildRoleOption(
-                    context: context,
-                    title: 'Contributer',
-                    description: 'Can upload data to the system.',
-                    icon: CupertinoIcons.wrench,
-                    color: CupertinoColors.activeOrange,
-                    isDark: isDark,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _updateUserRole(user['_id'], 'contributer');
-                    },
-                  ),
-                if (currentRole != 'contributer') const SizedBox(height: 12),
-                const SizedBox(height: 20),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showDeleteConfirm(context, user);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: CupertinoColors.destructiveRed.withValues(
-                        alpha: 0.1,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: CupertinoColors.destructiveRed.withValues(
-                          alpha: 0.3,
-                        ),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          CupertinoIcons.trash,
-                          color: CupertinoColors.destructiveRed,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Remove User Account',
-                          style: TextStyle(
-                            color: CupertinoColors.destructiveRed,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   void _showDeleteConfirm(BuildContext context, Map<String, dynamic> user) {
     showCupertinoDialog(
@@ -432,6 +287,27 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       return matchesSearch && matchesFilter;
     }).toList();
 
+    filteredUsers.sort((a, b) {
+      if (_sortBy == 'Role') {
+        final weightA = _getRoleWeight(_normalizeRole(a['role']?.toString()));
+        final weightB = _getRoleWeight(_normalizeRole(b['role']?.toString()));
+        final res = weightB.compareTo(weightA); // higher weight (admin) first
+        if (res != 0) return _sortAsc ? res : -res;
+      } else if (_sortBy == 'Date Created') {
+        final dateA = a['createdAt'] != null ? DateTime.tryParse(a['createdAt'].toString()) : DateTime.fromMillisecondsSinceEpoch(0);
+        final dateB = b['createdAt'] != null ? DateTime.tryParse(b['createdAt'].toString()) : DateTime.fromMillisecondsSinceEpoch(0);
+        if (dateA != null && dateB != null) {
+          final res = dateB.compareTo(dateA); // newest first
+          if (res != 0) return _sortAsc ? res : -res;
+        }
+      }
+      
+      // Fallback sort by name
+      final nameA = '${a['firstName']} ${a['lastName']}'.toLowerCase();
+      final nameB = '${b['firstName']} ${b['lastName']}'.toLowerCase();
+      return _sortAsc ? nameA.compareTo(nameB) : nameB.compareTo(nameA);
+    });
+
     return CupertinoPageScaffold(
       backgroundColor: isDark
           ? CupertinoColors.black
@@ -441,7 +317,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             ? CupertinoColors.black.withValues(alpha: 0.8)
             : Colors.white.withValues(alpha: 0.8),
         middle: const Text('User Management'),
-        previousPageTitle: 'Settings',
+        leading: CupertinoNavigationBarBackButton(
+          color: CupertinoColors.systemRed,
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       child: SafeArea(
         child: Material(
@@ -497,66 +376,100 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      child: Row(
-                        children:
-                            [
-                              'All',
-                              'Admin',
-                              'Contributer',
-                              'Societ',
-                              'Student',
-                            ].map((role) {
-                              final isSelected = _selectedRoleFilter == role;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedRoleFilter = role;
-                                    });
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: PopupMenuButton<String>(
+                            initialValue: _sortBy,
+                            onSelected: (value) {
+                              if (value == _sortBy) {
+                                setState(() => _sortAsc = !_sortAsc);
+                              } else {
+                                setState(() {
+                                  _sortBy = value;
+                                  _sortAsc = true;
+                                });
+                              }
+                            },
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(CupertinoIcons.sort_down, size: 16, color: isDark ? Colors.white : Colors.black),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '$_sortBy ${_sortAsc ? '↓' : '↑'}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : Colors.black,
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? CupertinoColors.activeBlue
-                                          : (isDark
-                                                ? const Color(0xFF2C2C2E)
-                                                : Colors.white),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: isSelected
-                                            ? CupertinoColors.activeBlue
-                                            : (isDark
-                                                  ? Colors.white12
-                                                  : Colors.black12),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      role,
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? Colors.white
-                                            : (isDark
-                                                  ? Colors.white70
-                                                  : Colors.black87),
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                        fontSize: 14,
-                                      ),
-                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                              );
-                            }).toList(),
-                      ),
+                                ],
+                              ),
+                            ),
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(value: 'Role', child: Text('Sort by Role')),
+                              const PopupMenuItem(value: 'Date Created', child: Text('Sort by Date Created')),
+                              const PopupMenuItem(value: 'Name', child: Text('Sort by Name')),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: PopupMenuButton<String>(
+                            initialValue: _selectedRoleFilter,
+                            onSelected: (value) {
+                              setState(() {
+                                _selectedRoleFilter = value;
+                              });
+                            },
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(CupertinoIcons.line_horizontal_3_decrease, size: 16, color: isDark ? Colors.white : Colors.black),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _selectedRoleFilter == 'All' ? 'Filter Roles' : _selectedRoleFilter,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : Colors.black,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(value: 'All', child: Text('All Roles')),
+                              const PopupMenuItem(value: 'Admin', child: Text('Admin')),
+                              const PopupMenuItem(value: 'Contributer', child: Text('Contributer')),
+                              const PopupMenuItem(value: 'Societ', child: Text('Society')),
+                              const PopupMenuItem(value: 'Student', child: Text('Student')),
+                              const PopupMenuItem(value: 'guest', child: Text('Guest')),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -581,38 +494,57 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                           Color roleColor;
                           switch (normalizedRole) {
                             case 'admin':
-                              roleColor = CupertinoColors.systemRed;
+                              roleColor = Colors.red;
                               break;
                             case 'contributer':
-                              roleColor = CupertinoColors.activeOrange;
+                              roleColor = Colors.purple;
                               break;
                             case 'societ':
-                              roleColor = CupertinoColors.activeBlue;
+                              roleColor = Colors.orange;
+                              break;
+                            case 'guest':
+                              roleColor = Colors.teal;
                               break;
                             default:
-                              roleColor = CupertinoColors.systemGrey;
+                              roleColor = Colors.blue;
                           }
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF1C1C1E)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(16),
+                              gradient: LinearGradient(
+                                colors: isDark 
+                                    ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
+                                    : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(24),
                               boxShadow: [
-                                BoxShadow(
-                                  color: isDark
-                                      ? Colors.black.withValues(alpha: 0.3)
-                                      : Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
+                                if (!isDark)
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
                               ],
                             ),
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: () => _showUserOptions(context, user),
+                              borderRadius: BorderRadius.circular(24),
+                              onTap: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AdminUserDetailsScreen(
+                                      user: user,
+                                      currentUserRole: _currentUserRole ?? '',
+                                    ),
+                                  ),
+                                );
+                                if (result == true) {
+                                  _fetchUsers();
+                                }
+                              },
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
                                 child: Row(

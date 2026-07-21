@@ -15,6 +15,7 @@ import 'widgets/todays_schedule_card.dart';
 import '../profile/profile_details_screen.dart';
 import '../admin/admin_main_app.dart';
 import '../splash/splash_screen.dart';
+import 'cgpa_calculator/cgpa_calculator_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToEvent;
@@ -58,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final openTimesheetPref = await SharedPreferencesService.getBool('openToTimesheet');
     final role = await SharedPreferencesService.getUserRole();
 
+    if (!mounted) return;
     setState(() {
       userFirstName = newFirstName;
       userId = newUserId;
@@ -436,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: CupertinoIcons.plus_slash_minus,
                     gradientColors: const [Color(0xFFF2709C), Color(0xFFFF9472)],
                     onTap: () {
-                      // Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const CGPACalculatorScreen()));
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const CGPACalculatorScreen()));
                     },
                   ),
                   DashboardActionCard(
@@ -621,7 +623,17 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                   title: 'Logout', 
                                   color: Colors.red,
                                   onTap: () async {
-                                    await SharedPreferencesService.clearAll();
+                                    final confirm = await showConfirmationDialog(
+                                      context: context,
+                                      title: 'Logout',
+                                      description: 'Are you sure to logout?',
+                                      confirmButtonText: 'Logout',
+                                      iconData: CupertinoIcons.square_arrow_right,
+                                      primaryColor: CupertinoColors.systemRed,
+                                    );
+                                    if (confirm != true) return;
+                                    
+                                    await SharedPreferencesService.clearUserData();
                                     if (context.mounted) {
                                       Navigator.pushAndRemoveUntil(
                                         context,

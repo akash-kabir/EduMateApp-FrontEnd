@@ -7,7 +7,7 @@ import 'dart:convert';
 import '../../../config.dart';
 import '../../../widgets/toast_manager.dart';
 import '../../../widgets/bottom_sheet_selector.dart';
-import '../../../services/shared_preferences_service.dart';
+import '../../../services/token_refresh_service.dart';
 
 class CurriculumEditorScreen extends StatefulWidget {
   final String branch;
@@ -16,7 +16,7 @@ class CurriculumEditorScreen extends StatefulWidget {
   const CurriculumEditorScreen({
     super.key,
     required this.branch,
-    required this.semester,
+    this.semester = 1,
   });
 
   @override
@@ -29,20 +29,22 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
   List<Map<String, dynamic>> _subjects = [];
   bool _isExisting = false;
   String? _originalSubjectsData;
+  late int _currentSemester;
 
   final List<String> _subjectTypes = ['Core', 'Elective', 'Lab', 'Project', 'Practical', 'Open Elective', 'Viva'];
 
   @override
   void initState() {
     super.initState();
+    _currentSemester = widget.semester;
     _fetchCurriculum();
   }
 
   Future<void> _fetchCurriculum() async {
     setState(() => _isLoading = true);
     try {
-      final response = await http.get(
-        Uri.parse('${Config.curriculumBaseEndpoint}/${widget.branch}/${widget.semester}'),
+      final response = await TokenRefreshService.authenticatedGet(
+        '${Config.curriculumBaseEndpoint}/${widget.branch}/$_currentSemester',
       );
 
       if (response.statusCode == 200) {
@@ -78,6 +80,42 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
     }
   }
 
+  void _onSemesterChanged(int newSemester) {
+    if (_isSaving) return;
+    
+    if (jsonEncode(_subjects) != _originalSubjectsData) {
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Unsaved Changes'),
+          content: const Text('You have unsaved changes. Do you want to discard them and switch semesters?'),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.pop(context),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              child: const Text('Discard'),
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  _currentSemester = newSemester;
+                });
+                _fetchCurriculum();
+              },
+            ),
+          ],
+        ),
+      );
+    } else {
+      setState(() {
+        _currentSemester = newSemester;
+      });
+      _fetchCurriculum();
+    }
+  }
+
   Future<void> _saveCurriculum() async {
     // Validation
     for (var subject in _subjects) {
@@ -107,7 +145,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
     final confirmed = await showConfirmationDialog(
       context: context,
       title: 'Save Changes',
-      description: 'Are you sure you want to save the curriculum changes for ${widget.branch} Semester ${widget.semester}?',
+      description: 'Are you sure you want to save the curriculum changes for ${widget.branch} Semester $_currentSemester?',
       confirmButtonText: 'Save',
       iconData: CupertinoIcons.checkmark_seal_fill,
     );
@@ -119,24 +157,21 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
   Future<void> _performSave() async {
     setState(() => _isSaving = true);
     try {
-      final token = await SharedPreferencesService.getToken();
-      final url = Uri.parse('${Config.curriculumBaseEndpoint}/${widget.branch}/${widget.semester}');
+      final url = '${Config.curriculumBaseEndpoint}/${widget.branch}/$_currentSemester';
       
-      final payload = jsonEncode({
+      final payload = {
         'subjects': _subjects
-      });
+      };
 
       http.Response response;
       if (_isExisting) {
-        response = await http.put(
+        response = await TokenRefreshService.authenticatedPut(
           url,
-          headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
           body: payload,
         );
       } else {
-        response = await http.post(
+        response = await TokenRefreshService.authenticatedPost(
           url,
-          headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
           body: payload,
         );
       }
@@ -144,7 +179,8 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (mounted) {
           EduMateToast.showCompact(context, message: 'Curriculum saved successfully.', isSuccess: true);
-          Navigator.pop(context);
+          _originalSubjectsData = jsonEncode(_subjects);
+          _isExisting = true;
         }
       } else {
         final errorData = jsonDecode(response.body);
@@ -222,7 +258,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                 Positioned.fill(
                   child: _subjects.isEmpty
                       ? Padding(
-                          padding: const EdgeInsets.only(top: 150),
+                          padding: const EdgeInsets.only(top: 220),
                           child: Center(
                             child: Text(
                               'No subjects added yet.',
@@ -231,7 +267,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.only(top: 175, bottom: 120, left: 16, right: 16),
+                          padding: const EdgeInsets.only(top: 235, bottom: 120, left: 16, right: 16),
                           itemCount: _subjects.length,
                           itemBuilder: (context, index) {
                             final subject = _subjects[index];
@@ -319,12 +355,36 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                               ),
                               const SizedBox(height: 12),
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: CupertinoSlidingSegmentedControl<int>(
+                                    groupValue: _currentSemester,
+                                    children: {
+                                      1: const Text('S1'),
+                                      2: const Text('S2'),
+                                      3: const Text('S3'),
+                                      4: const Text('S4'),
+                                      5: const Text('S5'),
+                                      6: const Text('S6'),
+                                      7: const Text('S7'),
+                                      8: const Text('S8'),
+                                    },
+                                    onValueChanged: (int? value) {
+                                      if (value != null) {
+                                        _onSemesterChanged(value);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                                   children: [
                                     _buildSummaryItem('Branch', widget.branch, isDark),
-                                    _buildSummaryItem('Semester', '${widget.semester}', isDark),
                                     _buildSummaryItem('Subjects', '${_subjects.length}', isDark),
                                     _buildSummaryItem('Credits', '${_subjects.fold(0, (sum, sub) => sum + ((sub['credits'] as int?) ?? 0))}', isDark),
                                   ],

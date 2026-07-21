@@ -130,14 +130,21 @@ class SharedPreferencesService {
 
   /// Save user role (e.g., 'student', 'faculty', 'admin', 'society_head')
   static Future<bool> setUserRole(String role) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.setString(_userRoleKey, role);
+    try {
+      await _secureStorage.write(key: _userRoleKey, value: role);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   /// Retrieve user role
   static Future<String?> getUserRole() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userRoleKey);
+    try {
+      return await _secureStorage.read(key: _userRoleKey);
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Save user name
@@ -430,7 +437,7 @@ class SharedPreferencesService {
       await setString(_semesterKey, user['semester'].toString());
     }
     final isCompleted = user['isProfileCompleted'] ?? false;
-    await setBool(_isProfileCompletedKey, isCompleted);
+    await setIsProfileCompleted(isCompleted);
     if (isCompleted) {
       await setProfileSetupComplete(true);
       // Auto-configure timesheet defaults
@@ -480,8 +487,21 @@ class SharedPreferencesService {
 
   // ==================== Profile Completed ====================
 
+  static Future<bool> setIsProfileCompleted(bool isCompleted) async {
+    try {
+      await _secureStorage.write(key: _isProfileCompletedKey, value: isCompleted.toString());
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   static Future<bool> getIsProfileCompleted() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_isProfileCompletedKey) ?? false;
+    try {
+      final value = await _secureStorage.read(key: _isProfileCompletedKey);
+      return value == 'true';
+    } catch (e) {
+      return false;
+    }
   }
 }

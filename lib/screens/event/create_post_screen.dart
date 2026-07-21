@@ -20,6 +20,7 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   String postType = 'news';
 
+  final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
   final TextEditingController _websiteLinkController = TextEditingController();
   final TextEditingController _registrationLinkController = TextEditingController();
@@ -39,6 +40,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   void dispose() {
+    _titleController.dispose();
     _bodyController.dispose();
     _websiteLinkController.dispose();
     _registrationLinkController.dispose();
@@ -152,9 +154,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   void _selectDate(bool isStart) {
-    DateTime? selectedDate = isStart
+    FocusScope.of(context).requestFocus(FocusNode());
+    DateTime initialDate = isStart
         ? startDate ?? DateTime.now()
         : endDate ?? DateTime.now();
+    DateTime today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    DateTime minDate = initialDate.isBefore(today) ? initialDate : today;
+    DateTime tempSelectedDate = initialDate;
+
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) => Container(
@@ -177,9 +184,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     onPressed: () {
                       setState(() {
                         if (isStart) {
-                          startDate = selectedDate;
+                          startDate = tempSelectedDate;
                         } else {
-                          endDate = selectedDate;
+                          endDate = tempSelectedDate;
                         }
                       });
                       Navigator.pop(context);
@@ -190,13 +197,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               Expanded(
                 child: CupertinoDatePicker(
                   mode: CupertinoDatePickerMode.date,
-                  minimumDate: DateTime.now(),
+                  minimumDate: minDate,
                   maximumDate: DateTime(2100),
-                  initialDateTime: isStart
-                      ? startDate ?? DateTime.now()
-                      : endDate ?? DateTime.now(),
+                  initialDateTime: initialDate,
                   onDateTimeChanged: (DateTime newDateTime) {
-                    selectedDate = newDateTime;
+                    tempSelectedDate = newDateTime;
                   },
                 ),
               ),
@@ -208,9 +213,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   void _selectTime(bool isStart) {
-    TimeOfDay selectedTime = isStart
+    FocusScope.of(context).requestFocus(FocusNode());
+    TimeOfDay initialTime = isStart
         ? startTime ?? TimeOfDay.now()
         : endTime ?? TimeOfDay.now();
+    TimeOfDay tempSelectedTime = initialTime;
+
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) => Container(
@@ -233,9 +241,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     onPressed: () {
                       setState(() {
                         if (isStart) {
-                          startTime = selectedTime;
+                          startTime = tempSelectedTime;
                         } else {
-                          endTime = selectedTime;
+                          endTime = tempSelectedTime;
                         }
                       });
                       Navigator.pop(context);
@@ -247,11 +255,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 child: CupertinoTimerPicker(
                   mode: CupertinoTimerPickerMode.hm,
                   initialTimerDuration: Duration(
-                    hours: selectedTime.hour,
-                    minutes: selectedTime.minute,
+                    hours: initialTime.hour,
+                    minutes: initialTime.minute,
                   ),
                   onTimerDurationChanged: (Duration duration) {
-                    selectedTime = TimeOfDay(
+                    tempSelectedTime = TimeOfDay(
                       hour: duration.inHours,
                       minute: duration.inMinutes % 60,
                     );
@@ -267,6 +275,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   void _submitPost() async {
 
+    if (_titleController.text.trim().isEmpty) {
+      EduMateToast.showCompact(context,
+          message: 'Please enter a title', isSuccess: false);
+      return;
+    }
+    if (_selectedImage == null) {
+      EduMateToast.showCompact(context,
+          message: 'An image is required', isSuccess: false);
+      return;
+    }
     if (_bodyController.text.trim().isEmpty) {
       EduMateToast.showCompact(
         context,
@@ -330,6 +348,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
       final Map<String, dynamic> body = {
         'postType': postType,
+        'title': _titleController.text.trim(),
         'body': _bodyController.text.trim(),
         'websiteLink': _websiteLinkController.text.trim(),
         'registrationLink': _registrationLinkController.text.trim(),
@@ -406,18 +425,25 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          letterSpacing: -0.5,
+  Widget _buildSectionTitle(String title, {bool isRequired = false, bool hasValue = false}) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: -0.5,
+          ),
         ),
-      ),
+        if (isRequired) ...[
+          const SizedBox(width: 8),
+          hasValue
+              ? const Icon(CupertinoIcons.checkmark_alt_circle_fill, color: Colors.green, size: 18)
+              : const Icon(CupertinoIcons.check_mark_circled, color: Color(0xFFE63946), size: 18),
+        ],
+      ],
     );
   }
 
@@ -560,9 +586,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
-
-
+                      const SizedBox(height: 16),
+                      // Title Input
+                      SleekTextField(
+                        title: 'Title',
+                        controller: _titleController,
+                        placeholder: 'Enter post title',
+                        icon: CupertinoIcons.text_quote,
+                        isRequired: true,
+                        maxLength: 25,
+                      ),
+                      const SizedBox(height: 16),
 
                       SleekTextField(
                         title: 'Body',
@@ -570,14 +604,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         placeholder: 'Enter body text',
                         icon: CupertinoIcons.text_alignleft,
                         maxLines: 5,
-                        maxLength: postType == 'news' ? 200 : 50,
+                        maxLength: 200,
                         isRequired: true,
                       ),
                       const SizedBox(height: 32),
 
-                      if (postType == 'event') ...[
-                        _buildSectionTitle('Image'),
-                        if (_selectedImage != null) ...[
+                      _buildSectionTitle('Image', isRequired: true, hasValue: _selectedImage != null),
+                      const SizedBox(height: 16),
+                      if (_selectedImage != null) ...[
                           Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
@@ -667,7 +701,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   const Text(
-                                    '4:3 ratio • Optional',
+                                    '4:3 ratio • Required',
                                     style: TextStyle(
                                       color: Colors.white54,
                                       fontSize: 13,
@@ -677,11 +711,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               ),
                             ),
                           ),
-                        ],
-                        const SizedBox(height: 32),
                       ],
+                      const SizedBox(height: 32),
 
                       _buildSectionTitle('Links'),
+                      const SizedBox(height: 16),
                       SleekTextField(
                         title: postType == 'event' ? 'Event Website' : 'Related Link',
                         controller: _websiteLinkController,
@@ -700,6 +734,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         const SizedBox(height: 32),
 
                         _buildSectionTitle('Location'),
+                        const SizedBox(height: 16),
                         SleekTextField(
                           title: 'Location',
                           controller: _locationController,
@@ -711,7 +746,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildSectionTitle('Date'),
+                            _buildSectionTitle('Date', isRequired: true, hasValue: startDate != null),
                             Row(
                               children: [
                                 const Text('Multiple Days', style: TextStyle(color: Colors.white, fontSize: 14)),
@@ -754,7 +789,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildSectionTitle('Time'),
+                            _buildSectionTitle('Time', isRequired: true, hasValue: startTime != null),
                             Row(
                               children: [
                                 const Text('Time Range', style: TextStyle(color: Colors.white, fontSize: 14)),
@@ -791,8 +826,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           ],
                         ),
 
-                        const SizedBox(height: 32),
                       ],
+
+                      const SizedBox(height: 32),
 
                       // Submit Button
                       SizedBox(
@@ -832,7 +868,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ]),
@@ -882,10 +918,16 @@ class _SleekTextFieldState extends State<SleekTextField> {
         _isFocused = _focusNode.hasFocus;
       });
     });
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    setState(() {});
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_onTextChanged);
     _focusNode.dispose();
     super.dispose();
   }
@@ -896,22 +938,34 @@ class _SleekTextFieldState extends State<SleekTextField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              widget.title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              children: [
+                Text(
+                  widget.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (widget.isRequired) ...[
+                  const SizedBox(width: 6),
+                  widget.controller.text.trim().isNotEmpty
+                      ? const Icon(CupertinoIcons.checkmark_alt_circle_fill, color: Colors.green, size: 16)
+                      : const Icon(CupertinoIcons.check_mark_circled, color: Color(0xFFE63946), size: 16),
+                ],
+              ],
             ),
-            if (widget.isRequired)
-              const Text(
-                ' *',
+            if (widget.maxLength != null)
+              Text(
+                '${widget.controller.text.length} / ${widget.maxLength}',
                 style: TextStyle(
-                  color: Color(0xFFE63946),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+                  color: widget.controller.text.length >= widget.maxLength! 
+                    ? const Color(0xFFE63946) 
+                    : Colors.white54,
+                  fontSize: 12,
                 ),
               ),
           ],
@@ -953,7 +1007,7 @@ class _SleekTextFieldState extends State<SleekTextField> {
                   maxLength: widget.maxLength,
                   style: const TextStyle(fontSize: 15, color: Colors.white),
                   decoration: InputDecoration(
-                    counterStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                    counterText: '',
                     hintText: widget.placeholder,
                     hintStyle: TextStyle(color: Colors.grey[600], fontSize: 15),
                     border: InputBorder.none,
