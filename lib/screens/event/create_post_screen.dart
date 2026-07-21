@@ -9,6 +9,10 @@ import 'dart:convert';
 import '../../config.dart';
 import '../../services/shared_preferences_service.dart';
 import '../../widgets/toast_manager.dart';
+import '../../models/poi_model.dart';
+import '../../services/poi_service.dart';
+
+import 'package:image_cropper/image_cropper.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -25,6 +29,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _websiteLinkController = TextEditingController();
   final TextEditingController _registrationLinkController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _floorController = TextEditingController();
+  final TextEditingController _roomNoController = TextEditingController();
+
+  List<PoiModel> _pois = [];
+  PoiModel? _selectedPoi;
+  bool _isLoadingPois = false;
 
   DateTime? startDate;
   DateTime? endDate;
@@ -39,12 +49,37 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   bool _isUploadingImage = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadPois();
+  }
+
+  Future<void> _loadPois() async {
+    setState(() => _isLoadingPois = true);
+    try {
+      final pois = await PoiService.getPOIs();
+      if (mounted) {
+        setState(() {
+          _pois = pois;
+          _isLoadingPois = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingPois = false);
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _bodyController.dispose();
     _websiteLinkController.dispose();
     _registrationLinkController.dispose();
     _locationController.dispose();
+    _floorController.dispose();
+    _roomNoController.dispose();
     super.dispose();
   }
 
@@ -52,12 +87,39 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 1200,
-      maxHeight: 900,
-      imageQuality: 85,
+      imageQuality: 90,
     );
+
     if (image != null) {
-      setState(() => _selectedImage = image);
+      try {
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: image.path,
+          aspectRatio: const CropAspectRatio(ratioX: 4, ratioY: 5),
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Crop Image (4:5)',
+              toolbarColor: const Color(0xFF1E1E1E),
+              toolbarWidgetColor: Colors.white,
+              activeControlsWidgetColor: const Color(0xFFFF9B7A),
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Crop Image (4:5)',
+              aspectRatioLockEnabled: true,
+              resetAspectRatioEnabled: false,
+            ),
+          ],
+        );
+
+        if (croppedFile != null) {
+          setState(() => _selectedImage = XFile(croppedFile.path));
+        }
+      } catch (e) {
+        // Fallback to uncropped image if native cropper plugin channel is missing (requires full app restart)
+        if (mounted) {
+          setState(() => _selectedImage = image);
+        }
+      }
     }
   }
 
@@ -113,7 +175,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       uploadRequest.fields['api_key'] = apiKey;
       uploadRequest.fields['timestamp'] = timestamp.toString();
       uploadRequest.fields['folder'] = folder;
-      uploadRequest.fields['transformation'] = transformation;
+      if (sigData['transformation'] != null && sigData['transformation'].toString().isNotEmpty) {
+        uploadRequest.fields['transformation'] = sigData['transformation'].toString();
+      }
       uploadRequest.files.add(
         await http.MultipartFile.fromPath('file', _selectedImage!.path),
       );
@@ -273,6 +337,171 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
+  void _showPoiPickerModal(BuildContext context) {
+    String searchQuery = '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) {
+        return StatefulBuilder(
+          builder: (stCtx, setModalState) {
+            final filteredPois = _pois.where((poi) {
+              final query = searchQuery.trim().toLowerCase();
+              if (query.isEmpty) return true;
+              return poi.name.toLowerCase().contains(query) ||
+                  poi.address.toLowerCase().contains(query) ||
+                  poi.type.toLowerCase().contains(query);
+            }).toList();
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                children: [
+                  // Top Handle & Header
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(CupertinoIcons.compass_fill, color: Color(0xFFFF9B7A), size: 22),
+                            SizedBox(width: 10),
+                            Text(
+                              'Select Navigation Target',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(CupertinoIcons.xmark_circle_fill, color: Colors.white54),
+                          onPressed: () => Navigator.pop(modalCtx),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Search Bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: CupertinoSearchTextField(
+                      backgroundColor: Colors.black38,
+                      style: const TextStyle(color: Colors.white),
+                      placeholder: 'Search POIs by name or type...',
+                      onChanged: (val) {
+                        setModalState(() {
+                          searchQuery = val;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(color: Colors.white10, height: 1),
+
+                  // POI List
+                  Expanded(
+                    child: filteredPois.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No matching POIs found',
+                              style: TextStyle(color: Colors.white54, fontSize: 14),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: filteredPois.length,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            itemBuilder: (ctx, index) {
+                              final poi = filteredPois[index];
+                              final isSelected = _selectedPoi?.id == poi.id;
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? const Color(0xFFFF9B7A).withValues(alpha: 0.15)
+                                      : Colors.white.withValues(alpha: 0.04),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFFFF9B7A)
+                                        : Colors.white.withValues(alpha: 0.08),
+                                    width: isSelected ? 1.5 : 1.0,
+                                  ),
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? const Color(0xFFFF9B7A) : Colors.white10,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      CupertinoIcons.location_solid,
+                                      color: isSelected ? Colors.black : Colors.white70,
+                                      size: 18,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    poi.name,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  subtitle: poi.address.isNotEmpty
+                                      ? Text(
+                                          poi.address,
+                                          style: const TextStyle(color: Colors.white54, fontSize: 13),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        )
+                                      : null,
+                                  trailing: isSelected
+                                      ? const Icon(CupertinoIcons.checkmark_circle_fill, color: Color(0xFFFF9B7A))
+                                      : const Icon(CupertinoIcons.chevron_right, color: Colors.white24, size: 16),
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedPoi = poi;
+                                      _locationController.text = poi.name;
+                                    });
+                                    Navigator.pop(modalCtx);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _submitPost() async {
 
     if (_titleController.text.trim().isEmpty) {
@@ -352,7 +581,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         'body': _bodyController.text.trim(),
         'websiteLink': _websiteLinkController.text.trim(),
         'registrationLink': _registrationLinkController.text.trim(),
-        'location': _locationController.text.trim(),
+        'location': {
+          'campus': _locationController.text.trim(),
+          'floor': _floorController.text.trim(),
+          'roomNo': _roomNoController.text.trim(),
+          if (_selectedPoi != null) 'poiId': _selectedPoi!.id,
+          if (_selectedPoi != null) 'poiName': _selectedPoi!.name,
+          if (_selectedPoi != null) 'poiLat': _selectedPoi!.lat,
+          if (_selectedPoi != null) 'poiLng': _selectedPoi!.lng,
+        },
       };
 
       if (imageUrl != null) {
@@ -628,7 +865,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               child: Stack(
                                 children: [
                                   AspectRatio(
-                                    aspectRatio: 4 / 3,
+                                    aspectRatio: 4 / 5,
                                     child: Image.file(
                                       File(_selectedImage!.path),
                                       fit: BoxFit.cover,
@@ -733,13 +970,123 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        _buildSectionTitle('Location'),
+                        _buildSectionTitle('Navigation Target (POI)'),
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: () => _showPoiPickerModal(context),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E1E1E),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: _selectedPoi != null
+                                    ? const Color(0xFFFF9B7A)
+                                    : Colors.white.withValues(alpha: 0.08),
+                                width: _selectedPoi != null ? 1.5 : 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: _selectedPoi != null
+                                        ? const Color(0xFFFF9B7A).withValues(alpha: 0.2)
+                                        : Colors.white10,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    CupertinoIcons.compass_fill,
+                                    color: _selectedPoi != null
+                                        ? const Color(0xFFFF9B7A)
+                                        : Colors.white54,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _selectedPoi == null
+                                            ? 'Select Campus POI / Target'
+                                            : _selectedPoi!.name,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: _selectedPoi != null
+                                              ? FontWeight.bold
+                                              : FontWeight.w500,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _selectedPoi == null
+                                            ? 'Tap to search & pick navigation destination'
+                                            : (_selectedPoi!.address.isNotEmpty
+                                                ? _selectedPoi!.address
+                                                : 'Navigation target set'),
+                                        style: const TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (_selectedPoi != null)
+                                  IconButton(
+                                    icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                                        color: Colors.white54, size: 20),
+                                    onPressed: () {
+                                      setState(() {
+                                        _selectedPoi = null;
+                                        _locationController.text = '';
+                                      });
+                                    },
+                                  )
+                                else
+                                  const Icon(CupertinoIcons.chevron_right,
+                                      color: Colors.white38, size: 16),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        _buildSectionTitle('Location Details'),
                         const SizedBox(height: 16),
                         SleekTextField(
-                          title: 'Location',
+                          title: 'Location / Building',
                           controller: _locationController,
-                          placeholder: 'Enter location (Max 25 words)',
+                          placeholder: 'Enter building/campus name',
                           icon: CupertinoIcons.location_solid,
+                          readOnly: _selectedPoi != null,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SleekTextField(
+                                title: 'Floor',
+                                controller: _floorController,
+                                placeholder: 'e.g. 2nd Floor',
+                                icon: CupertinoIcons.layers_alt,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: SleekTextField(
+                                title: 'Room No',
+                                controller: _roomNoController,
+                                placeholder: 'e.g. Room 204',
+                                icon: CupertinoIcons.number,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 32),
 
@@ -889,6 +1236,7 @@ class SleekTextField extends StatefulWidget {
   final bool isRequired;
   final IconData icon;
   final int? maxLength;
+  final bool readOnly;
 
   const SleekTextField({
     super.key,
@@ -899,6 +1247,7 @@ class SleekTextField extends StatefulWidget {
     this.maxLines = 1,
     this.isRequired = false,
     this.maxLength,
+    this.readOnly = false,
   });
 
   @override
@@ -956,6 +1305,10 @@ class _SleekTextFieldState extends State<SleekTextField> {
                       ? const Icon(CupertinoIcons.checkmark_alt_circle_fill, color: Colors.green, size: 16)
                       : const Icon(CupertinoIcons.check_mark_circled, color: Color(0xFFE63946), size: 16),
                 ],
+                if (widget.readOnly) ...[
+                  const SizedBox(width: 6),
+                  const Icon(CupertinoIcons.lock_fill, color: Colors.green, size: 14),
+                ],
               ],
             ),
             if (widget.maxLength != null)
@@ -974,10 +1327,12 @@ class _SleekTextFieldState extends State<SleekTextField> {
         AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E),
+            color: widget.readOnly ? const Color(0xFF161616) : const Color(0xFF1E1E1E),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _isFocused ? const Color(0xFFFF9B7A) : Colors.white.withValues(alpha: 0.05),
+              color: widget.readOnly
+                  ? Colors.green.withValues(alpha: 0.4)
+                  : (_isFocused ? const Color(0xFFFF9B7A) : Colors.white.withValues(alpha: 0.05)),
               width: _isFocused ? 1.5 : 1.0,
             ),
             boxShadow: [
@@ -995,7 +1350,9 @@ class _SleekTextFieldState extends State<SleekTextField> {
                 padding: EdgeInsets.only(left: 16, top: widget.maxLines > 1 ? 16 : 14, right: 8, bottom: widget.maxLines > 1 ? 0 : 14),
                 child: Icon(
                   widget.icon,
-                  color: _isFocused ? const Color(0xFFFF9B7A) : Colors.grey[500],
+                  color: widget.readOnly
+                      ? Colors.green
+                      : (_isFocused ? const Color(0xFFFF9B7A) : Colors.grey[500]),
                   size: 20,
                 ),
               ),
@@ -1003,9 +1360,13 @@ class _SleekTextFieldState extends State<SleekTextField> {
                 child: TextFormField(
                   controller: widget.controller,
                   focusNode: _focusNode,
+                  readOnly: widget.readOnly,
                   maxLines: widget.maxLines,
                   maxLength: widget.maxLength,
-                  style: const TextStyle(fontSize: 15, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: widget.readOnly ? Colors.white70 : Colors.white,
+                  ),
                   decoration: InputDecoration(
                     counterText: '',
                     hintText: widget.placeholder,

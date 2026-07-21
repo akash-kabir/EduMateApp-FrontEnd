@@ -2,6 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../constants/app_constants.dart';
+import '../../models/poi_model.dart';
+import '../../services/poi_service.dart';
+import '../../services/map_navigation_store.dart';
 
 class PostDetailScreen extends StatelessWidget {
   final Map<String, dynamic> post;
@@ -33,6 +36,125 @@ class PostDetailScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _handleLocate(
+    BuildContext context,
+    String locationText,
+    String? poiId,
+    String? poiName,
+    double? poiLat,
+    double? poiLng,
+  ) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(CupertinoIcons.compass, color: Color(0xFFFF9B7A)),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'View Location',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Would you like to view $locationText on the campus map?',
+          style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF9B7A),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('View Location'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    // Show Loading Transition Dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CupertinoActivityIndicator(radius: 14),
+              const SizedBox(height: 16),
+              Text(
+                'Opening Campus Map...',
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Resolve POI with rich backend data (description, image, address)
+    PoiModel targetPoi = PoiModel(
+      id: poiId ?? 'custom_loc',
+      name: poiName ?? locationText,
+      lat: poiLat ?? 20.2961,
+      lng: poiLng ?? 85.8245,
+      address: locationText,
+    );
+
+    try {
+      final pois = await PoiService.getPOIs();
+      final match = pois.firstWhere(
+        (p) => (poiId != null && p.id == poiId) ||
+               (poiName != null && p.name.trim().toLowerCase() == poiName.trim().toLowerCase()) ||
+               p.name.trim().toLowerCase().contains(locationText.trim().toLowerCase()) ||
+               locationText.trim().toLowerCase().contains(p.name.trim().toLowerCase()),
+        orElse: () => targetPoi,
+      );
+      targetPoi = match;
+    } catch (_) {}
+
+    // Trigger tab switch and POI navigation
+    MapNavigationStore.instance.navigateToPoi(targetPoi);
+
+    // Wait a brief moment to let loading overlay mask tab switch, then pop dialog and post detail screen
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (context.mounted) {
+      // Pop loading dialog
+      Navigator.of(context).pop();
+    }
+    if (context.mounted) {
+      // Pop PostDetailScreen
+      Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -48,9 +170,34 @@ class PostDetailScreen extends StatelessWidget {
 
     final eventDetails = post['eventDetails'] as Map<String, dynamic>?;
     final startDateStr = eventDetails?['startDate'] as String?;
+    final endDateStr = eventDetails?['endDate'] as String?;
     final startTimeStr = eventDetails?['startTime'] as String?;
+    final endTimeStr = eventDetails?['endTime'] as String?;
+    final isDateRange = eventDetails?['isDateRange'] == true;
+    final isTimeRange = eventDetails?['isTimeRange'] == true;
+
+    String dateDisplay = '';
+    if (startDateStr != null) {
+      dateDisplay = _formatDate(startDateStr);
+      if (isDateRange && endDateStr != null && endDateStr.isNotEmpty) {
+        dateDisplay += ' - ${_formatDate(endDateStr)}';
+      }
+    }
+
+    String timeDisplay = '';
+    if (startTimeStr != null) {
+      timeDisplay = startTimeStr;
+      if (isTimeRange && endTimeStr != null && endTimeStr.isNotEmpty) {
+        timeDisplay += ' - $endTimeStr';
+      }
+    }
 
     String locationText = '';
+    String? poiId;
+    String? poiName;
+    double? poiLat;
+    double? poiLng;
+
     final loc = post['location'];
     if (loc is String) {
       locationText = loc;
@@ -60,6 +207,11 @@ class PostDetailScreen extends StatelessWidget {
         loc['floor'],
         loc['roomNo'],
       ].where((e) => e != null && e.toString().isNotEmpty).join(', ');
+      
+      poiId = loc['poiId'] as String?;
+      poiName = loc['poiName'] as String?;
+      if (loc['poiLat'] != null) poiLat = (loc['poiLat'] as num).toDouble();
+      if (loc['poiLng'] != null) poiLng = (loc['poiLng'] as num).toDouble();
     }
 
     final websiteLink = post['websiteLink'] as String?;
@@ -74,7 +226,7 @@ class PostDetailScreen extends StatelessWidget {
         slivers: [
           // ── Hero Image App Bar ──
           SliverAppBar(
-            expandedHeight: 300,
+            expandedHeight: 400,
             pinned: true,
             stretch: true,
             backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
@@ -96,6 +248,7 @@ class PostDetailScreen extends StatelessWidget {
                     ? Image.network(
                         imageUrl,
                         fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
                         errorBuilder: (context, error, stackTrace) => _buildPlaceholder(isDark),
                       )
                     : _buildPlaceholder(isDark),
@@ -200,18 +353,18 @@ class PostDetailScreen extends StatelessWidget {
                         const SizedBox(height: 24),
 
                         // Event Specific Details
-                        if (isEvent && (locationText.isNotEmpty || startDateStr != null || startTimeStr != null)) ...[
+                        if (isEvent && (locationText.isNotEmpty || dateDisplay.isNotEmpty || timeDisplay.isNotEmpty)) ...[
                           const Divider(),
                           const SizedBox(height: 16),
                           
-                          if (startDateStr != null) ...[
+                          if (dateDisplay.isNotEmpty) ...[
                             Row(
                               children: [
                                 Icon(CupertinoIcons.calendar, color: typeColor, size: 20),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    _formatDate(startDateStr),
+                                    dateDisplay,
                                     style: TextStyle(
                                       fontSize: 15,
                                       color: isDark ? Colors.white : Colors.black,
@@ -223,14 +376,14 @@ class PostDetailScreen extends StatelessWidget {
                             const SizedBox(height: 12),
                           ],
                           
-                          if (startTimeStr != null) ...[
+                          if (timeDisplay.isNotEmpty) ...[
                             Row(
                               children: [
                                 Icon(CupertinoIcons.time, color: typeColor, size: 20),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    startTimeStr,
+                                    timeDisplay,
                                     style: TextStyle(
                                       fontSize: 15,
                                       color: isDark ? Colors.white : Colors.black,
@@ -258,6 +411,26 @@ class PostDetailScreen extends StatelessWidget {
                                 ),
                               ],
                             ),
+                            // Locate Button (Only if Navigation Target is Active)
+                            if (poiId != null || (poiLat != null && poiLng != null) || (poiName != null && poiName.isNotEmpty)) ...[
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _handleLocate(context, locationText, poiId, poiName, poiLat, poiLng),
+                                  icon: const Icon(CupertinoIcons.compass_fill, size: 18),
+                                  label: const Text('Locate on Map', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: typeColor,
+                                    side: BorderSide(color: typeColor.withValues(alpha: 0.5)),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 8),
                           ],
                         ],

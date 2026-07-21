@@ -136,11 +136,12 @@ class EventCard extends StatelessWidget {
                 Hero(
                   tag: 'image_$postId',
                   child: AspectRatio(
-                    aspectRatio: 4 / 3,
+                    aspectRatio: 4 / 5,
                     child: hasImage
                         ? Image.network(
                             imageUrl,
                             fit: BoxFit.cover,
+                            alignment: Alignment.topCenter,
                             errorBuilder: (context, error, stackTrace) => _buildPlaceholder(isDark),
                           )
                         : _buildPlaceholder(isDark),

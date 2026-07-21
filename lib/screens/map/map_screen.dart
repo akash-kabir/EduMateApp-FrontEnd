@@ -16,6 +16,7 @@ import '../../constants/app_constants.dart';
 import 'map_action_buttons.dart';
 import 'map_search_bar.dart';
 import '../../widgets/toast_manager.dart';
+import '../../services/map_navigation_store.dart';
 
 class PoiAnnotationClickListener extends mapbox.OnPointAnnotationClickListener {
   final Function(mapbox.PointAnnotation) onAnnotationClickCallback;
@@ -64,9 +65,13 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _navigationManager.addListener(_onNavigationStateChanged);
+    MapNavigationStore.instance.pendingNavigationPoi.addListener(_checkPendingNavigation);
     _initializeMapbox();
     _requestLocationPermission();
     _loadPOIs();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPendingNavigation();
+    });
   }
 
   Future<void> _saveRecentSearch(PoiModel poi) async {
@@ -94,6 +99,18 @@ class _MapScreenState extends State<MapScreen> {
         setState(() {
           _pois = pois;
           _filteredPois = [];
+          if (_selectedPoi != null) {
+            final fullPoi = _pois.cast<PoiModel?>().firstWhere(
+              (p) => (p?.id.isNotEmpty == true && p?.id == _selectedPoi!.id) ||
+                     (p?.name.trim().toLowerCase() == _selectedPoi!.name.trim().toLowerCase()) ||
+                     _selectedPoi!.name.trim().toLowerCase().contains(p?.name.trim().toLowerCase() ?? '') ||
+                     (p?.name.trim().toLowerCase() ?? '').contains(_selectedPoi!.name.trim().toLowerCase()),
+              orElse: () => null,
+            );
+            if (fullPoi != null) {
+              _selectedPoi = fullPoi;
+            }
+          }
         });
         
         // Resolve recent searches now that POIs are loaded
@@ -108,6 +125,7 @@ class _MapScreenState extends State<MapScreen> {
         });
         
         _renderPOIs();
+        _checkPendingNavigation();
       }
     } catch (e) {
       debugPrint('Error loading POIs: $e');
@@ -116,10 +134,42 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
+    MapNavigationStore.instance.pendingNavigationPoi.removeListener(_checkPendingNavigation);
     _navigationManager.removeListener(_onNavigationStateChanged);
     _navigationManager.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _checkPendingNavigation() {
+    final poi = MapNavigationStore.instance.pendingNavigationPoi.value;
+    if (poi != null && mounted) {
+      // 1. Find matching POI in loaded _pois list if available
+      PoiModel matchedPoi = poi;
+      if (_pois.isNotEmpty) {
+        matchedPoi = _pois.firstWhere(
+          (p) => p.id == poi.id || p.name.toLowerCase() == poi.name.toLowerCase(),
+          orElse: () => poi,
+        );
+      }
+
+      setState(() {
+        _selectedPoi = matchedPoi;
+        _isPoiCardExpanded = false;
+      });
+
+      // 2. Fly map camera to target POI if mapboxMap is initialized
+      if (mapboxMap != null) {
+        mapboxMap!.flyTo(
+          mapbox.CameraOptions(
+            center: mapbox.Point(coordinates: mapbox.Position(matchedPoi.lng, matchedPoi.lat)),
+            zoom: 16.8,
+          ),
+          mapbox.MapAnimationOptions(duration: 1000),
+        );
+        MapNavigationStore.instance.clearPendingPoi();
+      }
+    }
   }
 
   void _onSearchChanged(String query) {
@@ -243,6 +293,7 @@ class _MapScreenState extends State<MapScreen> {
         
         if (mapboxMap != null) {
           _navigationManager.onLocationUpdated(mapboxMap!, position.latitude, position.longitude);
+          _checkPendingNavigation();
         }
       }
     });
@@ -433,15 +484,17 @@ class _MapScreenState extends State<MapScreen> {
                     _poiClickListener = PoiAnnotationClickListener(_onMarkerTapped);
                     pointAnnotationManager?.addOnPointAnnotationClickListener(_poiClickListener!);
                     _renderPOIs();
+                    _checkPendingNavigation();
                     _getCurrentLocation();
 
                     if (mounted) {
-                      // Slight delay to allow native view to render its surface
-                      Future.delayed(const Duration(milliseconds: 300), () {
+                      // Slight delay to allow native view to render its surface before flying camera
+                      Future.delayed(const Duration(milliseconds: 500), () {
                         if (mounted) {
                           setState(() {
                             _isMapLoading = false;
                           });
+                          _checkPendingNavigation();
                         }
                       });
                     }

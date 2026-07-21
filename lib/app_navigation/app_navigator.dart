@@ -5,6 +5,7 @@ import '../screens/map/map_screen.dart';
 import '../screens/event/event_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../services/shared_preferences_service.dart';
+import '../services/map_navigation_store.dart';
 import '../widgets/custom_glass_dialog.dart';
 import '../constants/app_constants.dart';
 import 'nav_bar.dart';
@@ -28,6 +29,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   void initState() {
     super.initState();
     _loadInitialPage();
+    MapNavigationStore.instance.tabChangeNotifier.addListener(_onTabChangeRequested);
     _pages = [
       _HomeScreenWrapper(onNavigate: _onItemTapped),
       const ScheduleScreen(),
@@ -40,6 +42,19 @@ class _AppNavigatorState extends State<AppNavigator> {
         }
       }),
     ];
+  }
+
+  void _onTabChangeRequested() {
+    final targetIndex = MapNavigationStore.instance.tabChangeNotifier.value;
+    if (targetIndex != null) {
+      _onItemTapped(targetIndex);
+    }
+  }
+
+  @override
+  void dispose() {
+    MapNavigationStore.instance.tabChangeNotifier.removeListener(_onTabChangeRequested);
+    super.dispose();
   }
 
   void _onItemTapped(int index) {

@@ -32,13 +32,15 @@ class _EventScreenState extends State<EventScreen> {
 
   Future<void> _loadUserRole() async {
     final role = await SharedPreferencesService.getUserRole();
-    setState(() {
-      userRole = role;
-    });
+    if (mounted) {
+      setState(() {
+        userRole = role;
+      });
+    }
   }
 
   Future<void> _fetchPosts() async {
-    setState(() => isLoading = true);
+    if (mounted) setState(() => isLoading = true);
 
     try {
       String url = '${Config.postsEndpoint}';
@@ -50,12 +52,14 @@ class _EventScreenState extends State<EventScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        setState(() {
-          posts = data['posts'] ?? [];
-          isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            posts = data['posts'] ?? [];
+            isLoading = false;
+          });
+        }
       } else {
-        setState(() => isLoading = false);
+        if (mounted) setState(() => isLoading = false);
         if (mounted) {
           EduMateToast.showCompact(
             context,
@@ -65,7 +69,7 @@ class _EventScreenState extends State<EventScreen> {
         }
       }
     } catch (e) {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
       if (mounted) {
         EduMateToast.showCompact(
           context,
