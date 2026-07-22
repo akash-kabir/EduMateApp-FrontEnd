@@ -283,58 +283,207 @@ class _SignupScreen2State extends State<SignupScreen2>
     setState(() => _loading = true);
 
     try {
-      final result = await ApiService.register(
-        firstName: widget.firstName,
-        lastName: widget.lastName,
-        username: username,
+      final result = await ApiService.requestSignupOTP(
         email: email,
-        password: password,
+        username: username,
       );
 
-      if (result['success'] ?? false) {
-        final data = result['data'];
-        final token = data['token'];
-        final refreshToken = data['refreshToken'];
-        final user = data['user'];
+      setState(() => _loading = false);
 
-        // Save token and login state
-        await SharedPreferencesService.setToken(token);
-        if (refreshToken != null) {
-          await SharedPreferencesService.setRefreshToken(refreshToken);
-        }
-        await SharedPreferencesService.setIsLoggedIn(true);
-
-        // Save full user profile to SharedPreferences
-        await SharedPreferencesService.saveFullUserProfile(user);
-
+      if (result['success'] == true) {
         if (mounted) {
-          Navigator.pushReplacement(
+          EduMateToast.showCompact(
             context,
-            MaterialPageRoute(
-              builder: (_) => const SplashScreenWithApiLoading(),
-            ),
+            message: 'Verification OTP sent to your email inbox!',
+            isSuccess: true,
+          );
+          _showOtpVerificationDialog(
+            email: email,
+            username: username,
+            password: password,
           );
         }
       } else {
         if (mounted) {
           EduMateToast.showCompact(
             context,
-            message: result['message'] ?? 'Registration failed',
+            message: result['message'] ?? 'Failed to send OTP',
             isSuccess: false,
           );
         }
       }
     } catch (e) {
+      setState(() => _loading = false);
       if (mounted) {
         EduMateToast.showCompact(
           context,
-          message: 'Error: $e',
+          message: 'Error sending OTP: $e',
           isSuccess: false,
         );
       }
-    } finally {
-      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _showOtpVerificationDialog({
+    required String email,
+    required String username,
+    required String password,
+  }) async {
+    final TextEditingController otpController = TextEditingController();
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E1E1E),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Verify Your Email',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(CupertinoIcons.xmark_circle_fill, color: Colors.white54),
+                          onPressed: () => Navigator.pop(bottomSheetContext),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Enter the 6-digit OTP sent to $email',
+                      style: const TextStyle(fontSize: 13, color: Colors.white70),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: otpController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        letterSpacing: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        hintText: '000000',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          letterSpacing: 10,
+                        ),
+                        counterText: '',
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.08),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: CupertinoButton(
+                        color: const Color(0xFF00BFA5),
+                        borderRadius: BorderRadius.circular(14),
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                final otp = otpController.text.trim();
+                                if (otp.length != 6) {
+                                  EduMateToast.showCompact(
+                                    context,
+                                    message: 'Please enter a valid 6-digit OTP',
+                                    isSuccess: false,
+                                  );
+                                  return;
+                                }
+
+                                setModalState(() => isSubmitting = true);
+
+                                final result = await ApiService.register(
+                                  firstName: widget.firstName,
+                                  lastName: widget.lastName,
+                                  username: username,
+                                  email: email,
+                                  password: password,
+                                  otp: otp,
+                                );
+
+                                setModalState(() => isSubmitting = false);
+
+                                if (result['success'] ?? false) {
+                                  Navigator.pop(bottomSheetContext);
+
+                                  final data = result['data'];
+                                  final token = data['token'];
+                                  final refreshToken = data['refreshToken'];
+                                  final user = data['user'];
+
+                                  await SharedPreferencesService.setToken(token);
+                                  if (refreshToken != null) {
+                                    await SharedPreferencesService.setRefreshToken(refreshToken);
+                                  }
+                                  await SharedPreferencesService.setIsLoggedIn(true);
+                                  await SharedPreferencesService.saveFullUserProfile(user);
+
+                                  if (mounted) {
+                                    Navigator.pushReplacement(
+                                      this.context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const SplashScreenWithApiLoading(),
+                                      ),
+                                    );
+                                  }
+                                } else {
+                                  if (context.mounted) {
+                                    EduMateToast.showCompact(
+                                      context,
+                                      message: result['message'] ?? 'Registration failed',
+                                      isSuccess: false,
+                                    );
+                                  }
+                                }
+                              },
+                        child: isSubmitting
+                            ? const CupertinoActivityIndicator(color: Colors.white)
+                            : const Text(
+                                'Verify & Complete Registration',
+                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override

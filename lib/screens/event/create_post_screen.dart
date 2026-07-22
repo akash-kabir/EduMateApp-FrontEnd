@@ -164,7 +164,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       final signature = sigData['signature'];
       final timestamp = sigData['timestamp'];
       final folder = sigData['folder'];
-      final transformation = sigData['transformation'];
 
       // Step 2: Upload directly to Cloudinary (bypasses Vercel size limits)
       final uploadRequest = http.MultipartRequest(

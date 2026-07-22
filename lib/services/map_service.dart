@@ -6,6 +6,18 @@ import 'shared_preferences_service.dart';
 class MapService {
   static const String _mapboxKeyCache = 'mapbox_public_key';
 
+  // Helper to attach authorization header
+  static Future<Map<String, String>> _getAuthHeaders() async {
+    final token = await SharedPreferencesService.getToken();
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
   // Retry logic for handling Vercel cold starts
   static Future<http.Response> _getWithRetry(
     Uri url, {
@@ -48,9 +60,11 @@ class MapService {
   }) async {
     try {
       final url = Uri.parse('${Config.BASE_URL}/api/maps/directions');
+      final headers = await _getAuthHeaders();
+
       final response = await _getWithRetry(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({
           'originLat': originLat,
           'originLng': originLng,
@@ -69,9 +83,8 @@ class MapService {
           throw Exception(data['message'] ?? 'Failed to get directions');
         }
       } else {
-        throw Exception(
-          'Failed to get directions (Status: ${response.statusCode})',
-        );
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to get directions (Status: ${response.statusCode})');
       }
     } catch (e) {
       throw Exception('Error getting directions: $e');
@@ -90,7 +103,8 @@ class MapService {
 
       // Fetch from backend if not cached
       final url = Uri.parse('${Config.BASE_URL}/api/maps/config');
-      final response = await _getWithRetry(url, maxRetries: 2);
+      final headers = await _getAuthHeaders();
+      final response = await _getWithRetry(url, headers: headers, maxRetries: 2);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -109,6 +123,32 @@ class MapService {
       }
     } catch (e) {
       throw Exception('Error getting mapbox key: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getMapServiceStatus() async {
+    try {
+      final url = Uri.parse('${Config.BASE_URL}/api/maps/config');
+      final headers = await _getAuthHeaders();
+      final response = await _getWithRetry(url, headers: headers, maxRetries: 2);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success']) {
+          return Map<String, dynamic>.from(data['data']);
+        }
+      }
+      return {
+        'isServiceAvailable': true,
+        'isNavigationActive': true,
+        'message': 'Service active',
+      };
+    } catch (e) {
+      return {
+        'isServiceAvailable': true,
+        'isNavigationActive': true,
+        'message': 'Service active',
+      };
     }
   }
 }

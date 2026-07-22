@@ -17,6 +17,7 @@ import 'map_action_buttons.dart';
 import 'map_search_bar.dart';
 import '../../widgets/toast_manager.dart';
 import '../../services/map_navigation_store.dart';
+import 'widgets/map_skeleton_loader.dart';
 
 class PoiAnnotationClickListener extends mapbox.OnPointAnnotationClickListener {
   final Function(mapbox.PointAnnotation) onAnnotationClickCallback;
@@ -61,6 +62,9 @@ class _MapScreenState extends State<MapScreen> {
   Map<String, PoiModel> _annotationIdToPoi = {};
   PoiAnnotationClickListener? _poiClickListener;
 
+  bool _isServiceAvailable = true;
+  String _serviceStatusMessage = '';
+
   @override
   void initState() {
     super.initState();
@@ -69,9 +73,24 @@ class _MapScreenState extends State<MapScreen> {
     _initializeMapbox();
     _requestLocationPermission();
     _loadPOIs();
+    _checkMapServiceStatus();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkPendingNavigation();
     });
+  }
+
+  Future<void> _checkMapServiceStatus() async {
+    try {
+      final status = await MapService.getMapServiceStatus();
+      if (mounted) {
+        setState(() {
+          _isServiceAvailable = status['isServiceAvailable'] ?? true;
+          _serviceStatusMessage = status['message'] ?? '';
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking map service status: $e');
+    }
   }
 
   Future<void> _saveRecentSearch(PoiModel poi) async {
@@ -501,18 +520,7 @@ class _MapScreenState extends State<MapScreen> {
                   },
                 ),
               ),
-            if (_isMapLoading)
-              Positioned.fill(
-                child: Container(
-                  color: isDark ? Colors.black : Colors.white,
-                  child: const Center(
-                    child: CupertinoActivityIndicator(
-                      radius: 15,
-                      animating: true,
-                    ),
-                  ),
-                ),
-              ),
+
             if (isFullScreenSearch)
               Positioned.fill(
                 child: GestureDetector(
@@ -687,6 +695,52 @@ class _MapScreenState extends State<MapScreen> {
                         }
                       },
                     ),
+                    if (!_isServiceAvailable) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF2C1A1A) : const Color(0xFFFFF0F0),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.redAccent.withValues(alpha: 0.4),
+                              width: 1.2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                CupertinoIcons.exclamationmark_triangle_fill,
+                                color: Colors.redAccent,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _serviceStatusMessage.isNotEmpty
+                                      ? _serviceStatusMessage
+                                      : 'Campus navigation service is currently paused.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                     MapActionButtons(
                       isFullScreenSearch: isFullScreenSearch,
                       isMapMenuExpanded: isMapMenuExpanded,
@@ -768,6 +822,17 @@ class _MapScreenState extends State<MapScreen> {
                       },
                     )
                   : const SizedBox(),
+            ),
+            Positioned.fill(
+              child: AnimatedOpacity(
+                opacity: _isMapLoading ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 450),
+                curve: Curves.easeInOut,
+                child: IgnorePointer(
+                  ignoring: !_isMapLoading,
+                  child: MapSkeletonLoader(isDark: isDark),
+                ),
+              ),
             ),
           ],
         ),
@@ -915,45 +980,57 @@ class _MapScreenState extends State<MapScreen> {
                                   isSuccess: true,
                                 );
 
-                                await _navigationManager.startNavigation(
-                                  mapboxMap!,
-                                  poi,
-                                  currentLatitude!,
-                                  currentLongitude!,
-                                );
-                                
-                                // Adjust camera to fit route (roughly)
-                                final bounds = mapbox.CoordinateBounds(
-                                  southwest: mapbox.Point(
-                                    coordinates: mapbox.Position(
-                                      currentLongitude! < poi.lng ? currentLongitude! : poi.lng,
-                                      currentLatitude! < poi.lat ? currentLatitude! : poi.lat,
-                                    )
-                                  ),
-                                  northeast: mapbox.Point(
-                                    coordinates: mapbox.Position(
-                                      currentLongitude! > poi.lng ? currentLongitude! : poi.lng,
-                                      currentLatitude! > poi.lat ? currentLatitude! : poi.lat,
-                                    )
-                                  ),
-                                  infiniteBounds: false,
-                                );
-                                
-                                mapboxMap?.cameraForCoordinateBounds(
-                                  bounds,
-                                  mapbox.MbxEdgeInsets(top: 100, left: 50, bottom: 200, right: 50),
-                                  null, null, null, null,
-                                ).then((cameraOptions) {
-                                  mapboxMap?.easeTo(
-                                    cameraOptions,
-                                    mapbox.MapAnimationOptions(duration: 1000),
+                                try {
+                                  await _navigationManager.startNavigation(
+                                    mapboxMap!,
+                                    poi,
+                                    currentLatitude!,
+                                    currentLongitude!,
                                   );
-                                });
-                                
-                                setState(() {
-                                  _isPoiCardExpanded = false;
-                                  _selectedPoi = null; // hide the POI card
-                                });
+                                  
+                                  // Adjust camera to fit route (roughly)
+                                  final bounds = mapbox.CoordinateBounds(
+                                    southwest: mapbox.Point(
+                                      coordinates: mapbox.Position(
+                                        currentLongitude! < poi.lng ? currentLongitude! : poi.lng,
+                                        currentLatitude! < poi.lat ? currentLatitude! : poi.lat,
+                                      )
+                                    ),
+                                    northeast: mapbox.Point(
+                                      coordinates: mapbox.Position(
+                                        currentLongitude! > poi.lng ? currentLongitude! : poi.lng,
+                                        currentLatitude! > poi.lat ? currentLatitude! : poi.lat,
+                                      )
+                                    ),
+                                    infiniteBounds: false,
+                                  );
+                                  
+                                  mapboxMap?.cameraForCoordinateBounds(
+                                    bounds,
+                                    mapbox.MbxEdgeInsets(top: 100, left: 50, bottom: 200, right: 50),
+                                    null, null, null, null,
+                                  ).then((cameraOptions) {
+                                    mapboxMap?.easeTo(
+                                      cameraOptions,
+                                      mapbox.MapAnimationOptions(duration: 1000),
+                                    );
+                                  });
+                                  
+                                  setState(() {
+                                    _isPoiCardExpanded = false;
+                                    _selectedPoi = null; // hide the POI card
+                                  });
+                                } catch (e) {
+                                  _navigationManager.stopNavigation(mapboxMap!);
+                                  if (context.mounted) {
+                                    final rawMsg = e.toString().replaceAll('Exception: ', '').replaceAll('Error getting directions: ', '');
+                                    EduMateToast.showCompact(
+                                      context,
+                                      message: rawMsg.isNotEmpty ? rawMsg : 'Campus navigation service is currently down.',
+                                      isSuccess: false,
+                                    );
+                                  }
+                                }
                                 
                                 if (widget.onNavBarVisibilityChange != null) {
                                   widget.onNavBarVisibilityChange!(false); // hide nav bar while navigating

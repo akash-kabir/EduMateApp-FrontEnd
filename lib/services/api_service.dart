@@ -36,12 +36,38 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> requestSignupOTP({
+    required String email,
+    required String username,
+  }) async {
+    try {
+      final response = await _httpClient.post(
+        Uri.parse('${Config.BASE_URL}/api/users/request-signup-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'username': username,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': data['message'] ?? 'OTP sent to email.'};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Failed to send OTP'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error sending OTP: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> register({
     required String firstName,
     required String lastName,
     required String username,
     required String email,
     required String password,
+    required String otp,
   }) async {
     try {
       final response = await _httpClient.post(
@@ -53,6 +79,7 @@ class ApiService {
           'username': username,
           'email': email,
           'password': password,
+          'otp': otp,
         }),
       );
 
