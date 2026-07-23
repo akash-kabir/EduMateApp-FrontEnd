@@ -5,8 +5,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../config.dart';
+import '../../../services/holiday_service.dart';
 import '../../../services/token_refresh_service.dart';
 import '../../../widgets/toast_manager.dart';
+import '../../../widgets/custom_glass_dialog.dart';
 
 class AdminHolidayManagementScreen extends StatefulWidget {
   const AdminHolidayManagementScreen({super.key});
@@ -16,8 +18,57 @@ class AdminHolidayManagementScreen extends StatefulWidget {
 }
 
 class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScreen> {
-  bool _isLoading = false;
-  String? _selectedFileName;
+  bool _isLoading = true;
+  bool _isExpanded = false;
+  int _year = DateTime.now().year;
+  List<dynamic> _holidays = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHolidays();
+  }
+
+  Future<void> _fetchHolidays() async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await HolidayService.fetchHolidays(_year);
+      if (result['success'] == true && result['data'] != null) {
+        final rawData = result['data'];
+        List<dynamic> list = [];
+        if (rawData is List) {
+          list = rawData;
+        } else if (rawData is Map) {
+          if (rawData['holidays'] is List) {
+            list = rawData['holidays'];
+          }
+          if (rawData['year'] != null && rawData['year'] is int) {
+            _year = rawData['year'];
+          }
+        }
+        setState(() {
+          _holidays = List.from(list);
+        });
+      } else {
+        setState(() {
+          _holidays = [];
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching holidays: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  String _formatHolidayDate(dynamic h) {
+    final start = h['startDate'] ?? h['date'] ?? '';
+    final end = h['endDate'] ?? '';
+    if (end.isNotEmpty && end != start) {
+      return '$start - $end';
+    }
+    return start.toString();
+  }
 
   Future<void> _uploadHolidayJson() async {
     try {
@@ -26,15 +77,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
         allowedExtensions: ['json'],
       );
 
-      if (result == null || result.files.isEmpty) {
-        return;
-      }
-
-      final fileName = result.files.single.name;
-      setState(() {
-        _selectedFileName = fileName;
-        _isLoading = true;
-      });
+      if (result == null || result.files.isEmpty) return;
 
       final file = File(result.files.single.path!);
       final content = await file.readAsString();
@@ -47,9 +90,10 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
           message: 'Invalid JSON format. Must contain "year" and "holidays".',
           isSuccess: false,
         );
-        setState(() => _isLoading = false);
         return;
       }
+
+      setState(() => _isLoading = true);
 
       final response = await TokenRefreshService.authenticatedPost(
         '${Config.holidayBaseEndpoint}/upload',
@@ -61,15 +105,21 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
       if (response.statusCode == 200) {
         EduMateToast.showCompact(
           context,
-          message: 'Holidays calendar synced successfully!',
+          message: 'Holiday calendar synced successfully!',
           isSuccess: true,
         );
+        if (data['year'] != null) {
+          _year = data['year'];
+        }
+        _isExpanded = true;
+        _fetchHolidays();
       } else {
         EduMateToast.showCompact(
           context,
           message: 'Failed to upload holiday calendar',
           isSuccess: false,
         );
+        setState(() => _isLoading = false);
       }
     } catch (e) {
       if (mounted) {
@@ -78,10 +128,101 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
           message: 'Error: ${e.toString()}',
           isSuccess: false,
         );
+        setState(() => _isLoading = false);
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _deleteIndividualHoliday(int index) async {
+    final holiday = _holidays[index];
+    final String name = (holiday['event'] ??
+            holiday['name'] ??
+            holiday['title'] ??
+            holiday['holidayName'] ??
+            holiday['description'] ??
+            'Holiday')
+        .toString();
+
+    final bool? confirm = await showDeleteConfirmationDialog(
+      context: context,
+      title: 'Delete Holiday',
+      description: 'Are you sure you want to delete "$name"?',
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final updatedList = List.from(_holidays)..removeAt(index);
+      final payload = {
+        'year': _year,
+        'holidays': updatedList,
+      };
+
+      final response = await TokenRefreshService.authenticatedPost(
+        '${Config.holidayBaseEndpoint}/upload',
+        body: payload,
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          EduMateToast.showCompact(context, message: '$name deleted!', isSuccess: true);
+        }
+        _fetchHolidays();
+      } else {
+        if (mounted) {
+          EduMateToast.showCompact(context, message: 'Failed to delete holiday', isSuccess: false);
+        }
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        EduMateToast.showCompact(context, message: 'Error: $e', isSuccess: false);
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showQuickAddDialog() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => _QuickAddHolidayDialog(
+        year: _year,
+        onAdd: (newHoliday) async {
+          Navigator.pop(context);
+          setState(() => _isLoading = true);
+          try {
+            final updatedList = List.from(_holidays)..add(newHoliday);
+            final payload = {
+              'year': _year,
+              'holidays': updatedList,
+            };
+            final response = await TokenRefreshService.authenticatedPost(
+              '${Config.holidayBaseEndpoint}/upload',
+              body: payload,
+            );
+            if (response.statusCode == 200) {
+              if (mounted) {
+                EduMateToast.showCompact(context, message: 'Holiday added!', isSuccess: true);
+              }
+              _isExpanded = true;
+              _fetchHolidays();
+            } else {
+              if (mounted) {
+                EduMateToast.showCompact(context, message: 'Failed to add holiday', isSuccess: false);
+              }
+              setState(() => _isLoading = false);
+            }
+          } catch (e) {
+            if (mounted) {
+              EduMateToast.showCompact(context, message: 'Error: $e', isSuccess: false);
+              setState(() => _isLoading = false);
+            }
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -95,79 +236,22 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
           Positioned.fill(
             child: SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.only(top: 60, bottom: 20, left: 20, right: 20),
+                padding: const EdgeInsets.only(top: 65, bottom: 24, left: 20, right: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 12),
-                    // Header Card
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF06B6D4), Color(0xFF0284C7)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF06B6D4).withValues(alpha: 0.3),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(
-                              CupertinoIcons.calendar_badge_plus,
-                              size: 32,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Academic Holidays',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Upload official KIIT holiday calendar JSON to sync across all student devices.',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white70,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const SizedBox(height: 10),
 
-                    const SizedBox(height: 24),
-
-                    // Upload Action Area
+                    // Big Expandable Card: Holiday
                     GestureDetector(
-                      onTap: _isLoading ? null : _uploadHolidayJson,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+                      onTap: () {
+                        setState(() {
+                          _isExpanded = !_isExpanded;
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: isDark
@@ -176,135 +260,228 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                             color: isDark
-                                ? const Color(0xFF10B981).withValues(alpha: 0.4)
-                                : const Color(0xFF10B981).withValues(alpha: 0.3),
-                            width: 2,
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.black.withValues(alpha: 0.06),
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
+                              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
                           ],
                         ),
+                        padding: const EdgeInsets.all(20),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                CupertinoIcons.arrow_up_doc_fill,
-                                size: 36,
-                                color: Color(0xFF10B981),
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Holiday',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Poppins',
+                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    letterSpacing: -0.4,
+                                  ),
+                                ),
+                                Icon(
+                                  _isExpanded
+                                      ? CupertinoIcons.chevron_up_circle_fill
+                                      : CupertinoIcons.chevron_down_circle_fill,
+                                  color: isDark ? Colors.white38 : Colors.black38,
+                                  size: 24,
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 10),
                             Text(
-                              _selectedFileName ?? 'Select Holiday List JSON File',
+                              'Year : $_year',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF111827),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white70 : Colors.black87,
                               ),
-                              textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Tap to browse files (.json format)',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                              'No of holidays : ${_holidays.length}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF10B981),
                               ),
                             ),
                             const SizedBox(height: 20),
-                            if (_isLoading)
-                              const CupertinoActivityIndicator(radius: 14)
-                            else
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFF10B981), Color(0xFF059669)],
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Text(
-                                  'Choose JSON File',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                            // Action Row: Upload/Replace JSON and View/Hide side-by-side equal width
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildActionButton(
+                                    context: context,
+                                    icon: CupertinoIcons.arrow_up_doc_fill,
+                                    label: _holidays.isNotEmpty ? 'Replace JSON' : 'Upload JSON',
+                                    color: const Color(0xFF10B981), // Emerald Green
+                                    isDark: isDark,
+                                    onTap: _uploadHolidayJson,
                                   ),
                                 ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildActionButton(
+                                    context: context,
+                                    icon: _isExpanded ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
+                                    label: _isExpanded ? 'Hide' : 'View',
+                                    color: const Color(0xFF06B6D4), // Deep Teal
+                                    isDark: isDark,
+                                    onTap: () {
+                                      setState(() {
+                                        _isExpanded = !_isExpanded;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // Inline Expanded List of Holidays
+                            if (_isExpanded) ...[
+                              const SizedBox(height: 16),
+                              Divider(
+                                color: isDark ? Colors.white12 : Colors.black12,
+                                height: 1,
                               ),
+                              const SizedBox(height: 12),
+                              _holidays.isEmpty
+                                  ? Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      child: Center(
+                                        child: Text(
+                                          'No holidays configured for $_year',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: isDark ? Colors.white54 : Colors.black54,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : ListView.separated(
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      itemCount: _holidays.length,
+                                      separatorBuilder: (_, __) => Divider(
+                                        height: 1,
+                                        color: isDark
+                                            ? Colors.white10
+                                            : Colors.black.withValues(alpha: 0.05),
+                                      ),
+                                      itemBuilder: (context, index) {
+                                        final h = _holidays[index];
+                                        final String name = (h['event'] ??
+                                                h['name'] ??
+                                                h['title'] ??
+                                                h['holidayName'] ??
+                                                h['description'] ??
+                                                'Holiday')
+                                            .toString();
+                                        final dateStr = _formatHolidayDate(h);
+
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      name,
+                                                      style: TextStyle(
+                                                        fontSize: 14.5,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: isDark
+                                                            ? Colors.white
+                                                            : const Color(0xFF0F172A),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 3),
+                                                    Row(
+                                                      children: [
+                                                        const Icon(
+                                                          CupertinoIcons.calendar,
+                                                          size: 13,
+                                                          color: Color(0xFF10B981),
+                                                        ),
+                                                        const SizedBox(width: 5),
+                                                        Text(
+                                                          dateStr,
+                                                          style: const TextStyle(
+                                                            fontSize: 12,
+                                                            fontFamily: 'monospace',
+                                                            fontWeight: FontWeight.w600,
+                                                            color: Color(0xFF10B981),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(
+                                                  CupertinoIcons.trash_fill,
+                                                  size: 18,
+                                                  color: Color(0xFFDC2626), // Admin Red
+                                                ),
+                                                onPressed: () => _deleteIndividualHoliday(index),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                            ],
                           ],
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
-                    // Expected JSON Format Preview Card
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF141414) : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+                    // Quick Add Holiday Button (Admin Red)
+                    GestureDetector(
+                      onTap: _showQuickAddDialog,
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDC2626).withValues(alpha: isDark ? 0.15 : 0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFFDC2626).withValues(alpha: isDark ? 0.25 : 0.15),
+                            width: 0.8,
+                          ),
                         ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(CupertinoIcons.info_circle_fill, size: 18, color: Color(0xFF06B6D4)),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Expected JSON Schema',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : const Color(0xFF111827),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: isDark ? Colors.black : const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              '{\n'
-                              '  "year": 2026,\n'
-                              '  "holidays": [\n'
-                              '    {\n'
-                              '      "date": "2026-01-26",\n'
-                              '      "name": "Republic Day"\n'
-                              '    }\n'
-                              '  ]\n'
-                              '}',
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(CupertinoIcons.add_circled_solid, size: 18, color: Color(0xFFDC2626)),
+                            SizedBox(width: 8),
+                            Text(
+                              'Quick Add Holiday',
                               style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 12.5,
-                                color: Color(0xFF38BDF8),
-                                height: 1.4,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFDC2626),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -312,6 +489,8 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
               ),
             ),
           ),
+
+          // Top Header Bar
           Positioned(
             top: 0,
             left: 0,
@@ -322,9 +501,15 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.7),
+                    color: isDark
+                        ? const Color(0xFF141414).withValues(alpha: 0.6)
+                        : Colors.white.withValues(alpha: 0.7),
                     border: Border(
-                      bottom: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                      bottom: BorderSide(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.05),
+                      ),
                     ),
                   ),
                   child: SafeArea(
@@ -337,7 +522,10 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                             alignment: Alignment.centerLeft,
                             child: CupertinoButton(
                               padding: EdgeInsets.zero,
-                              child: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
+                              child: Icon(
+                                CupertinoIcons.back,
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
                               onPressed: () => Navigator.pop(context),
                             ),
                           ),
@@ -362,6 +550,168 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withValues(alpha: isDark ? 0.25 : 0.15),
+            width: 0.8,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickAddHolidayDialog extends StatefulWidget {
+  final int year;
+  final Function(Map<String, dynamic>) onAdd;
+
+  const _QuickAddHolidayDialog({required this.year, required this.onAdd});
+
+  @override
+  State<_QuickAddHolidayDialog> createState() => _QuickAddHolidayDialogState();
+}
+
+class _QuickAddHolidayDialogState extends State<_QuickAddHolidayDialog> {
+  final _nameController = TextEditingController();
+  final _startDateController = TextEditingController();
+  final _endDateController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _startDateController.text = '${widget.year}-01-01';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        height: 360,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Quick Add Holiday',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    final name = _nameController.text.trim();
+                    final startDate = _startDateController.text.trim();
+                    final endDate = _endDateController.text.trim();
+                    if (name.isEmpty || startDate.isEmpty) {
+                      EduMateToast.showCompact(context, message: 'Please enter Name and Start Date', isSuccess: false);
+                      return;
+                    }
+                    widget.onAdd({
+                      'event': name,
+                      'name': name,
+                      'startDate': startDate,
+                      'endDate': endDate.isNotEmpty ? endDate : startDate,
+                    });
+                  },
+                  child: const Text(
+                    'Add',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFDC2626), // Admin Red
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            const SizedBox(height: 12),
+            CupertinoTextField(
+              controller: _nameController,
+              placeholder: 'Holiday Name (e.g. Durga Puja)',
+              padding: const EdgeInsets.all(14),
+              style: TextStyle(color: isDark ? Colors.white : Colors.black),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: CupertinoTextField(
+                    controller: _startDateController,
+                    placeholder: 'Start Date (YYYY-MM-DD)',
+                    padding: const EdgeInsets.all(14),
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: CupertinoTextField(
+                    controller: _endDateController,
+                    placeholder: 'End Date (Optional)',
+                    padding: const EdgeInsets.all(14),
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
