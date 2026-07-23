@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'admin_elective_management.dart';
 import 'curriculum_management_screen.dart';
 import 'schedule_management_screen.dart';
@@ -15,122 +14,178 @@ class AdminUploadScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-            Text(
-              'Data Management',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: isDark ? CupertinoColors.white : CupertinoColors.black,
+      backgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF8F9FA),
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // Clean Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Data Management',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Salena',
+                      letterSpacing: -0.5,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Manage curriculums, timetables, electives, map POIs, and holiday calendars.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Manage curriculums, schedules, electives and POIs',
-              style: TextStyle(
-                fontSize: 16,
-                color: isDark ? CupertinoColors.systemGrey : Colors.grey[600],
+          ),
+
+          // Academic Data Section
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Text(
+                'ACADEMIC DATA',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                ),
               ),
             ),
-            const SizedBox(height: 40),
-            _UploadCard(
-              title: 'Curriculum Management',
-              description: 'Manage semester-wise subjects and credits',
-              icon: Icons.school_rounded,
-              isDark: isDark,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CurriculumManagementScreen(),
-                  ),
-                );
-              },
+          ),
+
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _DataManagementCard(
+                  title: 'Curriculum',
+                  iconColor: const Color(0xFF6366F1),
+                  icon: CupertinoIcons.book_fill,
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const CurriculumManagementScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                _DataManagementCard(
+                  title: 'Schedule',
+                  iconColor: const Color(0xFFF59E0B),
+                  icon: CupertinoIcons.clock_fill,
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const ScheduleManagementScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                _DataManagementCard(
+                  title: 'Electives',
+                  iconColor: const Color(0xFF10B981),
+                  icon: CupertinoIcons.checkmark_seal_fill,
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const AdminElectiveManagementScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+              ]),
             ),
-            const SizedBox(height: 16),
-            _UploadCard(
-              title: 'Schedule Management',
-              description: 'Manage semester-wise daily timetables',
-              icon: Icons.schedule_rounded,
-              isDark: isDark,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ScheduleManagementScreen(),
-                  ),
-                );
-              },
+          ),
+
+          // Campus & System Section
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Text(
+                'CAMPUS & SYSTEM',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            _UploadCard(
-              title: 'Elective Management',
-              description: 'Manage semester-wise professional electives',
-              icon: Icons.assignment_turned_in_rounded,
-              isDark: isDark,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminElectiveManagementScreen(),
-                  ),
-                );
-              },
+          ),
+
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _DataManagementCard(
+                  title: 'POI',
+                  iconColor: const Color(0xFFF43F5E),
+                  icon: CupertinoIcons.map_pin_ellipse,
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const AdminPoiManagementScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                _DataManagementCard(
+                  title: 'Holidays',
+                  iconColor: const Color(0xFF06B6D4),
+                  icon: CupertinoIcons.calendar_today,
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const AdminHolidayManagementScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 100),
+              ]),
             ),
-            const SizedBox(height: 16),
-            _UploadCard(
-              title: 'POI Management',
-              description: 'Manage campus Points of Interest',
-              icon: Icons.map_rounded,
-              isDark: isDark,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminPoiManagementScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _UploadCard(
-              title: 'Holiday Management',
-              description: 'Manage academic holidays',
-              icon: Icons.calendar_today_rounded,
-              isDark: isDark,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminHolidayManagementScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 80),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _UploadCard extends StatelessWidget {
+class _DataManagementCard extends StatelessWidget {
   final String title;
-  final String description;
+  final Color iconColor;
   final IconData icon;
   final bool isDark;
   final VoidCallback onTap;
 
-  const _UploadCard({
+  const _DataManagementCard({
     required this.title,
-    required this.description,
+    required this.iconColor,
     required this.icon,
     required this.isDark,
     required this.onTap,
@@ -138,73 +193,69 @@ class _UploadCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? const [Color(0xFF303030), Color(0xFF1A1A1A)]
+                : const [Color(0xFFFFFFFF), Color(0xFFF3F4F6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.06),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 8,
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+              blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            // Icon Container
+            Container(
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.black.withValues(alpha: 0.4)
-                    : Colors.white.withValues(alpha: 0.65),
+                color: iconColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF1744).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(icon, color: const Color(0xFFFF1744), size: 28),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: isDark
-                                ? CupertinoColors.white
-                                : CupertinoColors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          description,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? CupertinoColors.systemGrey
-                                : Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(CupertinoIcons.forward, color: Color(0xFFFF1744)),
-                ],
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 20,
               ),
             ),
-          ),
+            const SizedBox(width: 14),
+
+            // Title
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: 16,
+              color: isDark ? Colors.white30 : const Color(0xFF9CA3AF),
+            ),
+          ],
         ),
       ),
     );

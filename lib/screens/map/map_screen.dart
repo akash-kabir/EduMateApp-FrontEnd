@@ -467,6 +467,28 @@ class _MapScreenState extends State<MapScreen> {
                     },
                     onMapCreated: (mapbox.MapboxMap map) async {
                     mapboxMap = map;
+
+                    // Restrict camera bounds and zoom limits to KIIT University area to conserve disk cache & network
+                    try {
+                      await map.setBounds(
+                        mapbox.CameraBoundsOptions(
+                          bounds: mapbox.CoordinateBounds(
+                            southwest: mapbox.Point(
+                              coordinates: mapbox.Position(85.7500, 20.2800),
+                            ),
+                            northeast: mapbox.Point(
+                              coordinates: mapbox.Position(85.9000, 20.4200),
+                            ),
+                            infiniteBounds: false,
+                          ),
+                          minZoom: 11.0,
+                          maxZoom: 20.0,
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint('Could not set map camera bounds: $e');
+                    }
+
                     await map.compass.updateSettings(
                       mapbox.CompassSettings(enabled: false),
                     );

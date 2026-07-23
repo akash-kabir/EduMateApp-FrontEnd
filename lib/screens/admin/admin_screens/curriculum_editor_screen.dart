@@ -244,6 +244,95 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
     );
   }
 
+  void _showSemesterPicker(BuildContext context, bool isDark) {
+    int selectedSem = _currentSemester;
+
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) {
+        return Material(
+          color: Colors.transparent,
+          child: Container(
+            height: 270,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.black12,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Select Semester',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          Navigator.pop(context);
+                          if (selectedSem != _currentSemester) {
+                            _onSemesterChanged(selectedSem);
+                          }
+                        },
+                        child: const Text(
+                          'Done',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF1744),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: CupertinoPicker(
+                    itemExtent: 40,
+                    scrollController: FixedExtentScrollController(
+                      initialItem: _currentSemester - 1,
+                    ),
+                    onSelectedItemChanged: (index) {
+                      selectedSem = index + 1;
+                    },
+                    children: List.generate(8, (index) {
+                      return Center(
+                        child: Text(
+                          'Semester ${index + 1}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Poppins',
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -353,28 +442,67 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              // Long Pill for Semester Selection
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: CupertinoSlidingSegmentedControl<int>(
-                                    groupValue: _currentSemester,
-                                    children: {
-                                      1: const Text('S1'),
-                                      2: const Text('S2'),
-                                      3: const Text('S3'),
-                                      4: const Text('S4'),
-                                      5: const Text('S5'),
-                                      6: const Text('S6'),
-                                      7: const Text('S7'),
-                                      8: const Text('S8'),
-                                    },
-                                    onValueChanged: (int? value) {
-                                      if (value != null) {
-                                        _onSemesterChanged(value);
-                                      }
-                                    },
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: GestureDetector(
+                                  onTap: () => _showSemesterPicker(context, isDark),
+                                  child: Container(
+                                    height: 48,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.08)
+                                          : Colors.black.withValues(alpha: 0.05),
+                                      borderRadius: BorderRadius.circular(24),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? Colors.white.withValues(alpha: 0.12)
+                                            : Colors.black.withValues(alpha: 0.08),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              CupertinoIcons.square_stack_3d_up,
+                                              size: 18,
+                                              color: Color(0xFFFF1744),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              'Semester $_currentSemester',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: 'Poppins',
+                                                color: isDark ? Colors.white : Colors.black,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          children: [
+                                            const Text(
+                                              'Change',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFFFF1744),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            const Icon(
+                                              CupertinoIcons.chevron_down,
+                                              size: 15,
+                                              color: Color(0xFFFF1744),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),

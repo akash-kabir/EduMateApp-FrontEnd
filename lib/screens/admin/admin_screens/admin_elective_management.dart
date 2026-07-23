@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,6 +10,7 @@ import '../../../config.dart';
 import '../../../services/shared_preferences_service.dart';
 import '../../../services/token_refresh_service.dart';
 import '../../../widgets/toast_manager.dart';
+import '../../../widgets/custom_glass_dialog.dart';
 
 class AdminElectiveManagementScreen extends StatefulWidget {
   const AdminElectiveManagementScreen({super.key});
@@ -100,41 +102,83 @@ class _AdminElectiveManagementScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Material(
-      color: Colors.transparent,
-      child: CupertinoPageScaffold(
-        backgroundColor: isDark ? const Color(0xFF0F0F11) : const Color(0xFFFAFAFA),
-        navigationBar: CupertinoNavigationBar(
-          middle: const Text('Elective Management'),
-          backgroundColor: isDark
-              ? const Color(0xFF0F0F11).withOpacity(0.8)
-              : Colors.white.withOpacity(0.8),
-          border: Border(
-            bottom: BorderSide(
-              color: isDark ? Colors.white12 : Colors.black12,
-              width: 0.5,
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF8F9FA),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: SafeArea(
+              child: _isLoading
+                  ? const Center(child: CupertinoActivityIndicator())
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(top: 70, bottom: 30, left: 16, right: 16),
+                      itemCount: 8,
+                      itemBuilder: (context, index) {
+                        final semester = index + 1;
+                        final groups = _groupsBySemester[semester] ?? {};
+                        return _buildSemesterCard(context, semester, groups, isDark);
+                      },
+                    ),
             ),
           ),
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? const Center(child: CupertinoActivityIndicator())
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: 8,
-                  itemBuilder: (context, index) {
-                    final semester = index + 1;
-                    final groups = _groupsBySemester[semester] ?? {};
-                    return _buildSemesterCard(context, semester, groups, isDark);
-                  },
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.7),
+                    border: Border(
+                      bottom: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                    ),
+                  ),
+                  child: SafeArea(
+                    bottom: false,
+                    child: SizedBox(
+                      height: 50,
+                      child: Stack(
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              child: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Electives',
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Salena',
+                                fontSize: 17,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-        ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSemesterCard(
       BuildContext context, int semester, Map<String, List<dynamic>> groups, bool isDark) {
+    final groupNames = groups.keys.toList();
+
     return GestureDetector(
       onTap: () async {
         await Navigator.push(
@@ -153,68 +197,104 @@ class _AdminElectiveManagementScreenState
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+          gradient: LinearGradient(
+            colors: isDark
+                ? const [Color(0xFF303030), Color(0xFF1A1A1A)]
+                : const [Color(0xFFFFFFFF), Color(0xFFF3F4F6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.08),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  '$semester',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Semester $semester',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${groups.length} ${groups.length == 1 ? 'Elective Group' : 'Elective Groups'}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Semester $semester',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                if (!_canManageElectives)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'View Only',
+                      style: TextStyle(fontSize: 12),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${groups.length} Elective Groups',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
+                const SizedBox(width: 8),
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  color: isDark ? Colors.white38 : Colors.black38,
+                  size: 18,
+                ),
+              ],
             ),
-            if (!_canManageElectives)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'View Only',
-                  style: TextStyle(fontSize: 12),
-                ),
+            if (groupNames.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: groupNames.map((name) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF06B6D4).withValues(alpha: isDark ? 0.15 : 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFF06B6D4).withValues(alpha: isDark ? 0.3 : 0.2),
+                      ),
+                    ),
+                    child: Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Poppins',
+                        color: isDark ? const Color(0xFF22D3EE) : const Color(0xFF0891B2),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
-            const SizedBox(width: 8),
-            const Icon(CupertinoIcons.chevron_right, color: Colors.grey),
+            ],
           ],
         ),
       ),
@@ -487,23 +567,10 @@ class _SemesterElectiveDetailScreenState
   }
 
   Future<void> _deleteGroup(String groupName) async {
-    final bool? confirm = await showCupertinoDialog<bool>(
+    final bool? confirm = await showDeleteConfirmationDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Delete Group?'),
-        content: Text('Are you sure you want to delete the $groupName elective group?'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      title: 'Delete Group?',
+      description: 'Are you sure you want to delete the $groupName elective group?',
     );
 
     if (confirm != true) return;
@@ -604,107 +671,331 @@ class _SemesterElectiveDetailScreenState
     );
   }
 
-  Widget _buildGroupCard(
-      BuildContext context, String groupName, List<dynamic> electives, bool isDark) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Icon(CupertinoIcons.square_stack_3d_up, size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        groupName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${electives.length} subjects',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
+  void _showGroupDetailsDialog(String groupName, List<dynamic> electives, bool isDark) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) {
+        return Material(
+          color: Colors.transparent,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF18181B).withValues(alpha: 0.95)
+                    : Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.black.withValues(alpha: 0.08),
                 ),
-                if (widget.canManage) ...[
-                  IconButton(
-                    icon: const Icon(CupertinoIcons.cloud_upload),
-                    onPressed: () => _uploadToGroup(groupName),
-                    tooltip: 'Upload JSON',
-                    color: CupertinoColors.activeBlue,
-                  ),
-                  IconButton(
-                    icon: const Icon(CupertinoIcons.delete),
-                    onPressed: () => _deleteGroup(groupName),
-                    tooltip: 'Delete Group',
-                    color: CupertinoColors.destructiveRed,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
                 ],
-              ],
-            ),
-          ),
-          if (electives.isNotEmpty) ...[
-            Divider(height: 1, color: isDark ? Colors.white12 : Colors.black12),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: electives.length,
-              separatorBuilder: (context, index) => Divider(
-                height: 1,
-                indent: 16,
-                color: isDark ? Colors.white12 : Colors.black12,
               ),
-              itemBuilder: (context, index) {
-                final elective = electives[index];
-                final periods = elective['periods'] as List? ?? [];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          elective['name'] ?? 'Unknown Subject',
-                          style: const TextStyle(fontSize: 15),
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            groupName,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Poppins',
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Semester ${widget.semester} Elective Subjects',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? Colors.white60 : Colors.black54,
+                            ),
+                          ),
+                        ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '${periods.length} periods',
-                          style: const TextStyle(fontSize: 12),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(
+                          CupertinoIcons.xmark_circle_fill,
+                          color: isDark ? Colors.white38 : Colors.black38,
+                          size: 24,
                         ),
                       ),
                     ],
                   ),
-                );
-              },
+                  const SizedBox(height: 16),
+                  Divider(
+                    height: 1,
+                    color: isDark ? Colors.white12 : Colors.black12,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'SUBJECT / COURSE',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          color: isDark ? Colors.white38 : Colors.black45,
+                        ),
+                      ),
+                      Text(
+                        'SECTIONS',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          color: isDark ? Colors.white38 : Colors.black45,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (electives.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24.0),
+                      child: Center(
+                        child: Text(
+                          'No subjects available for $groupName',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.white54 : Colors.black54,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.4,
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: electives.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final elective = electives[index];
+                          final subjectName = elective['name'] ?? 'Unknown Subject';
+
+                          int sectionCount = 0;
+                          if (elective['sections'] is List) {
+                            sectionCount = (elective['sections'] as List).length;
+                          } else if (elective['periods'] is List) {
+                            sectionCount = (elective['periods'] as List).length;
+                          } else if (elective['sectionCount'] != null) {
+                            sectionCount = elective['sectionCount'];
+                          } else {
+                            sectionCount = 1;
+                          }
+
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.04)
+                                  : Colors.black.withValues(alpha: 0.03),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.06)
+                                    : Colors.black.withValues(alpha: 0.04),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    subjectName,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Poppins',
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '$sectionCount ${sectionCount == 1 ? 'Section' : 'Sections'}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF10B981),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGroupCard(
+      BuildContext context, String groupName, List<dynamic> electives, bool isDark) {
+    final bool hasSubjects = electives.isNotEmpty;
+
+    return GestureDetector(
+      onTap: () => _showGroupDetailsDialog(groupName, electives, isDark),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? const [Color(0xFF303030), Color(0xFF1A1A1A)]
+                : const [Color(0xFFFFFFFF), Color(0xFFF3F4F6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.08),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
-        ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  groupName,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hasSubjects
+                      ? '${electives.length} ${electives.length == 1 ? 'subject' : 'subjects'}'
+                      : 'No subjects',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Poppins',
+                    color: hasSubjects
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFFF59E0B),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionButton(
+                    context: context,
+                    icon: CupertinoIcons.arrow_up_doc_fill,
+                    label: 'Upload JSON',
+                    color: const Color(0xFF10B981), // Emerald Green
+                    isDark: isDark,
+                    onTap: () => _uploadToGroup(groupName),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionButton(
+                    context: context,
+                    icon: CupertinoIcons.trash_fill,
+                    label: 'Delete Group',
+                    color: const Color(0xFFDC2626), // Admin Red
+                    isDark: isDark,
+                    onTap: () => _deleteGroup(groupName),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withValues(alpha: isDark ? 0.25 : 0.15),
+            width: 0.8,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

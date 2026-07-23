@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../config.dart';
 import '../../../services/shared_preferences_service.dart';
 import '../../../widgets/toast_manager.dart';
+import '../../../widgets/custom_glass_dialog.dart';
 import 'admin_user_details_screen.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
@@ -177,30 +178,16 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   }
 
 
-  void _showDeleteConfirm(BuildContext context, Map<String, dynamic> user) {
-    showCupertinoDialog(
+  Future<void> _showDeleteConfirm(BuildContext context, Map<String, dynamic> user) async {
+    final bool? confirm = await showDeleteConfirmationDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Remove User'),
-        content: Text(
+      title: 'Remove User',
+      description:
           'Are you sure you want to permanently delete ${user['firstName']} ${user['lastName']}? This cannot be undone.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () {
-              Navigator.pop(context);
-              _deleteUser(user['_id']);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
+    if (confirm == true) {
+      _deleteUser(user['_id']);
+    }
   }
 
   Widget _buildRoleOption({
