@@ -7,6 +7,7 @@ class SapAuthService {
   static const String _keyPassword = 'sap_password';
   static const String _keyTermYear = 'sap_term_year';
   static const String _keySessionKey = 'sap_session_key';
+  static const String _keyThreshold = 'sap_threshold';
 
   Future<void> saveCredentials(String userId, String password) async {
     await _secureStorage.write(key: _keyUserId, value: userId);
@@ -25,6 +26,18 @@ class SapAuthService {
       return {'termYear': termYear, 'sessionKey': sessionKey};
     }
     return null;
+  }
+
+  Future<void> saveThreshold(double threshold) async {
+    await _secureStorage.write(key: _keyThreshold, value: threshold.toString());
+  }
+
+  Future<double> getThreshold() async {
+    final val = await _secureStorage.read(key: _keyThreshold);
+    if (val != null) {
+      return double.tryParse(val) ?? 75.0;
+    }
+    return 75.0;
   }
 
   Future<bool> hasCredentials() async {
@@ -48,5 +61,6 @@ class SapAuthService {
     await _secureStorage.delete(key: _keyPassword);
     await _secureStorage.delete(key: _keyTermYear);
     await _secureStorage.delete(key: _keySessionKey);
+    await _secureStorage.delete(key: _keyThreshold);
   }
 }

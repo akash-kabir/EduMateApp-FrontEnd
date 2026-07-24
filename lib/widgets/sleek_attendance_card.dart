@@ -4,19 +4,21 @@ import '../models/sap/attendance_record.dart';
 class SleekAttendanceCard extends StatelessWidget {
   final AttendanceRecord record;
   final bool isSelected;
+  final double threshold;
   final VoidCallback? onTap;
 
   const SleekAttendanceCard({
     super.key,
     required this.record,
     this.isSelected = false,
+    this.threshold = 75.0,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final percentage = record.percentage;
-    final isHigh = percentage >= 75;
+    final isHigh = percentage >= threshold;
     final accentColor = isHigh ? const Color(0xFF4CD97B) : const Color(0xFFFF5252);
     final gradientColors = isHigh
         ? [const Color(0xFF4CD97B), const Color(0xFF00B894)]
@@ -62,35 +64,67 @@ class SleekAttendanceCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
 
-            // 2. Middle Row: Pill-shaped Gradient Linear Progress Bar
-            Container(
-              height: 8,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2C2C2E),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: pctFactor,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: gradientColors,
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accentColor.withOpacity(0.35),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
+            // 2. Middle Row: Pill Progress Bar with Threshold Marker
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final barWidth = constraints.maxWidth;
+                final markerLeft = (barWidth * (threshold / 100.0)).clamp(0.0, barWidth - 3);
+
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      height: 8,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2C2C2E),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    ],
-                  ),
-                ),
-              ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: pctFactor,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: gradientColors,
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accentColor.withOpacity(0.35),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Threshold Split Line Indicator
+                    Positioned(
+                      left: markerLeft,
+                      top: -3,
+                      child: Container(
+                        width: 3,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.amberAccent,
+                          borderRadius: BorderRadius.circular(2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.amberAccent.withOpacity(0.8),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 16),
 

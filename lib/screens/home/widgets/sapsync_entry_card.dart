@@ -8,12 +8,32 @@ import '../../../provider/sap_provider.dart';
 class SapSyncEntryCard extends StatelessWidget {
   const SapSyncEntryCard({Key? key}) : super(key: key);
 
+  String _getAbbreviation(String subject) {
+    final clean = subject.trim();
+    if (clean.isEmpty) return '';
+    
+    // Extract capital letters from subject (e.g. Data Mining and Data Warehousing -> DMDW)
+    final uppercaseLetters = RegExp(r'[A-Z]').allMatches(clean).map((m) => m.group(0)!).join();
+    if (uppercaseLetters.length >= 2) {
+      return uppercaseLetters.length > 5 ? uppercaseLetters.substring(0, 5) : uppercaseLetters;
+    }
+
+    // Fallback if title doesn't contain multiple capital letters
+    final words = clean.split(RegExp(r'\s+'));
+    if (words.length > 1) {
+      final abbr = words.map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
+      return abbr.length > 4 ? abbr.substring(0, 4) : abbr;
+    }
+    return clean.length > 4 ? clean.substring(0, 4).toUpperCase() : clean.toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     final sapProvider = Provider.of<SapProvider>(context);
     final isConnected = sapProvider.isConnected;
     final overallPct = sapProvider.overallPercentage;
-    final pctColor = overallPct >= 75 ? Colors.greenAccent : Colors.redAccent;
+    final pctColor = overallPct >= sapProvider.attendanceThreshold ? const Color(0xFF4CD97B) : const Color(0xFFFF5252);
+    final records = sapProvider.attendanceRecords;
 
     return GestureDetector(
       onTap: () {
@@ -27,7 +47,7 @@ class SapSyncEntryCard extends StatelessWidget {
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF2C2C2C), Color(0xFF1A1A1A)],
@@ -35,7 +55,6 @@ class SapSyncEntryCard extends StatelessWidget {
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: isConnected ? Border.all(color: pctColor.withOpacity(0.3), width: 1.5) : null,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.3),
@@ -45,79 +64,108 @@ class SapSyncEntryCard extends StatelessWidget {
           ],
         ),
         child: isConnected
-            ? Row(
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Text(
-                              'SAPSYNC',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.5,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: pctColor.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                overallPct >= 75 ? 'Good Standing' : 'Low Attendance',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: pctColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          sapProvider.attendanceRecords.isNotEmpty
-                              ? '${sapProvider.totalPresentClasses} / ${sapProvider.totalClassesCount} Classes Attended'
-                              : 'Tap to view attendance',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[400],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  if (sapProvider.attendanceRecords.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: pctColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: pctColor.withOpacity(0.4)),
-                      ),
-                      child: Text(
-                        '${overallPct.toStringAsFixed(1)}%',
+                  // Top Row: Title & Total Classes
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Attendance',
                         style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: pctColor,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                          color: Colors.white,
                         ),
                       ),
-                    )
-                  else
-                    const Icon(
-                      CupertinoIcons.chevron_right,
-                      color: Colors.grey,
-                      size: 22,
+                      Row(
+                        children: [
+                          Text(
+                            '${sapProvider.totalPresentClasses}/${sapProvider.totalClassesCount} Classes',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[400],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            CupertinoIcons.chevron_right,
+                            color: Colors.grey,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // Equalizer Columns for Subjects (Horizontal Scrollable, 125px Height, 25px Width)
+                  if (records.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      height: 125,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: List.generate(records.length, (index) {
+                            final rec = records[index];
+                            final pct = rec.percentage;
+                            final threshold = sapProvider.attendanceThreshold;
+                            final col = pct >= threshold
+                                ? const Color(0xFF4CD97B)
+                                : pct >= threshold - 10
+                                    ? Colors.amberAccent
+                                    : const Color(0xFFFF5252);
+                            final abbr = _getAbbreviation(rec.subject);
+                            final barHeight = (pct / 100.0 * 80.0).clamp(14.0, 80.0);
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${pct.toInt()}%',
+                                    style: TextStyle(
+                                      color: Colors.grey[400],
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    width: 25,
+                                    height: barHeight,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [col, col.withOpacity(0.5)],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    abbr,
+                                    style: TextStyle(
+                                      color: Colors.grey[400],
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
                     ),
+                  ],
                 ],
               )
             : Row(

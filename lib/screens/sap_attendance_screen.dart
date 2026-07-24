@@ -4,6 +4,7 @@ import '../provider/sap_provider.dart';
 import '../models/sap/attendance_record.dart';
 import '../widgets/radial_segment_chart.dart';
 import '../widgets/sleek_attendance_card.dart';
+import '../widgets/sap_hero_visualization.dart';
 
 class SapAttendanceScreen extends StatefulWidget {
   const SapAttendanceScreen({super.key});
@@ -14,6 +15,7 @@ class SapAttendanceScreen extends StatefulWidget {
 
 class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
   int? _selectedIndex;
+  SapHeroStyle _heroStyle = SapHeroStyle.bentoGrid;
 
   @override
   Widget build(BuildContext context) {
@@ -91,52 +93,25 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           children: [
-                            // Hero Radial Segment Chart Container
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF1E222B), Color(0xFF16181F)],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(28),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.08),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.4),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                children: [
-                                  RadialSegmentChart(
-                                    records: records,
-                                    overallPercentage: overallPct,
-                                    selectedIndex: _selectedIndex,
-                                    onSegmentSelected: (index) {
-                                      setState(() {
-                                        _selectedIndex = _selectedIndex == index ? null : index;
-                                      });
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    '${sapProvider.totalPresentClasses} of ${sapProvider.totalClassesCount} total classes attended across ${records.length} subjects',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.grey[400],
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            // Hero Visualization Header (4 Switchable Modes)
+                            SapHeroVisualization(
+                              records: records,
+                              overallPercentage: overallPct,
+                              totalPresent: sapProvider.totalPresentClasses,
+                              totalClasses: sapProvider.totalClassesCount,
+                              threshold: sapProvider.attendanceThreshold,
+                              selectedIndex: _selectedIndex,
+                              onSegmentSelected: (index) {
+                                setState(() {
+                                  _selectedIndex = _selectedIndex == index ? null : index;
+                                });
+                              },
+                              activeStyle: _heroStyle,
+                              onStyleChanged: (newStyle) {
+                                setState(() {
+                                  _heroStyle = newStyle;
+                                });
+                              },
                             ),
                             const SizedBox(height: 20),
 
@@ -172,6 +147,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                               return SleekAttendanceCard(
                                 record: record,
                                 isSelected: isSelected,
+                                threshold: sapProvider.attendanceThreshold,
                                 onTap: () {
                                   setState(() {
                                     _selectedIndex = isSelected ? null : index;
@@ -193,6 +169,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF16181F),
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -220,6 +197,8 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
+
+              // Active Session Info
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -239,7 +218,69 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Attendance Threshold Setting Slider
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: StatefulBuilder(
+                  builder: (context, setModalState) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Attendance Threshold', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                            Text(
+                              '${sapProvider.attendanceThreshold.toInt()}%',
+                              style: const TextStyle(color: Color(0xFF4CD97B), fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        SliderTheme(
+                          data: SliderThemeData(
+                            activeTrackColor: const Color(0xFF4CD97B),
+                            inactiveTrackColor: Colors.grey[800],
+                            thumbColor: const Color(0xFF4CD97B),
+                            overlayColor: const Color(0xFF4CD97B).withOpacity(0.2),
+                            valueIndicatorColor: const Color(0xFF4CD97B),
+                            valueIndicatorTextStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                          ),
+                          child: Slider(
+                            value: sapProvider.attendanceThreshold,
+                            min: 60.0,
+                            max: 90.0,
+                            divisions: 6,
+                            label: '${sapProvider.attendanceThreshold.toInt()}%',
+                            onChanged: (val) {
+                              setModalState(() {});
+                              sapProvider.setAttendanceThreshold(val);
+                            },
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Text('60%', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                            Text('75% (Target)', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                            Text('90%', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
               const SizedBox(height: 24),
+
+              // Disconnect SapSync Button
               ElevatedButton.icon(
                 onPressed: () async {
                   final confirm = await showDialog<bool>(

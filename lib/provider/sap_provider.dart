@@ -18,6 +18,7 @@ class SapProvider with ChangeNotifier {
   
   String _termYear = '';
   String _sessionKey = '';
+  double _attendanceThreshold = 75.0;
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
@@ -27,6 +28,7 @@ class SapProvider with ChangeNotifier {
   List<AttendanceRecord> get attendanceRecords => _attendanceRecords;
   String get termYear => _termYear;
   String get sessionKey => _sessionKey;
+  double get attendanceThreshold => _attendanceThreshold;
 
   int get totalPresentClasses => _attendanceRecords.fold(0, (sum, r) => sum + r.presentClasses);
   int get totalClassesCount => _attendanceRecords.fold(0, (sum, r) => sum + r.totalClasses);
@@ -38,6 +40,7 @@ class SapProvider with ChangeNotifier {
 
   Future<void> _checkInitialConnection() async {
     _isConnected = await _authService.hasCredentials();
+    _attendanceThreshold = await _authService.getThreshold();
     if (_isConnected) {
       final sessionInfo = await _authService.getSessionInfo();
       if (sessionInfo != null) {
@@ -48,6 +51,12 @@ class SapProvider with ChangeNotifier {
         await _loadFromCache();
       }
     }
+    notifyListeners();
+  }
+
+  Future<void> setAttendanceThreshold(double threshold) async {
+    _attendanceThreshold = threshold;
+    await _authService.saveThreshold(threshold);
     notifyListeners();
   }
 
