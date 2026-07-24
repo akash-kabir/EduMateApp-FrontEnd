@@ -5,6 +5,7 @@ class AttendanceRecord {
   final int presentClasses;
   final String semesterId;
   final DateTime lastSyncedAt;
+  final String? facultyName;
 
   AttendanceRecord({
     this.id,
@@ -13,6 +14,7 @@ class AttendanceRecord {
     required this.presentClasses,
     required this.semesterId,
     required this.lastSyncedAt,
+    this.facultyName,
   });
 
   double get percentage => totalClasses == 0 ? 0.0 : (presentClasses / totalClasses) * 100;
@@ -25,6 +27,7 @@ class AttendanceRecord {
       'presentClasses': presentClasses,
       'semesterId': semesterId,
       'lastSyncedAt': lastSyncedAt.toIso8601String(),
+      'facultyName': facultyName,
     };
   }
 
@@ -36,6 +39,7 @@ class AttendanceRecord {
       presentClasses: map['presentClasses'],
       semesterId: map['semesterId'],
       lastSyncedAt: DateTime.parse(map['lastSyncedAt']),
+      facultyName: map['facultyName'],
     );
   }
 }

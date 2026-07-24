@@ -18,9 +18,10 @@ class SapWebViewScraper {
   Completer<String?>? _pendingAttendanceCompleter;
 
   Future<void> init() async {
-    if (_headlessWebView != null) return; // Already initialized
+    if (_headlessWebView != null && _controller != null) return; // Already initialized
 
     _extractorJs = await rootBundle.loadString('assets/js/attendance_extractor.js');
+    final controllerCompleter = Completer<void>();
 
     _headlessWebView = HeadlessInAppWebView(
       initialUrlRequest: URLRequest(url: WebUri('https://kiitportal.kiituniversity.net/irj/portal/')),
@@ -47,6 +48,9 @@ class SapWebViewScraper {
              _pendingAttendanceCompleter!.complete(args[0]?.toString());
           }
         });
+        if (!controllerCompleter.isCompleted) {
+          controllerCompleter.complete();
+        }
       },
       onLoadStop: (controller, url) {
         isPageLoaded.value = false;
@@ -66,6 +70,7 @@ class SapWebViewScraper {
     );
 
     await _headlessWebView?.run();
+    await controllerCompleter.future.timeout(const Duration(seconds: 10), onTimeout: () {});
   }
 
   Future<bool> waitForPageLoad({Duration timeout = const Duration(seconds: 15)}) async {
@@ -108,7 +113,22 @@ class SapWebViewScraper {
       await init();
     }
 
-    // Always navigate to portal home to start from a clean state
+    // 1. Check if we are ALREADY logged into the portal on the Overview page
+    try {
+      final currentTitle = await _controller?.evaluateJavascript(source: 'document.title');
+      final currentUrl = await _controller?.getUrl();
+      if (currentTitle is String &&
+          currentTitle.contains('Overview') &&
+          currentUrl != null &&
+          currentUrl.toString().contains('kiitportal.kiituniversity.net')) {
+        print('SAP_DEBUG [Scraper]: Already logged into portal (Overview active). Skipping re-login.');
+        return true;
+      }
+    } catch (e) {
+      // Ignore evaluation errors and proceed with normal navigation
+    }
+
+    // 2. Navigate to portal home to load the login page
     isPageLoaded.value = false;
     await _controller?.loadUrl(
       urlRequest: URLRequest(
@@ -117,7 +137,14 @@ class SapWebViewScraper {
     );
     await waitForPageLoad(timeout: const Duration(seconds: 15));
 
-    // Check if #logonuidfield is ready
+    // 3. Check if we reached Overview directly via an existing active session
+    final loadedTitle = await _controller?.evaluateJavascript(source: 'document.title');
+    if (loadedTitle is String && loadedTitle.contains('Overview')) {
+      print('SAP_DEBUG [Scraper]: Session active, reached Overview directly.');
+      return true;
+    }
+
+    // 4. Check if #logonuidfield is ready
     bool loginFieldReady = false;
     for (int i = 0; i < 15; i++) {
       final exists = await _controller?.evaluateJavascript(
@@ -130,33 +157,8 @@ class SapWebViewScraper {
       await Future.delayed(const Duration(milliseconds: 300));
     }
 
-    // If logon field is not present, we might be auto-logged in from an old session cookie
     if (!loginFieldReady) {
-      print('SAP_DEBUG [Scraper]: Login field not found, clearing session cookies and reloading...');
-      await clearSessionData();
-      isPageLoaded.value = false;
-      await _controller?.loadUrl(
-        urlRequest: URLRequest(
-          url: WebUri('https://kiitportal.kiituniversity.net/irj/portal/'),
-        ),
-      );
-      await waitForPageLoad(timeout: const Duration(seconds: 15));
-
-      // Wait again for login field
-      for (int i = 0; i < 15; i++) {
-        final exists = await _controller?.evaluateJavascript(
-          source: "document.querySelector('#logonuidfield') !== null",
-        );
-        if (exists == true) {
-          loginFieldReady = true;
-          break;
-        }
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
-    }
-
-    if (!loginFieldReady) {
-      print('SAP_DEBUG [Scraper]: Failed to render login form.');
+      print('SAP_DEBUG [Scraper]: Login field not found and session not active.');
       return false;
     }
 

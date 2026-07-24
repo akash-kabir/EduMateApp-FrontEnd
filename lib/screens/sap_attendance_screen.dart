@@ -2,92 +2,185 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../provider/sap_provider.dart';
 import '../models/sap/attendance_record.dart';
+import '../widgets/radial_segment_chart.dart';
+import '../widgets/sleek_attendance_card.dart';
 
-class SapAttendanceScreen extends StatelessWidget {
+class SapAttendanceScreen extends StatefulWidget {
   const SapAttendanceScreen({super.key});
+
+  @override
+  State<SapAttendanceScreen> createState() => _SapAttendanceScreenState();
+}
+
+class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
+  int? _selectedIndex;
 
   @override
   Widget build(BuildContext context) {
     final sapProvider = Provider.of<SapProvider>(context);
+    final records = sapProvider.attendanceRecords;
+    final overallPct = sapProvider.overallPercentage;
 
     return Scaffold(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: const Color(0xFF121417),
       appBar: AppBar(
-        title: const Text('SapSync Attendance', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'SapSync Attendance',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () => sapProvider.fetchAttendance(),
+            tooltip: 'Sync Attendance',
           ),
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () => _showSettingsModal(context, sapProvider),
+            tooltip: 'SapSync Settings',
           ),
         ],
       ),
       body: Column(
         children: [
-          // Dropdown Header
-          if (sapProvider.availableSemesters.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[800],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<SemesterOption>(
-                    dropdownColor: Colors.grey[800],
-                    value: sapProvider.currentSemester,
-                    isExpanded: true,
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                    onChanged: (SemesterOption? newValue) {
-                      if (newValue != null) {
-                        sapProvider.changeSemester(newValue);
-                      }
-                    },
-                    items: sapProvider.availableSemesters.map<DropdownMenuItem<SemesterOption>>((SemesterOption value) {
-                      return DropdownMenuItem<SemesterOption>(
-                        value: value,
-                        child: Text(value.title),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ),
-            
-          // Error Message
+          // 1. Error Banner (if any)
           if (sapProvider.errorMessage.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+              ),
               child: Text(
                 sapProvider.errorMessage,
-                style: const TextStyle(color: Colors.redAccent),
+                style: const TextStyle(color: Colors.redAccent, fontSize: 13),
               ),
             ),
 
-          // Content
+          // 2. Main Content
           Expanded(
-            child: sapProvider.isLoading && sapProvider.attendanceRecords.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : sapProvider.attendanceRecords.isEmpty
-                    ? const Center(child: Text('No attendance data available', style: TextStyle(color: Colors.grey)))
+            child: sapProvider.isLoading && records.isEmpty
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF4CD97B),
+                    ),
+                  )
+                : records.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No attendance data available.\nTap refresh to sync.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
                     : RefreshIndicator(
+                        color: const Color(0xFF4CD97B),
+                        backgroundColor: const Color(0xFF1C1C1E),
                         onRefresh: () => sapProvider.fetchAttendance(),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: sapProvider.attendanceRecords.length,
-                          itemBuilder: (context, index) {
-                            final record = sapProvider.attendanceRecords[index];
-                            return _buildAttendanceCard(record);
-                          },
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          children: [
+                            // Hero Radial Segment Chart Container
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF1E222B), Color(0xFF16181F)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(28),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.08),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.4),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  RadialSegmentChart(
+                                    records: records,
+                                    overallPercentage: overallPct,
+                                    selectedIndex: _selectedIndex,
+                                    onSegmentSelected: (index) {
+                                      setState(() {
+                                        _selectedIndex = _selectedIndex == index ? null : index;
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    '${sapProvider.totalPresentClasses} of ${sapProvider.totalClassesCount} total classes attended across ${records.length} subjects',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.grey[400],
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Section Title
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Subject Attendance',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                Text(
+                                  '${records.length} Subjects',
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Subject List Cards
+                            ...List.generate(records.length, (index) {
+                              final record = records[index];
+                              final isSelected = _selectedIndex == index;
+                              return SleekAttendanceCard(
+                                record: record,
+                                isSelected: isSelected,
+                                onTap: () {
+                                  setState(() {
+                                    _selectedIndex = isSelected ? null : index;
+                                  });
+                                },
+                              );
+                            }),
+                            const SizedBox(height: 24),
+                          ],
                         ),
                       ),
           ),
@@ -96,70 +189,10 @@ class SapAttendanceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAttendanceCard(AttendanceRecord record) {
-    final percentage = record.percentage;
-    final color = percentage >= 75 ? Colors.greenAccent : Colors.redAccent;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  record.subject,
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Present: ${record.presentClasses} / ${record.totalClasses}',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                height: 60,
-                width: 60,
-                child: CircularProgressIndicator(
-                  value: record.totalClasses == 0 ? 0 : record.presentClasses / record.totalClasses,
-                  backgroundColor: Colors.grey[700],
-                  color: color,
-                  strokeWidth: 6,
-                ),
-              ),
-              Text(
-                '${percentage.toStringAsFixed(0)}%',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
   void _showSettingsModal(BuildContext context, SapProvider sapProvider) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: const Color(0xFF16181F),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -190,8 +223,9 @@ class SapAttendanceScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[850],
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,7 +245,7 @@ class SapAttendanceScreen extends StatelessWidget {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      backgroundColor: Colors.grey[850],
+                      backgroundColor: const Color(0xFF1C1C1E),
                       title: const Text('Disconnect SapSync?', style: TextStyle(color: Colors.white)),
                       content: const Text(
                         'This will remove your stored SAP credentials and clear all local attendance data for SapSync. Your main EduMate account will not be affected.',
@@ -241,9 +275,9 @@ class SapAttendanceScreen extends StatelessWidget {
                 icon: const Icon(Icons.link_off, color: Colors.white),
                 label: const Text('Disconnect SapSync', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: const Color(0xFFFF5252),
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
               ),
               const SizedBox(height: 12),

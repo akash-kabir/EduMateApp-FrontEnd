@@ -138,6 +138,7 @@ class SapProvider with ChangeNotifier {
             presentClasses: (double.tryParse(row['present'].toString()) ?? 0).toInt(),
             semesterId: _currentSemester!.id,
             lastSyncedAt: DateTime.now(),
+            facultyName: row['facultyName']?.toString(),
           ));
         }
 

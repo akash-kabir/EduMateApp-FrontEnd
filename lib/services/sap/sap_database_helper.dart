@@ -20,8 +20,9 @@ class SapDatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -37,9 +38,20 @@ CREATE TABLE attendance_records (
   totalClasses $intType,
   presentClasses $intType,
   semesterId $textType,
-  lastSyncedAt $textType
+  lastSyncedAt $textType,
+  facultyName TEXT
 )
 ''');
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE attendance_records ADD COLUMN facultyName TEXT');
+      } catch (e) {
+        // Ignore if column already exists
+      }
+    }
   }
 
   Future<void> insertBatch(List<AttendanceRecord> records) async {
