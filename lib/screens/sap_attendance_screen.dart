@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../provider/sap_provider.dart';
 import '../models/sap/attendance_record.dart';
@@ -38,11 +39,6 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => sapProvider.fetchAttendance(),
-            tooltip: 'Sync Attendance',
-          ),
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () => _showSettingsModal(context, sapProvider),
@@ -165,6 +161,48 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
     );
   }
 
+  String _formatAcademicYear(String rawTitle, String userId) {
+    if (rawTitle.isEmpty) return 'Not configured';
+    final yearMatch = RegExp(r'(\d{4})-\d{4}').firstMatch(rawTitle);
+    if (yearMatch != null) {
+      final startYear = int.tryParse(yearMatch.group(1)!) ?? 2024;
+      int studentStartYear = 2024;
+      if (userId.length >= 2) {
+        final prefix = int.tryParse(userId.substring(0, 2));
+        if (prefix != null && prefix >= 15 && prefix <= 30) {
+          studentStartYear = 2000 + prefix;
+        }
+      }
+      final yearDiff = startYear - studentStartYear + 1;
+      String yearName = '1st Year';
+      if (yearDiff == 2) yearName = '2nd Year';
+      else if (yearDiff == 3) yearName = '3rd Year';
+      else if (yearDiff >= 4) yearName = '4th Year';
+
+      final isSpring = rawTitle.toLowerCase().contains('spring');
+      final sessionName = isSpring ? 'Spring Session' : 'Autumn Session';
+      return '$yearName • $sessionName';
+    }
+    return rawTitle;
+  }
+
+  List<Map<String, String>> _getTermOptions(String userId) {
+    int studentStartYear = 2024;
+    if (userId.length >= 2) {
+      final prefix = int.tryParse(userId.substring(0, 2));
+      if (prefix != null && prefix >= 15 && prefix <= 35) {
+        studentStartYear = 2000 + prefix;
+      }
+    }
+
+    return [
+      {'label': '1st Year', 'year': '$studentStartYear-${studentStartYear + 1}'},
+      {'label': '2nd Year', 'year': '${studentStartYear + 1}-${studentStartYear + 2}'},
+      {'label': '3rd Year', 'year': '${studentStartYear + 2}-${studentStartYear + 3}'},
+      {'label': '4th Year', 'year': '${studentStartYear + 3}-${studentStartYear + 4}'},
+    ];
+  }
+
   void _showSettingsModal(BuildContext context, SapProvider sapProvider) {
     showModalBottomSheet(
       context: context,
@@ -198,7 +236,26 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Active Session Info
+              // 1. Sync Attendance Button
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  sapProvider.fetchAttendance();
+                },
+                icon: const Icon(Icons.refresh, color: Colors.black),
+                label: const Text(
+                  'Sync / Refresh Attendance',
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4CD97B),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 2. Term & Session Switcher Card with Cupertino Sliding Segmented Controls
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -209,11 +266,88 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Active Session', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text(
-                      sapProvider.currentSemester?.title ?? 'Not configured',
-                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                    Text('Academic Term', style: TextStyle(color: Colors.grey[400], fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: CupertinoSlidingSegmentedControl<String>(
+                        groupValue: sapProvider.termYear.isEmpty
+                            ? _getTermOptions(sapProvider.sapUserId).first['year']
+                            : sapProvider.termYear,
+                        backgroundColor: const Color(0xFF2C2C2E),
+                        thumbColor: const Color(0xFF4CD97B),
+                        children: Map.fromEntries(
+                          _getTermOptions(sapProvider.sapUserId).map((opt) {
+                            final isSel = sapProvider.termYear == opt['year'] ||
+                                (sapProvider.termYear.isEmpty && opt == _getTermOptions(sapProvider.sapUserId).first);
+                            return MapEntry(
+                              opt['year']!,
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Text(
+                                  opt['label']!,
+                                  style: TextStyle(
+                                    color: isSel ? Colors.black : Colors.grey[300],
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                        onValueChanged: (val) {
+                          if (val != null) {
+                            sapProvider.updateSession(
+                              val,
+                              sapProvider.sessionKey.isEmpty ? 'Autumn' : sapProvider.sessionKey,
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Session', style: TextStyle(color: Colors.grey[400], fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: CupertinoSlidingSegmentedControl<String>(
+                        groupValue: sapProvider.sessionKey.toLowerCase() == 'spring' ? 'Spring' : 'Autumn',
+                        backgroundColor: const Color(0xFF2C2C2E),
+                        thumbColor: const Color(0xFF4CD97B),
+                        children: {
+                          'Autumn': Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'Autumn Session',
+                              style: TextStyle(
+                                color: sapProvider.sessionKey.toLowerCase() != 'spring' ? Colors.black : Colors.grey[300],
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          'Spring': Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'Spring Session',
+                              style: TextStyle(
+                                color: sapProvider.sessionKey.toLowerCase() == 'spring' ? Colors.black : Colors.grey[300],
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        },
+                        onValueChanged: (val) {
+                          if (val != null) {
+                            final curYear = sapProvider.termYear.isEmpty
+                                ? _getTermOptions(sapProvider.sapUserId).first['year']!
+                                : sapProvider.termYear;
+                            sapProvider.updateSession(curYear, val);
+                          }
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -255,9 +389,9 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                           ),
                           child: Slider(
                             value: sapProvider.attendanceThreshold,
-                            min: 60.0,
-                            max: 90.0,
-                            divisions: 6,
+                            min: 0.0,
+                            max: 100.0,
+                            divisions: 100,
                             label: '${sapProvider.attendanceThreshold.toInt()}%',
                             onChanged: (val) {
                               setModalState(() {});
@@ -268,9 +402,9 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: const [
-                            Text('60%', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                            Text('0%', style: TextStyle(color: Colors.grey, fontSize: 11)),
                             Text('75% (Target)', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                            Text('90%', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                            Text('100%', style: TextStyle(color: Colors.grey, fontSize: 11)),
                           ],
                         ),
                       ],

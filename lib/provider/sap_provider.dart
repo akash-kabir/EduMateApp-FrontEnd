@@ -16,6 +16,7 @@ class SapProvider with ChangeNotifier {
   SemesterOption? _currentSemester;
   List<AttendanceRecord> _attendanceRecords = [];
   
+  String _userId = '';
   String _termYear = '';
   String _sessionKey = '';
   double _attendanceThreshold = 75.0;
@@ -26,6 +27,7 @@ class SapProvider with ChangeNotifier {
   List<SemesterOption> get availableSemesters => _availableSemesters;
   SemesterOption? get currentSemester => _currentSemester;
   List<AttendanceRecord> get attendanceRecords => _attendanceRecords;
+  String get sapUserId => _userId;
   String get termYear => _termYear;
   String get sessionKey => _sessionKey;
   double get attendanceThreshold => _attendanceThreshold;
@@ -42,6 +44,10 @@ class SapProvider with ChangeNotifier {
     _isConnected = await _authService.hasCredentials();
     _attendanceThreshold = await _authService.getThreshold();
     if (_isConnected) {
+      final creds = await _authService.getCredentials();
+      if (creds != null) {
+        _userId = creds['userId'] ?? '';
+      }
       final sessionInfo = await _authService.getSessionInfo();
       if (sessionInfo != null) {
         _termYear = sessionInfo['termYear'] ?? '';
@@ -178,6 +184,16 @@ class SapProvider with ChangeNotifier {
       _attendanceRecords = await SapDatabaseHelper.instance.getAttendanceForSemester(_currentSemester!.id);
       print('SAP_DEBUG [Provider]: Loaded ${_attendanceRecords.length} records from DB');
     }
+  }
+
+  Future<void> updateSession(String termYear, String sessionKey) async {
+    _termYear = termYear;
+    _sessionKey = sessionKey;
+    await _authService.saveSessionInfo(termYear, sessionKey);
+    _currentSemester = SemesterOption(id: '$termYear-$sessionKey', title: '$termYear Session $sessionKey');
+    _availableSemesters = [_currentSemester!];
+    notifyListeners();
+    await fetchAttendance();
   }
 
   Future<void> changeSemester(SemesterOption newSemester) async {

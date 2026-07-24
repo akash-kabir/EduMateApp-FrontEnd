@@ -39,4 +39,7 @@ class Config {
 
   // Elective endpoints
   static const String electiveBaseEndpoint = "$BASE_URL/api/elective";
+
+  // Student Data endpoints
+  static const String studentDataBaseEndpoint = "$BASE_URL/api/student-data";
 }

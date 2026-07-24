@@ -78,47 +78,6 @@ class SapHeroVisualization extends StatelessWidget {
     );
   }
 
-  String _getStyleName(SapHeroStyle style) {
-    switch (style) {
-      case SapHeroStyle.segmentedBar:
-        return 'Segmented Bar';
-      case SapHeroStyle.equalizerColumns:
-        return 'Equalizer';
-      case SapHeroStyle.bentoGrid:
-        return 'Bento Grid';
-      case SapHeroStyle.chipsCarousel:
-        return 'Chips Hub';
-    }
-  }
-
-  PopupMenuItem<SapHeroStyle> _buildMenuItem(SapHeroStyle style, String title) {
-    final isSelected = activeStyle == style;
-    return PopupMenuItem<SapHeroStyle>(
-      value: style,
-      child: Text(
-        title,
-        style: TextStyle(
-          color: isSelected ? const Color(0xFF4CD97B) : Colors.white,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActiveStyleContent() {
-    switch (activeStyle) {
-      case SapHeroStyle.segmentedBar:
-        return _buildSegmentedBarStyle();
-      case SapHeroStyle.equalizerColumns:
-        return _buildEqualizerColumnsStyle();
-      case SapHeroStyle.bentoGrid:
-        return _buildBentoGridStyle();
-      case SapHeroStyle.chipsCarousel:
-        return _buildChipsCarouselStyle();
-    }
-  }
-
   // ================= STYLE 1: SEGMENTED MULTI-COLOR PROGRESS BAR =================
   Widget _buildSegmentedBarStyle() {
     return Column(

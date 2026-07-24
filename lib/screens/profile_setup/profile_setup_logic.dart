@@ -5,6 +5,7 @@ import '../../config.dart';
 import '../../constants/app_constants.dart';
 import '../../services/api_service.dart';
 import '../../services/shared_preferences_service.dart';
+import '../../services/student_data_service.dart';
 
 class ProfileSetupLogic extends ChangeNotifier {
   final TextEditingController firstNameController = TextEditingController();
@@ -15,10 +16,18 @@ class ProfileSetupLogic extends ChangeNotifier {
   String? selectedBranch;
   String? selectedSection;
   String? selectedSemester;
+  List<String> detectedElectives = [];
   
   bool isLoading = false;
   List<String> dynamicSections = [];
   bool loadingSections = false;
+  
+  // Auto-setup state
+  bool isKiitEmail = false;
+  String? detectedRollNo;
+  bool isSearching = false;
+  bool autoSetupSuccess = false;
+  String? autoSetupError;
   
   final String? userId;
   final String? token;
@@ -30,7 +39,7 @@ class ProfileSetupLogic extends ChangeNotifier {
     this.onKiitEmailPrefilled,
   }) {
     _loadNameFromPrefs();
-    _prefilDataFromKiitEmail();
+    _detectRollNoFromEmail();
   }
 
   Future<void> _loadNameFromPrefs() async {
@@ -46,39 +55,60 @@ class ProfileSetupLogic extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _prefilDataFromKiitEmail() async {
+  /// Detect roll number from KIIT email. Does NOT auto-search — just prepares the roll number.
+  Future<void> _detectRollNoFromEmail() async {
     final email = await SharedPreferencesService.getUserEmail();
 
     if (email != null && email.endsWith(ProfileSetupConstants.kiitEmailDomain)) {
       final rollNo = email.split('@')[0];
+      isKiitEmail = true;
+      detectedRollNo = rollNo;
       rollNoController.text = rollNo;
-
-      if (rollNo.length >= 2) {
-        final admissionYearStr = rollNo.substring(0, 2);
-        final admissionYear = int.tryParse(admissionYearStr);
-
-        if (admissionYear != null) {
-          final currentYear = DateTime.now().year;
-          final currentMonth = DateTime.now().month;
-
-          final academicYear = currentMonth >= ProfileSetupConstants.academicYearStartMonth
-              ? currentYear
-              : currentYear - 1;
-
-          final fullAdmissionYear = ProfileSetupConstants.yearBaseValue + admissionYear;
-          int yearNumber = academicYear - fullAdmissionYear + 1;
-
-          if (yearNumber >= ProfileSetupConstants.minAcademicYear &&
-              yearNumber <= ProfileSetupConstants.maxAcademicYear) {
-            selectedYear = ProfileSetupConstants.academicYears[yearNumber - 1];
-          }
-        }
-      }
       notifyListeners();
+    }
+  }
+
+  /// Auto-setup from roll number: calls the lookup API and populates fields.
+  /// Returns true if data was found and populated, false otherwise.
+  Future<bool> autoSetupFromRollNo(String rollNo) async {
+    isSearching = true;
+    autoSetupSuccess = false;
+    autoSetupError = null;
+    notifyListeners();
+
+    try {
+      final result = await StudentDataService.lookupRollNo(rollNo.trim());
       
-      if (onKiitEmailPrefilled != null) {
-        onKiitEmailPrefilled!();
+      if (result['success'] == true && result['data'] != null) {
+        final data = result['data'];
+        
+        selectedYear = data['year'];
+        selectedSemester = data['semester'];
+        selectedBranch = data['branch'];
+        selectedSection = data['section'];
+        rollNoController.text = data['rollNo'] ?? rollNo;
+        
+        if (data['electives'] != null && data['electives'] is List) {
+          detectedElectives = List<String>.from(data['electives']);
+        }
+        
+        autoSetupSuccess = true;
+        isSearching = false;
+        notifyListeners();
+        return true;
+      } else {
+        autoSetupError = result['message'] ?? 'Roll number not found';
+        autoSetupSuccess = false;
+        isSearching = false;
+        notifyListeners();
+        return false;
       }
+    } catch (e) {
+      autoSetupError = 'Error searching: $e';
+      autoSetupSuccess = false;
+      isSearching = false;
+      notifyListeners();
+      return false;
     }
   }
 
@@ -141,18 +171,25 @@ class ProfileSetupLogic extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final profileData = {
+        'rollNo': rollNoController.text.trim(),
+        'year': selectedYear!,
+        'semester': selectedSemester!,
+        'branch': selectedBranch!,
+        'section': selectedSection!,
+        'firstName': firstNameController.text.trim(),
+        'lastName': lastNameController.text.trim(),
+        'isProfileCompleted': true,
+      };
+
+      // Include electives if detected
+      if (detectedElectives.isNotEmpty) {
+        profileData['electives'] = detectedElectives;
+      }
+
       final result = await ApiService.updateUserProfileWithFields(
         token: token!,
-        profileData: {
-          'rollNo': rollNoController.text.trim(),
-          'year': selectedYear!,
-          'semester': selectedSemester!,
-          'branch': selectedBranch!,
-          'section': selectedSection!,
-          'firstName': firstNameController.text.trim(),
-          'lastName': lastNameController.text.trim(),
-          'isProfileCompleted': true,
-        },
+        profileData: profileData,
       );
 
       if (result['success'] ?? false) {
@@ -162,17 +199,19 @@ class ProfileSetupLogic extends ChangeNotifier {
             responseData['data'] as Map<String, dynamic>,
           );
         } else {
-          await SharedPreferencesService.saveFullUserProfile({
-            'firstName': firstNameController.text.trim(),
-            'lastName': lastNameController.text.trim(),
-            'rollNo': rollNoController.text.trim(),
-            'branch': selectedBranch!,
-            'section': selectedSection!,
-            'year': selectedYear!,
-            'semester': selectedSemester!,
-            'isProfileCompleted': true,
-          });
+          final localProfile = Map<String, dynamic>.from(profileData);
+          if (detectedElectives.isNotEmpty) {
+            localProfile['electives'] = detectedElectives;
+          }
+          await SharedPreferencesService.saveFullUserProfile(localProfile);
         }
+
+        // Also save timesheet preferences so schedule loads correctly
+        await SharedPreferencesService.setString('timesheet_branch', selectedBranch!);
+        await SharedPreferencesService.setString('timesheet_semester', selectedSemester!);
+        await SharedPreferencesService.setString('timesheet_section', selectedSection!);
+        await SharedPreferencesService.setString('timesheet_year', selectedYear!);
+        await SharedPreferencesService.setBool('timesheet_save_preference', true);
       }
       return result;
     } catch (e) {

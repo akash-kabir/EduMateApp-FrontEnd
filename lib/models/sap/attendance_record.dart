@@ -19,6 +19,30 @@ class AttendanceRecord {
 
   double get percentage => totalClasses == 0 ? 0.0 : (presentClasses / totalClasses) * 100;
 
+  double simulateAttendNext() {
+    return ((presentClasses + 1) / (totalClasses + 1)) * 100;
+  }
+
+  double simulateSkipNext() {
+    return (presentClasses / (totalClasses + 1)) * 100;
+  }
+
+  int classesNeededToReach(double threshold) {
+    if (percentage >= threshold) return 0;
+    if (threshold >= 100) return 999;
+    final num = (threshold * totalClasses) - (100 * presentClasses);
+    final den = 100 - threshold;
+    final needed = (num / den).ceil();
+    return needed < 0 ? 0 : needed;
+  }
+
+  int classesAllowedToSkip(double threshold) {
+    if (percentage < threshold || threshold <= 0) return 0;
+    final maxTotal = (100 * presentClasses) / threshold;
+    final allowed = (maxTotal - totalClasses).floor();
+    return allowed < 0 ? 0 : allowed;
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,

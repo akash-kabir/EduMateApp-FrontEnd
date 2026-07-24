@@ -5,6 +5,7 @@ import 'curriculum_management_screen.dart';
 import 'schedule_management_screen.dart';
 import 'admin_poi_management.dart';
 import 'admin_holiday_management.dart';
+import 'admin_student_data_management.dart';
 
 class AdminUploadScreen extends StatelessWidget {
   const AdminUploadScreen({super.key});
@@ -166,6 +167,22 @@ class AdminUploadScreen extends StatelessWidget {
                     );
                   },
                 ),
+                const SizedBox(height: 10),
+                _DataManagementCard(
+                  title: 'Student Data',
+                  subtitle: 'Roll number to section & elective mappings',
+                  iconColor: const Color(0xFF06B6D4),
+                  icon: CupertinoIcons.person_2_fill,
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const AdminStudentDataManagementScreen(),
+                      ),
+                    );
+                  },
+                ),
                 const SizedBox(height: 100),
               ]),
             ),
@@ -178,6 +195,7 @@ class AdminUploadScreen extends StatelessWidget {
 
 class _DataManagementCard extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final Color iconColor;
   final IconData icon;
   final bool isDark;
@@ -185,6 +203,7 @@ class _DataManagementCard extends StatelessWidget {
 
   const _DataManagementCard({
     required this.title,
+    this.subtitle,
     required this.iconColor,
     required this.icon,
     required this.isDark,
@@ -238,15 +257,31 @@ class _DataManagementCard extends StatelessWidget {
             ),
             const SizedBox(width: 14),
 
-            // Title
+            // Title & Subtitle
             Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF111827),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             const SizedBox(width: 8),
