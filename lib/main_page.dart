@@ -14,6 +14,8 @@ import 'services/shared_preferences_service.dart';
 import 'services/token_refresh_service.dart';
 import 'config.dart';
 import 'screens/auth/getting_started_screen.dart';
+import 'package:provider/provider.dart';
+import 'provider/sap_provider.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -78,6 +80,10 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     _pollingTimer?.cancel();
     await SharedPreferencesService.clearUserData();
     if (!mounted) return;
+    
+    // Clear SAP provider data
+    await Provider.of<SapProvider>(context, listen: false).logout();
+    
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const GettingStartedScreen()),

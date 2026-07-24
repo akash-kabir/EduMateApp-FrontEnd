@@ -35,6 +35,12 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   http: ^1.1.0
+  dio: ^5.4.0
+  dio_cookie_manager: ^3.1.1
+  cookie_jar: ^4.0.8
+  html: ^0.15.4
+  sqflite: ^2.3.0
+  path: ^1.8.3
   shared_preferences: ^2.2.2
   flutter_secure_storage: ^10.3.1
   provider: ^6.0.0
@@ -42,6 +48,7 @@ dependencies:
   mapbox_maps_flutter: ^2.18.0
   geolocator: ^14.0.2
   connectivity_plus: ^7.0.0
+  flutter_inappwebview: ^6.1.5
   image_picker: ^1.1.2
   intl: ^0.20.3
   url_launcher: ^6.3.2
@@ -69,6 +76,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/js/attendance_extractor.js
 
   # To add assets to your application, add an assets section, like this:
   # assets:

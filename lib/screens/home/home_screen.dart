@@ -12,10 +12,13 @@ import '../../services/shared_preferences_service.dart';
 import '../profile_setup/profile_setup_screen.dart';
 import 'holiday_list/holiday_list_screen.dart';
 import 'widgets/todays_schedule_card.dart';
+import 'widgets/sapsync_entry_card.dart';
 import '../profile/profile_details_screen.dart';
 import '../admin/admin_main_app.dart';
 import '../splash/splash_screen.dart';
 import 'cgpa_calculator/cgpa_calculator_screen.dart';
+import 'package:provider/provider.dart';
+import '../../provider/sap_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToEvent;
@@ -408,6 +411,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
+            // SapSync Entry Card
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: SapSyncEntryCard(),
+              ),
+            ),
+
             // Quick Actions Grid
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
@@ -635,6 +646,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                     
                                     await SharedPreferencesService.clearUserData();
                                     if (context.mounted) {
+                                      await Provider.of<SapProvider>(context, listen: false).logout();
                                       Navigator.pushAndRemoveUntil(
                                         context,
                                         CupertinoPageRoute(builder: (_) => const SplashScreen()),

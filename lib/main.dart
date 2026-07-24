@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'provider/animation_provider.dart';
+import 'provider/sap_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/pwa_install_screen.dart';
@@ -40,8 +41,11 @@ class _EduMateAppState extends State<EduMateApp> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _animationProvider,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _animationProvider),
+        ChangeNotifierProvider(create: (_) => SapProvider()),
+      ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
         debugShowCheckedModeBanner: false,

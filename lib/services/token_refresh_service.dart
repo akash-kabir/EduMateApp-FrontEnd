@@ -5,6 +5,8 @@ import '../config.dart';
 import 'shared_preferences_service.dart';
 import 'package:flutter/material.dart';
 import '../main.dart';
+import 'package:provider/provider.dart';
+import '../provider/sap_provider.dart';
 import '../screens/auth/getting_started_screen.dart';
 
 /// Service to handle silent token refresh when the access token expires.
@@ -80,6 +82,7 @@ class TokenRefreshService {
   static Future<void> _forceLogout() async {
     await SharedPreferencesService.clearUserData();
     if (navigatorKey.currentContext != null) {
+      await Provider.of<SapProvider>(navigatorKey.currentContext!, listen: false).logout();
       Navigator.pushAndRemoveUntil(
         navigatorKey.currentContext!,
         MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
