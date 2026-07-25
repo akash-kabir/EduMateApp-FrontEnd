@@ -57,6 +57,7 @@ dependencies:
   flutter_svg: ^2.3.0
   workmanager: ^0.9.0+3
   flutter_local_notifications: ^22.2.0
+  timezone: ^0.11.1
 
 dev_dependencies:
   flutter_test:
@@ -82,6 +83,7 @@ flutter:
 
   assets:
     - assets/js/attendance_extractor.js
+    - lib/assets/Icons/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

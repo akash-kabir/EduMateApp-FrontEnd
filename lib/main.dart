@@ -8,11 +8,13 @@ import 'package:flutter/foundation.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/pwa_install_screen.dart';
 import 'services/background_sync_service.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  tz.initializeTimeZones();
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   

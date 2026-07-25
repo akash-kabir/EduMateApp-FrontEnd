@@ -4,6 +4,8 @@ import 'dart:ui';
 
 import 'package:app/screens/home/widgets/dashboard_action_card.dart';
 import 'package:app/screens/settings/settings_screen.dart';
+import 'package:app/screens/about/about_screen.dart';
+import 'package:app/screens/feedback/feedback_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/custom_glass_dialog.dart';
@@ -521,19 +523,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   childAspectRatio: 0.85,
                 ),
                 delegate: SliverChildListDelegate([
-                  DashboardActionCard(
-                    title: 'Settings',
-                    subtitle: 'Account',
-                    icon: CupertinoIcons.settings,
-                    gradientColors: const [Color(0xFF6A11CB), Color(0xFF2575FC)],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        CupertinoPageRoute(
-                          builder: (context) => const SettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
+
                   DashboardActionCard(
                     title: 'CGPA',
                     subtitle: 'Calculator',
@@ -713,13 +703,57 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                   title: 'Settings', 
                                   onTap: () {
                                     Navigator.pop(context);
-                                    Navigator.of(context).push(CupertinoPageRoute(builder: (_) => const SettingsScreen()));
+                                    Navigator.of(context).push(
+                                      PageRouteBuilder(
+                                        pageBuilder: (context, animation, secondaryAnimation) => const SettingsScreen(),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          return SlideTransition(
+                                            position: Tween<Offset>(begin: const Offset(-1.0, 0.0), end: Offset.zero)
+                                                .animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+                                            child: child,
+                                          );
+                                        },
+                                      ),
+                                    );
                                   }
                                 ),
                                 _buildDrawerItem(
                                   icon: CupertinoIcons.info_circle, 
                                   title: 'About', 
-                                  onTap: () => Navigator.pop(context)
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.of(context).push(
+                                      PageRouteBuilder(
+                                        pageBuilder: (context, animation, secondaryAnimation) => const AboutScreen(),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          return SlideTransition(
+                                            position: Tween<Offset>(begin: const Offset(-1.0, 0.0), end: Offset.zero)
+                                                .animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+                                            child: child,
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  }
+                                ),
+                                _buildDrawerItem(
+                                  icon: CupertinoIcons.chat_bubble_2, 
+                                  title: 'Feedback', 
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.of(context).push(
+                                      PageRouteBuilder(
+                                        pageBuilder: (context, animation, secondaryAnimation) => const FeedbackScreen(),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          return SlideTransition(
+                                            position: Tween<Offset>(begin: const Offset(-1.0, 0.0), end: Offset.zero)
+                                                .animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+                                            child: child,
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  }
                                 ),
                                 _buildDrawerItem(
                                   icon: CupertinoIcons.doc_text, 
