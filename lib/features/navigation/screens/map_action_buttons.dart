@@ -6,7 +6,7 @@ class MapActionButtons extends StatelessWidget {
   final bool isFullScreenSearch;
   final bool isMapMenuExpanded;
   final bool is3DMode;
-  final bool isDark;
+
   final VoidCallback onToggleMenu;
   final VoidCallback onRecenter;
   final VoidCallback onCompass;
@@ -17,7 +17,7 @@ class MapActionButtons extends StatelessWidget {
     required this.isFullScreenSearch,
     required this.isMapMenuExpanded,
     required this.is3DMode,
-    required this.isDark,
+
     required this.onToggleMenu,
     required this.onRecenter,
     required this.onCompass,
@@ -45,14 +45,14 @@ class MapActionButtons extends StatelessWidget {
                         child: Container(
                           height: 38,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                           ),
                           child: CupertinoButton(
                             padding: EdgeInsets.zero,
                             onPressed: onRecenter,
                             child: Icon(
                               CupertinoIcons.location_fill,
-                              color: isDark ? Colors.white : Colors.black,
+                              color: Colors.white,
                               size: 18,
                             ),
                           ),
@@ -69,14 +69,14 @@ class MapActionButtons extends StatelessWidget {
                         child: Container(
                           height: 38,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                           ),
                           child: CupertinoButton(
                             padding: EdgeInsets.zero,
                             onPressed: onCompass,
                             child: Icon(
                               CupertinoIcons.compass,
-                              color: isDark ? Colors.white : Colors.black,
+                              color: Colors.white,
                               size: 18,
                             ),
                           ),
@@ -93,14 +93,14 @@ class MapActionButtons extends StatelessWidget {
                         child: Container(
                           height: 38,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                           ),
                           child: CupertinoButton(
                             padding: EdgeInsets.zero,
                             onPressed: onToggle3D,
                             child: Icon(
                               is3DMode ? CupertinoIcons.view_2d : CupertinoIcons.view_3d,
-                              color: isDark ? Colors.white : Colors.black,
+                              color: Colors.white,
                               size: 18,
                             ),
                           ),
@@ -121,14 +121,14 @@ class MapActionButtons extends StatelessWidget {
                       height: 38,
                       width: 38,
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                       ),
                       child: CupertinoButton(
                         padding: EdgeInsets.zero,
                         onPressed: onToggleMenu,
                         child: Icon(
                           CupertinoIcons.slider_horizontal_3,
-                          color: isDark ? Colors.white : Colors.black,
+                          color: Colors.white,
                           size: 18,
                         ),
                       ),

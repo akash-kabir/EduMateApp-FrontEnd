@@ -25,12 +25,12 @@ class BottomSheetSelector<T> extends StatelessWidget {
     if (selectedIndex == -1) selectedIndex = 0;
     int tempIndex = selectedIndex;
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final doneColor = isAdmin ? const Color(0xFFFF1744) : const Color(0xFFFF7F50);
 
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      backgroundColor: const Color(0xFF1E1E1E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
       ),
@@ -52,7 +52,7 @@ class BottomSheetSelector<T> extends StatelessWidget {
                           onPressed: () => Navigator.pop(context),
                           child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
                         ),
-                        Text(hint, style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
+                        Text(hint, style: const TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                         CupertinoButton(
                           padding: EdgeInsets.zero,
                           onPressed: () {
@@ -80,7 +80,7 @@ class BottomSheetSelector<T> extends StatelessWidget {
                       children: items.map((item) => Center(
                         child: Text(
                           labelBuilder(item),
-                          style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 16),
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
                         ),
                       )).toList(),
                     ),

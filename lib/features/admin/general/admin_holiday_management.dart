@@ -212,10 +212,10 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFF0A0A0A),
       body: Stack(
         children: [
           Positioned.fill(
@@ -239,21 +239,17 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                         curve: Curves.easeInOut,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: isDark
-                                ? const [Color(0xFF303030), Color(0xFF1A1A1A)]
-                                : const [Color(0xFFFFFFFF), Color(0xFFF3F4F6)],
+                            colors: const [Color(0xFF303030), Color(0xFF1A1A1A)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.1)
-                                : Colors.black.withValues(alpha: 0.06),
+                            color: Colors.white.withValues(alpha: 0.1),
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -272,7 +268,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                                     fontSize: 22,
                                     fontWeight: FontWeight.bold,
                                     fontFamily: 'Poppins',
-                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    color: Colors.white,
                                     letterSpacing: -0.4,
                                   ),
                                 ),
@@ -280,7 +276,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                                   _isExpanded
                                       ? CupertinoIcons.chevron_up_circle_fill
                                       : CupertinoIcons.chevron_down_circle_fill,
-                                  color: isDark ? Colors.white38 : Colors.black38,
+                                  color: Colors.white38,
                                   size: 24,
                                 ),
                               ],
@@ -291,7 +287,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white70 : Colors.black87,
+                                color: Colors.white70,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -313,7 +309,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                                     icon: CupertinoIcons.arrow_up_doc_fill,
                                     label: _holidays.isNotEmpty ? 'Replace JSON' : 'Upload JSON',
                                     color: const Color(0xFF10B981), // Emerald Green
-                                    isDark: isDark,
+
                                     onTap: _uploadHolidayJson,
                                   ),
                                 ),
@@ -324,7 +320,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                                     icon: _isExpanded ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
                                     label: _isExpanded ? 'Hide' : 'View',
                                     color: const Color(0xFF06B6D4), // Deep Teal
-                                    isDark: isDark,
+
                                     onTap: () {
                                       setState(() {
                                         _isExpanded = !_isExpanded;
@@ -339,7 +335,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                             if (_isExpanded) ...[
                               const SizedBox(height: 16),
                               Divider(
-                                color: isDark ? Colors.white12 : Colors.black12,
+                                color: Colors.white12,
                                 height: 1,
                               ),
                               const SizedBox(height: 12),
@@ -351,7 +347,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                                           'No holidays configured for $_year',
                                           style: TextStyle(
                                             fontSize: 13,
-                                            color: isDark ? Colors.white54 : Colors.black54,
+                                            color: Colors.white54,
                                           ),
                                         ),
                                       ),
@@ -362,9 +358,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                                       itemCount: _holidays.length,
                                       separatorBuilder: (_, __) => Divider(
                                         height: 1,
-                                        color: isDark
-                                            ? Colors.white10
-                                            : Colors.black.withValues(alpha: 0.05),
+                                        color: Colors.white10,
                                       ),
                                       itemBuilder: (context, index) {
                                         final h = _holidays[index];
@@ -390,9 +384,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                                                       style: TextStyle(
                                                         fontSize: 14.5,
                                                         fontWeight: FontWeight.bold,
-                                                        color: isDark
-                                                            ? Colors.white
-                                                            : const Color(0xFF0F172A),
+                                                        color: Colors.white,
                                                       ),
                                                     ),
                                                     const SizedBox(height: 3),
@@ -445,10 +437,10 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFDC2626).withValues(alpha: isDark ? 0.15 : 0.08),
+                          color: const Color(0xFFDC2626).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: const Color(0xFFDC2626).withValues(alpha: isDark ? 0.25 : 0.15),
+                            color: const Color(0xFFDC2626).withValues(alpha: 0.25),
                             width: 0.8,
                           ),
                         ),
@@ -486,14 +478,10 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF141414).withValues(alpha: 0.6)
-                        : Colors.white.withValues(alpha: 0.7),
+                    color: const Color(0xFF141414).withValues(alpha: 0.6),
                     border: Border(
                       bottom: BorderSide(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : Colors.black.withValues(alpha: 0.05),
+                        color: Colors.white.withValues(alpha: 0.1),
                       ),
                     ),
                   ),
@@ -509,7 +497,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                               padding: EdgeInsets.zero,
                               child: Icon(
                                 CupertinoIcons.back,
-                                color: isDark ? Colors.white : Colors.black,
+                                color: Colors.white,
                               ),
                               onPressed: () => Navigator.pop(context),
                             ),
@@ -519,7 +507,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                             child: Text(
                               'Holidays',
                               style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Salena',
                                 fontSize: 17,
@@ -544,7 +532,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
     required IconData icon,
     required String label,
     required Color color,
-    required bool isDark,
+
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -552,10 +540,10 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withValues(alpha: isDark ? 0.25 : 0.15),
+            color: color.withValues(alpha: 0.25),
             width: 0.8,
           ),
         ),
@@ -602,14 +590,14 @@ class _QuickAddHolidayDialogState extends State<_QuickAddHolidayDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Material(
       color: Colors.transparent,
       child: Container(
         height: 360,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+          color: const Color(0xFF1C1C1E),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(20),
@@ -623,7 +611,7 @@ class _QuickAddHolidayDialogState extends State<_QuickAddHolidayDialog> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
+                    color: Colors.white,
                   ),
                 ),
                 CupertinoButton(
@@ -659,9 +647,9 @@ class _QuickAddHolidayDialogState extends State<_QuickAddHolidayDialog> {
               controller: _nameController,
               placeholder: 'Holiday Name (e.g. Durga Puja)',
               padding: const EdgeInsets.all(14),
-              style: TextStyle(color: isDark ? Colors.white : Colors.black),
+              style: const TextStyle(color: Colors.white),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
@@ -673,9 +661,9 @@ class _QuickAddHolidayDialogState extends State<_QuickAddHolidayDialog> {
                     controller: _startDateController,
                     placeholder: 'Start Date (YYYY-MM-DD)',
                     padding: const EdgeInsets.all(14),
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    style: const TextStyle(color: Colors.white),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                      color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
@@ -686,9 +674,9 @@ class _QuickAddHolidayDialogState extends State<_QuickAddHolidayDialog> {
                     controller: _endDateController,
                     placeholder: 'End Date (Optional)',
                     padding: const EdgeInsets.all(14),
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    style: const TextStyle(color: Colors.white),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                      color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),

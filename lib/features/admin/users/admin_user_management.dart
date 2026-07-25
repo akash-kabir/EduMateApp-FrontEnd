@@ -106,7 +106,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     final filteredUsers = _users.where((user) {
       final role = _normalizeRole(user['role']?.toString());
@@ -145,13 +145,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     });
 
     return CupertinoPageScaffold(
-      backgroundColor: isDark
-          ? CupertinoColors.black
-          : CupertinoColors.systemGroupedBackground,
+      backgroundColor: CupertinoColors.black,
       navigationBar: CupertinoNavigationBar(
-        backgroundColor: isDark
-            ? CupertinoColors.black.withValues(alpha: 0.8)
-            : Colors.white.withValues(alpha: 0.8),
+        backgroundColor: CupertinoColors.black.withValues(alpha: 0.8),
         middle: const Text('User Management'),
         leading: CupertinoNavigationBarBackButton(
           color: CupertinoColors.systemRed,
@@ -166,15 +162,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               // Search and Filter Header
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                color: isDark
-                    ? CupertinoColors.black
-                    : CupertinoColors.systemGroupedBackground,
+                color: CupertinoColors.black,
                 child: Column(
                   children: [
                     Container(
                       height: 50,
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.grey[850] : Colors.white,
+                        color: Colors.grey[850],
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
@@ -202,7 +196,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                 });
                               },
                               style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
+                                color: Colors.white,
                                 fontSize: 16,
                               ),
                               decoration: null, // removes default border
@@ -228,25 +222,25 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                               }
                             },
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                            color: const Color(0xFF2C2C2E),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                                color: const Color(0xFF2C2C2E),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                                border: Border.all(color: Colors.white12),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(CupertinoIcons.sort_down, size: 16, color: isDark ? Colors.white : Colors.black),
+                                  Icon(CupertinoIcons.sort_down, size: 16, color: Colors.white),
                                   const SizedBox(width: 6),
                                   Text(
                                     '$_sortBy ${_sortAsc ? '↓' : '↑'}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : Colors.black,
+                                      color: Colors.white,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -270,25 +264,25 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                               });
                             },
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                            color: const Color(0xFF2C2C2E),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                                color: const Color(0xFF2C2C2E),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                                border: Border.all(color: Colors.white12),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(CupertinoIcons.line_horizontal_3_decrease, size: 16, color: isDark ? Colors.white : Colors.black),
+                                  Icon(CupertinoIcons.line_horizontal_3_decrease, size: 16, color: Colors.white),
                                   const SizedBox(width: 6),
                                   Text(
                                     _selectedRoleFilter == 'All' ? 'Filter Roles' : _selectedRoleFilter,
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : Colors.black,
+                                      color: Colors.white,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -349,20 +343,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: isDark 
-                                    ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
-                                    : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+                                colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
-                                if (!isDark)
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
+
                               ],
                             ),
                             child: InkWell(
@@ -409,9 +396,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
-                                              color: isDark
-                                                  ? Colors.white
-                                                  : Colors.black,
+                                              color: Colors.white,
                                             ),
                                           ),
                                           const SizedBox(height: 4),
@@ -419,9 +404,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                             user['email'] ?? '',
                                             style: TextStyle(
                                               fontSize: 13,
-                                              color: isDark
-                                                  ? CupertinoColors.systemGrey
-                                                  : Colors.grey[600],
+                                              color: CupertinoColors.systemGrey,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,

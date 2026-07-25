@@ -13,15 +13,12 @@ class CupertinoBottomTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return CupertinoTabBar(
       currentIndex: selectedIndex,
       onTap: onItemTapped,
       height: 60,
-      backgroundColor: isDark
-          ? CupertinoColors.black.withOpacity(0.6)
-          : CupertinoColors.white.withOpacity(0.6),
+      backgroundColor: CupertinoColors.black.withOpacity(0.6),
       items: [
         BottomNavigationBarItem(
           icon: Padding(

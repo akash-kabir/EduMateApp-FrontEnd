@@ -78,7 +78,7 @@ class _AppNavigatorState extends State<AppNavigator> {
       barrierDismissible: true,
       child: Builder(
         builder: (context) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -106,7 +106,7 @@ class _AppNavigatorState extends State<AppNavigator> {
                   fontFamily: 'Poppins',
                   fontSize: 20.0,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: Colors.white,
                   letterSpacing: -0.5,
                 ),
                 textAlign: TextAlign.center,
@@ -117,7 +117,7 @@ class _AppNavigatorState extends State<AppNavigator> {
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 14.0,
-                  color: isDark ? Colors.grey[400] : Colors.grey[700],
+                  color: Colors.grey[400],
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,

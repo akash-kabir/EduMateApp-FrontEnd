@@ -112,7 +112,6 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
   }
 
   void _showRoleManagementSheet(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentRole = _normalizeRole(_user['role']?.toString());
 
     if (currentRole == 'admin' && _normalizeRole(widget.currentUserRole) != 'superadmin') {
@@ -132,7 +131,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E24) : Colors.white,
+            color: const Color(0xFF1E1E24),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             boxShadow: [
               BoxShadow(
@@ -152,18 +151,18 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                     width: 40,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.black12,
+                      color: Colors.white24,
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text(
+                const Text(
                   'Manage Role',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -175,7 +174,6 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                     description: 'Standard access to community features.',
                     icon: CupertinoIcons.person,
                     color: CupertinoColors.systemGrey,
-                    isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
                       _updateUserRole('Student');
@@ -189,7 +187,6 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                     description: 'Can manage society posts and events.',
                     icon: CupertinoIcons.group,
                     color: CupertinoColors.activeBlue,
-                    isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
                       _updateUserRole('Society');
@@ -203,7 +200,6 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                     description: 'Can create content for curriculum and schedules.',
                     icon: CupertinoIcons.doc_text,
                     color: CupertinoColors.systemRed.withValues(alpha: 0.8),
-                    isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
                       _updateUserRole('Contributer');
@@ -224,7 +220,6 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
     required String description,
     required IconData icon,
     required Color color,
-    required bool isDark,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -232,9 +227,9 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF2C2C2E) : Colors.grey[100],
+          color: const Color(0xFF2C2C2E),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+          border: Border.all(color: Colors.white12),
         ),
         child: Row(
           children: [
@@ -253,28 +248,26 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
-                      color: isDark
-                          ? CupertinoColors.systemGrey
-                          : Colors.grey[600],
+                      color: CupertinoColors.systemGrey,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               CupertinoIcons.chevron_forward,
-              color: isDark ? Colors.white30 : Colors.black26,
+              color: Colors.white30,
               size: 20,
             ),
           ],
@@ -327,7 +320,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
     }
   }
 
-  Widget _buildDetailRow(String label, String value, bool isDark) {
+  Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Column(
@@ -335,20 +328,20 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         children: [
           Text(
             label.toUpperCase(),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
-              color: isDark ? CupertinoColors.systemGrey : Colors.grey[600],
+              color: CupertinoColors.systemGrey,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             value.isEmpty ? 'N/A' : value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white : Colors.black,
+              color: Colors.white,
             ),
           ),
         ],
@@ -358,7 +351,6 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final normalizedRole = _normalizeRole(_user['role']?.toString());
     final roleColor = _roleColor(normalizedRole);
     final firstName = _user['firstName']?.toString() ?? '';
@@ -385,7 +377,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.systemGroupedBackground,
+      backgroundColor: CupertinoColors.black,
       body: Stack(
         children: [
           SafeArea(
@@ -410,10 +402,10 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                   const SizedBox(height: 16),
                   Text(
                     '$firstName $lastName',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -443,8 +435,8 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : () => _showRoleManagementSheet(context),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                              foregroundColor: isDark ? Colors.white : Colors.black,
+                              backgroundColor: const Color(0xFF2C2C2E),
+                              foregroundColor: Colors.white,
                               elevation: 2,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -467,7 +459,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _deleteUser,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                            backgroundColor: const Color(0xFF2C2C2E),
                             foregroundColor: CupertinoColors.systemRed,
                             elevation: 2,
                             padding: EdgeInsets.zero,
@@ -488,51 +480,41 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isDark 
-                            ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
-                            : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF303030), Color(0xFF1a1a1a)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        if (!isDark)
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildDetailRow('Email', _user['email']?.toString() ?? '', isDark),
-                        Divider(color: isDark ? Colors.white12 : Colors.black12),
-                        _buildDetailRow('Username', _user['username']?.toString() ?? '', isDark),
+                        _buildDetailRow('Email', _user['email']?.toString() ?? ''),
+                        const Divider(color: Colors.white12),
+                        _buildDetailRow('Username', _user['username']?.toString() ?? ''),
                         
                         if (normalizedRole != 'guest') ...[
-                          Divider(color: isDark ? Colors.white12 : Colors.black12),
-                          _buildDetailRow('Roll Number', _user['rollNo']?.toString() ?? '', isDark),
-                          Divider(color: isDark ? Colors.white12 : Colors.black12),
-                          _buildDetailRow('Year', _user['year']?.toString() ?? '', isDark),
-                          Divider(color: isDark ? Colors.white12 : Colors.black12),
+                          const Divider(color: Colors.white12),
+                          _buildDetailRow('Roll Number', _user['rollNo']?.toString() ?? ''),
+                          const Divider(color: Colors.white12),
+                          _buildDetailRow('Year', _user['year']?.toString() ?? ''),
+                          const Divider(color: Colors.white12),
                           Row(
                             children: [
-                              Expanded(child: _buildDetailRow('Semester', _user['semester']?.toString() ?? '', isDark)),
-                              Expanded(child: _buildDetailRow('Section', _user['section']?.toString() ?? '', isDark)),
+                              Expanded(child: _buildDetailRow('Semester', _user['semester']?.toString() ?? '')),
+                              Expanded(child: _buildDetailRow('Section', _user['section']?.toString() ?? '')),
                             ],
                           ),
-                          Divider(color: isDark ? Colors.white12 : Colors.black12),
-                          _buildDetailRow('Profile Complete', _user['isProfileComplete'] == true ? 'Yes' : 'No', isDark),
+                          const Divider(color: Colors.white12),
+                          _buildDetailRow('Profile Complete', _user['isProfileComplete'] == true ? 'Yes' : 'No'),
                         ] else ...[
-                          Divider(color: isDark ? Colors.white12 : Colors.black12),
-                          _buildDetailRow('Guest Access', '$daysLeft Days Left', isDark),
+                          const Divider(color: Colors.white12),
+                          _buildDetailRow('Guest Access', '$daysLeft Days Left'),
                         ],
 
-                        Divider(color: isDark ? Colors.white12 : Colors.black12),
-                        _buildDetailRow('Joined', createdAtFormatted, isDark),
+                        const Divider(color: Colors.white12),
+                        _buildDetailRow('Joined', createdAtFormatted),
                       ],
                     ),
                   ),
@@ -551,7 +533,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.black45 : Colors.white,
+                    color: Colors.black45,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -561,7 +543,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                       ),
                     ],
                   ),
-                  child: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
+                  child: const Icon(CupertinoIcons.back, color: Colors.white),
                 ),
               ),
             ),

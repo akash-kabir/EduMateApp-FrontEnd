@@ -89,9 +89,7 @@ class _OngoingTimeIndicatorState extends State<_OngoingTimeIndicator> {
 }
 
 class TodaysScheduleCard extends StatefulWidget {
-  final bool isDark;
-  
-  const TodaysScheduleCard({super.key, required this.isDark});
+  const TodaysScheduleCard({super.key});
 
   @override
   State<TodaysScheduleCard> createState() => _TodaysScheduleCardState();
@@ -219,23 +217,21 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: widget.isDark 
-              ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
-              : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+          colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: (widget.isDark ? Colors.black : Colors.grey).withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
       ),
       child: _isLoading
-          ? TodaysScheduleSkeleton(isDark: widget.isDark)
+          ? const TodaysScheduleSkeleton()
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -276,8 +272,8 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
   }
 
   Widget _buildHeader() {
-    final titleColor = widget.isDark ? Colors.white : Colors.black87;
-    final subtitleColor = widget.isDark ? Colors.white70 : Colors.black54;
+    final titleColor = Colors.white;
+    final subtitleColor = Colors.white70;
 
     if (_scheduleData!.isHoliday) {
       return Column(
@@ -457,28 +453,28 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
           final isDone = _isClassDone(c);
           
           final bgColor = isDone 
-              ? (widget.isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03))
+              ? Colors.white.withValues(alpha: 0.03)
               : isOngoing 
-                  ? (widget.isDark ? Colors.white : Colors.black87)
-                  : (widget.isDark ? Colors.white : Colors.black).withValues(alpha: 0.1);
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.1);
               
           final borderColor = isDone
               ? Colors.transparent
               : isOngoing 
                   ? Colors.transparent 
-                  : (widget.isDark ? Colors.white : Colors.black).withValues(alpha: 0.2);
+                  : Colors.white.withValues(alpha: 0.2);
               
           final primaryTextColor = isDone
-              ? (widget.isDark ? Colors.white38 : Colors.black38)
+              ? Colors.white38
               : isOngoing 
-                  ? (widget.isDark ? Colors.black87 : Colors.white)
-                  : (widget.isDark ? Colors.white : Colors.black87);
+                  ? Colors.black87
+                  : Colors.white;
               
           final secondaryTextColor = isDone
-              ? (widget.isDark ? Colors.white24 : Colors.black26)
+              ? Colors.white24
               : isOngoing 
-                  ? (widget.isDark ? Colors.black54 : Colors.white70)
-                  : (widget.isDark ? Colors.white70 : Colors.black54);
+                  ? Colors.black54
+                  : Colors.white70;
           
           return Container(
             width: 220,

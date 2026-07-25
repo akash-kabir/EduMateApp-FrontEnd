@@ -132,11 +132,10 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFF0A0A0A),
       body: Stack(
         children: [
           Positioned.fill(
@@ -171,7 +170,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
                             semester: sem,
                             isConfigured: isConfigured,
                             periodCount: periodCount,
-                            isDark: isDark,
+
                             onUpload: () => _uploadSchedule(sem),
                             onUpdate: () => _fetchSchedules(),
                           );
@@ -191,14 +190,10 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF141414).withValues(alpha: 0.6)
-                        : Colors.white.withValues(alpha: 0.7),
+                    color: const Color(0xFF141414).withValues(alpha: 0.6),
                     border: Border(
                       bottom: BorderSide(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.black.withValues(alpha: 0.05)),
+                          color: Colors.white.withValues(alpha: 0.1)),
                     ),
                   ),
                   child: SafeArea(
@@ -215,8 +210,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
                                 child: CupertinoButton(
                                   padding: EdgeInsets.zero,
                                   child: Icon(CupertinoIcons.back,
-                                      color:
-                                          isDark ? Colors.white : Colors.black),
+                                          color: Colors.white),
                                   onPressed: () => Navigator.pop(context),
                                 ),
                               ),
@@ -225,7 +219,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
                                 child: Text(
                                   'Schedule',
                                   style: TextStyle(
-                                    color: isDark ? Colors.white : Colors.black,
+                                    color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontFamily: 'Salena',
                                     fontSize: 17,
@@ -235,7 +229,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
                             ],
                           ),
                         ),
-                        _buildPillSlider(context, isDark),
+                        _buildPillSlider(context),
                       ],
                     ),
                   ),
@@ -248,7 +242,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
     );
   }
 
-  Widget _buildPillSlider(BuildContext context, bool isDark) {
+  Widget _buildPillSlider(BuildContext context) {
     final isAutumn = _selectedSeason == 'Autumn';
 
     return Padding(
@@ -256,14 +250,10 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.05),
+          color: Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.06),
+            color: Colors.white.withValues(alpha: 0.08),
           ),
         ),
         child: LayoutBuilder(
@@ -308,9 +298,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.bold,
-                              color: isAutumn
-                                  ? Colors.white
-                                  : (isDark ? Colors.white60 : Colors.black54),
+                              color: isAutumn ? Colors.white : Colors.white60,
                               fontSize: 13.5,
                             ),
                           ),
@@ -331,9 +319,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.bold,
-                              color: !isAutumn
-                                  ? Colors.white
-                                  : (isDark ? Colors.white60 : Colors.black54),
+                              color: !isAutumn ? Colors.white : Colors.white60,
                               fontSize: 13.5,
                             ),
                           ),
@@ -355,7 +341,7 @@ class _SemesterCard extends StatelessWidget {
   final int semester;
   final bool isConfigured;
   final int periodCount;
-  final bool isDark;
+
   final VoidCallback onUpload;
   final VoidCallback onUpdate;
 
@@ -363,7 +349,7 @@ class _SemesterCard extends StatelessWidget {
     required this.semester,
     required this.isConfigured,
     required this.periodCount,
-    required this.isDark,
+
     required this.onUpload,
     required this.onUpdate,
   });
@@ -380,21 +366,17 @@ class _SemesterCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: isDark
-                    ? const [Color(0xFF303030), Color(0xFF1A1A1A)]
-                    : const [Color(0xFFFFFFFF), Color(0xFFF3F4F6)],
+                colors: const [Color(0xFF303030), Color(0xFF1A1A1A)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.05),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+                  color: Colors.black.withValues(alpha: 0.25),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -412,7 +394,7 @@ class _SemesterCard extends StatelessWidget {
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: isDark ? Colors.white : Colors.black,
+                        color: Colors.white,
                       ),
                     ),
                     Container(
@@ -445,7 +427,7 @@ class _SemesterCard extends StatelessWidget {
                       : 'No schedule JSON uploaded yet',
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark ? Colors.white60 : Colors.black54,
+                    color: Colors.white60,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -457,7 +439,7 @@ class _SemesterCard extends StatelessWidget {
                         icon: CupertinoIcons.arrow_up_doc_fill,
                         label: isConfigured ? 'Replace JSON' : 'Upload JSON',
                         color: const Color(0xFF10B981), // Emerald Green
-                        isDark: isDark,
+
                         onTap: onUpload,
                       ),
                     ),
@@ -468,7 +450,7 @@ class _SemesterCard extends StatelessWidget {
                         icon: CupertinoIcons.pencil_circle_fill,
                         label: isConfigured ? 'Edit Schedule' : 'Add Schedule',
                         color: const Color(0xFFF59E0B), // Amber
-                        isDark: isDark,
+
                         onTap: () {
                           Navigator.push(
                             context,
@@ -496,7 +478,7 @@ class _SemesterCard extends StatelessWidget {
     required IconData icon,
     required String label,
     required Color color,
-    required bool isDark,
+
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -504,10 +486,10 @@ class _SemesterCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withValues(alpha: isDark ? 0.25 : 0.15),
+            color: color.withValues(alpha: 0.25),
             width: 0.8,
           ),
         ),

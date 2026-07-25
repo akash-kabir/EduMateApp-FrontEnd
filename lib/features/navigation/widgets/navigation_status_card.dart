@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:app/theme/theme.dart';
 
 class NavigationStatusCard extends StatelessWidget {
-  final bool isDark;
+
   final String poiName;
   final double distanceInMeters;
   final VoidCallback onStopNavigation;
 
   const NavigationStatusCard({
     super.key,
-    required this.isDark,
+
     required this.poiName,
     required this.distanceInMeters,
     required this.onStopNavigation,
@@ -34,10 +34,10 @@ class NavigationStatusCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.7),
+            color: Colors.black.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+              color: Colors.white.withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -68,7 +68,7 @@ class NavigationStatusCard extends StatelessWidget {
                       'Navigating to',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        color: Colors.grey[400],
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -76,7 +76,7 @@ class NavigationStatusCard extends StatelessWidget {
                       poiName,
                       style: TextStyle(
                         fontSize: 16,
-                        color: isDark ? Colors.white : Colors.black,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,

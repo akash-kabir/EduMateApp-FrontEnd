@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class MapSearchBar extends StatelessWidget {
   final bool isFullScreenSearch;
-  final bool isDark;
+
   final VoidCallback onToggleSearch;
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
@@ -12,7 +12,7 @@ class MapSearchBar extends StatelessWidget {
   const MapSearchBar({
     super.key,
     required this.isFullScreenSearch,
-    required this.isDark,
+
     required this.onToggleSearch,
     this.controller,
     this.onChanged,
@@ -27,7 +27,7 @@ class MapSearchBar extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         height: 50,
         decoration: BoxDecoration(
-          color: isDark ? Colors.grey[850] : (isFullScreenSearch ? Colors.white : Colors.grey[200]),
+          color: Colors.grey[850],
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
@@ -51,8 +51,8 @@ class MapSearchBar extends StatelessWidget {
                   child: FadeTransition(opacity: animation, child: child),
                 ),
                 child: isFullScreenSearch
-                    ? Icon(CupertinoIcons.back, key: const ValueKey('back'), color: isDark ? Colors.white : Colors.black)
-                    : Icon(CupertinoIcons.search, key: const ValueKey('search'), color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                    ? Icon(CupertinoIcons.back, key: const ValueKey('back'), color: Colors.white)
+                    : Icon(CupertinoIcons.search, key: const ValueKey('search'), color: Colors.grey[400]),
               ),
             ),
             Expanded(
@@ -61,7 +61,7 @@ class MapSearchBar extends StatelessWidget {
                       controller: controller,
                       autofocus: true,
                       placeholder: 'Search location...',
-                      style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 16),
+                      style: TextStyle(color: Colors.white, fontSize: 16),
                       decoration: null,
                       onChanged: onChanged,
                     )
@@ -72,7 +72,7 @@ class MapSearchBar extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Search...',
-                          style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 16),
+                          style: TextStyle(color: Colors.grey[400], fontSize: 16),
                         ),
                       ),
                     ),
@@ -80,7 +80,7 @@ class MapSearchBar extends StatelessWidget {
             if (isFullScreenSearch)
               CupertinoButton(
                 padding: const EdgeInsets.only(right: 16),
-                child: Icon(CupertinoIcons.clear_thick_circled, color: isDark ? Colors.grey[400] : Colors.grey[600], size: 20),
+                child: Icon(CupertinoIcons.clear_thick_circled, color: Colors.grey[400], size: 20),
                 onPressed: onClear,
               )
           ],

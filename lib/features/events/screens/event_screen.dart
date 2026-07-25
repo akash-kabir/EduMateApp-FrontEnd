@@ -155,7 +155,6 @@ class _EventScreenState extends State<EventScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final canPost =
         userRole != null &&
         [
@@ -177,9 +176,7 @@ class _EventScreenState extends State<EventScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: isDark
-            ? CupertinoColors.black.withOpacity(0.6)
-            : CupertinoColors.white.withOpacity(0.6),
+        backgroundColor: CupertinoColors.black.withOpacity(0.6),
         leading: canPost
             ? CupertinoButton(
                 padding: EdgeInsets.zero,
@@ -208,7 +205,7 @@ class _EventScreenState extends State<EventScreen> {
               onPressed: _showFilterDialog,
               child: Icon(
                 CupertinoIcons.slider_horizontal_3,
-                color: isDark ? Colors.white : Colors.black,
+                color: Colors.white,
               ),
             ),
           ],
@@ -239,7 +236,7 @@ class _EventScreenState extends State<EventScreen> {
                     'No posts available',
                     style: TextStyle(
                       fontSize: 16,
-                      color: isDark ? Colors.white70 : Colors.black54,
+                      color: Colors.white70,
                     ),
                   ),
                 ),

@@ -112,10 +112,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Scaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+      backgroundColor: CupertinoColors.black,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -128,7 +128,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Salena',
-                color: isDark ? CupertinoColors.white : CupertinoColors.black,
+                color: CupertinoColors.white,
               ),
             ),
             const SizedBox(height: 12),
@@ -136,7 +136,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               'Manage users, services, and system content',
               style: TextStyle(
                 fontSize: 16,
-                color: isDark ? CupertinoColors.systemGrey : Colors.grey[600],
+                color: CupertinoColors.systemGrey,
               ),
             ),
             const SizedBox(height: 30),
@@ -144,7 +144,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             // ── Kill Switch Card ──
             if (_isAdmin) ...[
               _MapKillSwitchCard(
-                isDark: isDark,
+
                 isNavigationActive: _isNavigationActive,
                 currentMonthCount: _currentMonthCount,
                 monthlyLimit: _monthlyLimit,
@@ -158,7 +158,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               title: 'User Management',
               description: 'View users, change roles, and remove accounts',
               icon: CupertinoIcons.group_solid,
-              isDark: isDark,
+
               onTap: () {
                 if (!_isAdmin) {
                   EduMateToast.showCompact(
@@ -181,7 +181,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               title: 'Post Management',
               description: 'View and moderate community posts',
               icon: CupertinoIcons.bubble_left_bubble_right_fill,
-              isDark: isDark,
+
               onTap: () {
                 if (!_isAdmin) {
                   EduMateToast.showCompact(
@@ -234,7 +234,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 }
 
 class _MapKillSwitchCard extends StatelessWidget {
-  final bool isDark;
+
   final bool isNavigationActive;
   final int currentMonthCount;
   final int monthlyLimit;
@@ -242,7 +242,7 @@ class _MapKillSwitchCard extends StatelessWidget {
   final ValueChanged<bool> onToggle;
 
   const _MapKillSwitchCard({
-    required this.isDark,
+
     required this.isNavigationActive,
     required this.currentMonthCount,
     required this.monthlyLimit,
@@ -264,9 +264,7 @@ class _MapKillSwitchCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark
-              ? const [Color(0xFF2C2C2E), Color(0xFF1C1C1E)]
-              : const [Color(0xFFF2F2F7), Color(0xFFE5E5EA)],
+          colors: const [Color(0xFF2C2C2E), Color(0xFF1C1C1E)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -303,7 +301,7 @@ class _MapKillSwitchCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -338,7 +336,7 @@ class _MapKillSwitchCard extends StatelessWidget {
                 'Monthly Directions Usage:',
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
               Text(
@@ -346,7 +344,7 @@ class _MapKillSwitchCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black,
+                  color: Colors.white,
                 ),
               ),
             ],
@@ -361,14 +359,14 @@ class _SettingsCard extends StatelessWidget {
   final String title;
   final String description;
   final IconData icon;
-  final bool isDark;
+
   final VoidCallback onTap;
 
   const _SettingsCard({
     required this.title,
     required this.description,
     required this.icon,
-    required this.isDark,
+
     required this.onTap,
   });
 
@@ -380,26 +378,20 @@ class _SettingsCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isDark
-                ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
-                : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+            colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
           border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.transparent,
+            color: Colors.white.withValues(alpha: 0.05),
           ),
         ),
         child: Row(
@@ -407,12 +399,12 @@ class _SettingsCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: isDark ? Colors.white : Colors.black,
+                color: Colors.white,
                 size: 28,
               ),
             ),
@@ -426,7 +418,7 @@ class _SettingsCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -434,7 +426,7 @@ class _SettingsCard extends StatelessWidget {
                     description,
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark ? Colors.grey[400] : Colors.grey[700],
+                      color: Colors.grey[400],
                     ),
                   ),
                 ],
@@ -442,7 +434,7 @@ class _SettingsCard extends StatelessWidget {
             ),
             Icon(
               CupertinoIcons.chevron_forward,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              color: Colors.grey[400],
             ),
           ],
         ),

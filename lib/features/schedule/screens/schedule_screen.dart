@@ -502,7 +502,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final weekDates = getWeekDates();
     final now = DateTime.now();
     final classes = _getClassesForDay(selectedDate.weekday);
@@ -576,9 +575,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
-          backgroundColor: isDark
-              ? CupertinoColors.black.withValues(alpha: 0.6)
-              : CupertinoColors.white.withValues(alpha: 0.6),
+          backgroundColor: CupertinoColors.black.withValues(alpha: 0.6),
           trailing: CupertinoButton(
             padding: EdgeInsets.zero,
             onPressed: _showSettingsBottomSheet,
@@ -601,9 +598,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   child: BackdropFilter(
                     filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                     child: Container(
-                      color: isDark
-                          ? CupertinoColors.black.withValues(alpha: 0.6)
-                          : CupertinoColors.white.withValues(alpha: 0.6),
+                      color: CupertinoColors.black.withValues(alpha: 0.6),
                       height: 118.0,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -616,7 +611,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                             weekDates: weekDates,
                             selectedDate: selectedDate,
                             now: now,
-                            isDark: isDark,
                             onDateSelected: (date, slideRight) {
                               setState(() {
                                 slideFromRight = slideRight;
@@ -633,9 +627,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                   fontFamily: 'Poppins',
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
+                                  color: Colors.grey[400],
                                 ),
                                 children: [
                                   TextSpan(
@@ -659,9 +651,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                 fontFamily: 'Poppins',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? Colors.grey[600]
-                                    : Colors.grey[400],
+                                color: Colors.grey[600],
                               ),
                             ),
                           ],
@@ -752,7 +742,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black,
+                            color: Colors.white,
                             fontFamily: 'Salena',
                           ),
                         ),
@@ -762,7 +752,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            color: Colors.grey[400],
                             height: 1.5,
                           ),
                         ),
@@ -807,13 +797,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       Icon(
                         CupertinoIcons.exclamationmark_circle,
                         size: 40,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        color: Colors.grey[400],
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'No schedule data available for $selectedSemester.toString()',
                         style: TextStyle(
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          color: Colors.grey[400],
                           fontSize: 14,
                         ),
                         textAlign: TextAlign.center,
@@ -904,7 +894,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                               alignment: Alignment.topCenter,
                               children: <Widget>[
                                 ...previousChildren,
-                                if (currentChild != null) currentChild,
+                                ?currentChild,
                               ],
                             );
                           },
@@ -935,8 +925,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                             key: ValueKey(selectedDate),
                             child: ScheduleTimeline(
                               mergedClasses: mergedClasses,
-                              isDark: isDark,
-                              isOngoing: isClassOngoing,
+                              isOngoing: (c) => isClassOngoing(c['startTime'] as String, c['endTime'] as String),
                               isPassed: isClassPassed,
                               isHoliday: getHolidayForSelectedDate() != null,
                               emptyMessage: (selectedDate.weekday == 6 || selectedDate.weekday == 7)

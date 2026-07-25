@@ -316,12 +316,12 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
     return false;
   }
 
-  InputDecoration _buildInputDecoration(String label, bool isDark) {
+  InputDecoration _buildInputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[600], fontSize: 13),
+      labelStyle: TextStyle(color: Colors.grey[500], fontSize: 13),
       filled: true,
-      fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+      fillColor: Colors.white.withValues(alpha: 0.05),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -350,7 +350,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
       widthFactor: 0.9,
       child: StatefulBuilder(
         builder: (context, setDialogState) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+
           return SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -361,7 +361,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                     fontFamily: 'Poppins',
                     fontSize: 20.0,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: Colors.white,
                     letterSpacing: -0.5,
                   ),
                   textAlign: TextAlign.center,
@@ -373,8 +373,8 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                       child: TextFormField(
                         controller: startTimeController,
                         readOnly: true,
-                        style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
-                        decoration: _buildInputDecoration('Start Time', isDark),
+                        style: const TextStyle(color: Colors.white, fontSize: 15),
+                        decoration: _buildInputDecoration('Start Time'),
                         onTap: () async {
                           final parts = tempStartTime.split(':');
                           final picked = await showTimePicker(
@@ -396,8 +396,8 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                       child: TextFormField(
                         controller: endTimeController,
                         readOnly: true,
-                        style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
-                        decoration: _buildInputDecoration('End Time', isDark),
+                        style: const TextStyle(color: Colors.white, fontSize: 15),
+                        decoration: _buildInputDecoration('End Time'),
                         onTap: () async {
                           final parts = tempEndTime.split(':');
                           final picked = await showTimePicker(
@@ -419,15 +419,15 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   initialValue: tempClassName,
-                  style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
-                  decoration: _buildInputDecoration('Class/Subject Name', isDark),
+                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                  decoration: _buildInputDecoration('Class/Subject Name'),
                   onChanged: (val) => tempClassName = val,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   initialValue: tempRoom,
-                  style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
-                  decoration: _buildInputDecoration('Room', isDark),
+                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                  decoration: _buildInputDecoration('Room'),
                   onChanged: (val) => tempRoom = val,
                 ),
                 const SizedBox(height: 28),
@@ -437,8 +437,8 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: isDark ? Colors.white : Colors.black,
-                          side: BorderSide(color: isDark ? Colors.white24 : Colors.black26),
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white24),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -501,10 +501,10 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Scaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+      backgroundColor: CupertinoColors.black,
       extendBodyBehindAppBar: true,
       body: _isLoading
           ? const Center(child: CupertinoActivityIndicator())
@@ -588,7 +588,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF141414).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.6),
+                                    color: const Color(0xFF141414).withValues(alpha: 0.5),
                                     borderRadius: BorderRadius.circular(24),
                                     border: Border.all(
                                       color: const Color(0xFFFF1744).withValues(alpha: 0.3),
@@ -620,7 +620,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                               fontWeight: FontWeight.w700,
                                               color: isSelected
                                                   ? Colors.white
-                                                  : (isDark ? Colors.white70 : Colors.black87),
+                                                  : Colors.white70,
                                             ),
                                           ),
                                         ),
@@ -637,7 +637,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                   alignment: Alignment.center,
                                   child: Text(
                                     'No classes scheduled for ${_days[_selectedDay - 1]}.',
-                                    style: TextStyle(color: isDark ? Colors.grey : Colors.grey[600]),
+                                    style: const TextStyle(color: Colors.grey),
                                   ),
                                 )
                               : ListView.builder(
@@ -650,7 +650,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                     return _PeriodEditCard(
                                       key: ObjectKey(period),
                                       period: period,
-                                      isDark: isDark,
+
                                       onChanged: () => setState(() {}),
                                       onRemove: () => _removePeriod(index),
                                       onValidateTime: (start, end) => !_hasOverlap(start, end, _selectedDay, ignoreIndex: index),
@@ -663,7 +663,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                             alignment: Alignment.center,
                             child: Text(
                               'Please add a section to start editing schedules.',
-                              style: TextStyle(color: isDark ? Colors.grey : Colors.grey[600]),
+                              style: const TextStyle(color: Colors.grey),
                             ),
                           ),
                         ],
@@ -681,9 +681,9 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                       filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.7),
+                          color: const Color(0xFF141414).withValues(alpha: 0.6),
                           border: Border(
-                            bottom: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                            bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                           ),
                         ),
                         child: SafeArea(
@@ -699,7 +699,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                       alignment: Alignment.centerLeft,
                                       child: CupertinoButton(
                                         padding: EdgeInsets.zero,
-                                        child: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
+                                        child: const Icon(CupertinoIcons.back, color: Colors.white),
                                         onPressed: () => Navigator.pop(context),
                                       ),
                                     ),
@@ -708,7 +708,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                       child: Text(
                                         'Edit Schedule',
                                         style: TextStyle(
-                                          color: isDark ? Colors.white : Colors.black,
+                                          color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                           fontFamily: 'Salena',
                                           fontSize: 18,
@@ -766,7 +766,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6),
+                                color: const Color(0xFF141414).withValues(alpha: 0.6),
                                 borderRadius: BorderRadius.circular(21),
                               ),
                               child: ElevatedButton.icon(
@@ -776,7 +776,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
                                   shadowColor: Colors.transparent,
-                                  foregroundColor: isDark ? Colors.white : Colors.black,
+                                  foregroundColor: Colors.white,
                                   minimumSize: const Size(double.infinity, 55),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
                                 ),
@@ -935,7 +935,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
 
 class _PeriodEditCard extends StatefulWidget {
   final Map<String, dynamic> period;
-  final bool isDark;
+
   final VoidCallback onChanged;
   final VoidCallback onRemove;
   final bool Function(String, String)? onValidateTime;
@@ -943,7 +943,7 @@ class _PeriodEditCard extends StatefulWidget {
   const _PeriodEditCard({
     super.key,
     required this.period,
-    required this.isDark,
+
     required this.onChanged,
     required this.onRemove,
     this.onValidateTime,
@@ -982,7 +982,7 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
       widthFactor: 0.9,
       child: StatefulBuilder(
         builder: (context, setDialogState) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+
           return SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -993,7 +993,7 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                             fontFamily: 'Poppins',
                             fontSize: 20.0,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: Colors.white,
                             letterSpacing: -0.5,
                           ),
                           textAlign: TextAlign.center,
@@ -1005,7 +1005,7 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                               child: TextFormField(
                                 controller: startTimeController,
                                 readOnly: true,
-                                style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                                style: const TextStyle(color: Colors.white, fontSize: 15),
                                 decoration: _buildInputDecoration('Start Time'),
                                 onTap: () async {
                                   final parts = tempStartTime.split(':');
@@ -1028,7 +1028,7 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                               child: TextFormField(
                                 controller: endTimeController,
                                 readOnly: true,
-                                style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                                style: const TextStyle(color: Colors.white, fontSize: 15),
                                 decoration: _buildInputDecoration('End Time'),
                                 onTap: () async {
                                   final parts = tempEndTime.split(':');
@@ -1051,14 +1051,14 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                         const SizedBox(height: 16),
                         TextFormField(
                           initialValue: tempClassName,
-                          style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                          style: const TextStyle(color: Colors.white, fontSize: 15),
                           decoration: _buildInputDecoration('Class/Subject Name'),
                           onChanged: (val) => tempClassName = val,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           initialValue: tempRoom,
-                          style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                          style: const TextStyle(color: Colors.white, fontSize: 15),
                           decoration: _buildInputDecoration('Room'),
                           onChanged: (val) => tempRoom = val,
                         ),
@@ -1069,8 +1069,8 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                               child: OutlinedButton(
                                 onPressed: () => Navigator.pop(context),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: isDark ? Colors.white : Colors.black,
-                                  side: BorderSide(color: isDark ? Colors.white24 : Colors.black26),
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(color: Colors.white24),
                                   padding: const EdgeInsets.symmetric(vertical: 14),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -1127,9 +1127,9 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
   InputDecoration _buildInputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: widget.isDark ? Colors.grey[500] : Colors.grey[600], fontSize: 13),
+      labelStyle: TextStyle(color: Colors.grey[500], fontSize: 13),
       filled: true,
-      fillColor: widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+      fillColor: Colors.white.withValues(alpha: 0.05),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -1167,7 +1167,7 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             decoration: BoxDecoration(
-              color: widget.isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.65),
+              color: const Color(0xFF141414).withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -1181,7 +1181,7 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                       Text(
                         title,
                         style: TextStyle(
-                          color: widget.isDark ? Colors.white : Colors.black,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),
@@ -1190,7 +1190,7 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          color: widget.isDark ? Colors.grey[400] : Colors.grey[600],
+                          color: Colors.grey[400],
                           fontSize: 14,
                         ),
                       ),
@@ -1199,15 +1199,15 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                 ),
                 Divider(
                   height: 1,
-                  color: widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  color: Colors.white.withValues(alpha: 0.1),
                 ),
                 Row(
                   children: [
                     Expanded(
                       child: TextButton.icon(
                         onPressed: () => _showEditDialog(context),
-                        icon: Icon(CupertinoIcons.pencil, size: 18, color: widget.isDark ? Colors.white70 : Colors.black87),
-                        label: Text('Edit', style: TextStyle(color: widget.isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600)),
+                        icon: const Icon(CupertinoIcons.pencil, size: 18, color: Colors.white70),
+                        label: const Text('Edit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16))),
@@ -1217,7 +1217,7 @@ class _PeriodEditCardState extends State<_PeriodEditCard> {
                     Container(
                       width: 1,
                       height: 48,
-                      color: widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                      color: Colors.white.withValues(alpha: 0.1),
                     ),
                     Expanded(
                       child: TextButton.icon(

@@ -197,7 +197,7 @@ class _CurriculumManagementScreenState
 
   void _showAddBranchDialog() {
     final TextEditingController branchController = TextEditingController();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     showDialog(
       context: context,
@@ -212,20 +212,14 @@ class _CurriculumManagementScreenState
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF141416).withValues(alpha: 0.92)
-                      : Colors.white.withValues(alpha: 0.95),
+                  color: const Color(0xFF141416).withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.08),
+                    color: Colors.white.withValues(alpha: 0.1),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: isDark
-                          ? Colors.black.withValues(alpha: 0.5)
-                          : const Color(0xFF10B981).withValues(alpha: 0.1),
+                      color: Colors.black.withValues(alpha: 0.5),
                       blurRadius: 24,
                       offset: const Offset(0, 8),
                     ),
@@ -240,7 +234,7 @@ class _CurriculumManagementScreenState
                         fontSize: 19,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Salena',
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -249,8 +243,7 @@ class _CurriculumManagementScreenState
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
-                        color:
-                            isDark ? Colors.white54 : const Color(0xFF64748B),
+                        color: Colors.white54,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -259,20 +252,18 @@ class _CurriculumManagementScreenState
                       autofocus: true,
                       textCapitalization: TextCapitalization.characters,
                       style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                       decoration: InputDecoration(
                         hintText: 'e.g. CSE',
                         hintStyle: TextStyle(
-                          color: isDark ? Colors.white30 : Colors.black38,
+                          color: Colors.white30,
                           fontSize: 15,
                         ),
                         filled: true,
-                        fillColor: isDark
-                            ? const Color(0xFF1E1E22)
-                            : const Color(0xFFF1F5F9),
+                        fillColor: const Color(0xFF1E1E22),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 14),
                         border: OutlineInputBorder(
@@ -295,9 +286,7 @@ class _CurriculumManagementScreenState
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.08)
-                                    : Colors.black.withValues(alpha: 0.05),
+                                color: Colors.white.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Center(
@@ -306,9 +295,7 @@ class _CurriculumManagementScreenState
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? Colors.white70
-                                        : Colors.black87,
+                                    color: Colors.white70,
                                   ),
                                 ),
                               ),
@@ -496,7 +483,7 @@ class _CurriculumManagementScreenState
   }
 
   Future<void> _deleteCurriculum(String branchName) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -511,14 +498,10 @@ class _CurriculumManagementScreenState
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF141416).withValues(alpha: 0.92)
-                      : Colors.white.withValues(alpha: 0.95),
+                  color: const Color(0xFF141416).withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.08),
+                    color: Colors.white.withValues(alpha: 0.1),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -547,7 +530,7 @@ class _CurriculumManagementScreenState
                         fontSize: 19,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Salena',
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -557,8 +540,7 @@ class _CurriculumManagementScreenState
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.4,
-                        color:
-                            isDark ? Colors.white54 : const Color(0xFF64748B),
+                        color: Colors.white54,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -570,9 +552,7 @@ class _CurriculumManagementScreenState
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.08)
-                                    : Colors.black.withValues(alpha: 0.05),
+                                color: Colors.white.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Center(
@@ -581,9 +561,7 @@ class _CurriculumManagementScreenState
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? Colors.white70
-                                        : Colors.black87,
+                                    color: Colors.white70,
                                   ),
                                 ),
                               ),
@@ -700,7 +678,7 @@ class _CurriculumManagementScreenState
 
   void _showBranchDetailsDialog(String branch) {
     final info = _branchDataMap[branch];
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     showCupertinoModalPopup(
       context: context,
@@ -712,7 +690,7 @@ class _CurriculumManagementScreenState
               maxHeight: MediaQuery.of(context).size.height * 0.75,
             ),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+              color: const Color(0xFF1C1C1E),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24)),
             ),
@@ -726,7 +704,7 @@ class _CurriculumManagementScreenState
                     width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.black12,
+                      color: Colors.white24,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -741,7 +719,7 @@ class _CurriculumManagementScreenState
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black,
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -751,7 +729,7 @@ class _CurriculumManagementScreenState
                             Icon(
                               CupertinoIcons.calendar,
                               size: 14,
-                              color: isDark ? Colors.white54 : Colors.black54,
+                              color: Colors.white54,
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -760,7 +738,7 @@ class _CurriculumManagementScreenState
                                   : 'No upload date recorded',
                               style: TextStyle(
                                 fontSize: 12.5,
-                                color: isDark ? Colors.white54 : Colors.black54,
+                                color: Colors.white54,
                               ),
                             ),
                           ],
@@ -771,7 +749,7 @@ class _CurriculumManagementScreenState
                   const SizedBox(height: 16),
                   Divider(
                     height: 1,
-                    color: isDark ? Colors.white12 : Colors.black12,
+                    color: Colors.white12,
                   ),
 
                   Expanded(
@@ -781,9 +759,7 @@ class _CurriculumManagementScreenState
                       itemCount: 8,
                       separatorBuilder: (_, __) => Divider(
                         height: 1,
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : Colors.black.withValues(alpha: 0.04),
+                        color: Colors.white.withValues(alpha: 0.05),
                       ),
                       itemBuilder: (context, index) {
                         final semNum = index + 1;
@@ -810,9 +786,7 @@ class _CurriculumManagementScreenState
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
-                                        color: isDark
-                                            ? Colors.white
-                                            : Colors.black,
+                                        color: Colors.white,
                                       ),
                                     ),
                                     const SizedBox(width: 10),
@@ -822,9 +796,7 @@ class _CurriculumManagementScreenState
                                           : 'No subjects',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: isDark
-                                            ? Colors.white38
-                                            : Colors.black38,
+                                        color: Colors.white38,
                                       ),
                                     ),
                                   ],
@@ -844,9 +816,7 @@ class _CurriculumManagementScreenState
                                     Icon(
                                       CupertinoIcons.chevron_right,
                                       size: 14,
-                                      color: isDark
-                                          ? Colors.white24
-                                          : Colors.black26,
+                                      color: Colors.white24,
                                     ),
                                   ],
                                 ),
@@ -863,9 +833,7 @@ class _CurriculumManagementScreenState
                     child: SizedBox(
                       width: double.infinity,
                       child: CupertinoButton(
-                        color: isDark
-                            ? const Color(0xFF2C2C2E)
-                            : const Color(0xFFE5E7EB),
+                        color: const Color(0xFF2C2C2E),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         borderRadius: BorderRadius.circular(12),
                         child: Text(
@@ -873,7 +841,7 @@ class _CurriculumManagementScreenState
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black,
+                            color: Colors.white,
                           ),
                         ),
                         onPressed: () => Navigator.pop(ctx),
@@ -891,25 +859,23 @@ class _CurriculumManagementScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFF0A0A0A),
       body: Stack(
         children: [
           Positioned.fill(
             child: SafeArea(
               child: _isLoading
-                  ? _buildSkeletonList(isDark)
+                  ? _buildSkeletonList()
                   : _branches.isEmpty
                       ? Center(
                           child: Text(
                             'No branch curriculums found.\nTap + to add a branch.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color:
-                                  isDark ? Colors.grey[500] : Colors.grey[600],
+                              color: Colors.grey[500],
                               fontSize: 16,
                             ),
                           ),
@@ -919,7 +885,7 @@ class _CurriculumManagementScreenState
                               top: 70, bottom: 30, left: 16, right: 16),
                           itemCount: _branches.length,
                           itemBuilder: (context, index) {
-                            return _buildBranchCard(_branches[index], isDark);
+                            return _buildBranchCard(_branches[index]);
                           },
                         ),
             ),
@@ -935,14 +901,10 @@ class _CurriculumManagementScreenState
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF141414).withValues(alpha: 0.6)
-                        : Colors.white.withValues(alpha: 0.7),
+                    color: const Color(0xFF141414).withValues(alpha: 0.6),
                     border: Border(
                       bottom: BorderSide(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.black.withValues(alpha: 0.05)),
+                          color: Colors.white.withValues(alpha: 0.1)),
                     ),
                   ),
                   child: SafeArea(
@@ -956,7 +918,7 @@ class _CurriculumManagementScreenState
                             child: CupertinoButton(
                               padding: EdgeInsets.zero,
                               child: Icon(CupertinoIcons.back,
-                                  color: isDark ? Colors.white : Colors.black),
+                                  color: Colors.white),
                               onPressed: () => Navigator.pop(context),
                             ),
                           ),
@@ -965,7 +927,7 @@ class _CurriculumManagementScreenState
                             child: Text(
                               'Curriculum',
                               style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Salena',
                                 fontSize: 17,
@@ -979,8 +941,7 @@ class _CurriculumManagementScreenState
                                 padding: EdgeInsets.zero,
                                 onPressed: _showAddBranchDialog,
                                 child: Icon(CupertinoIcons.add,
-                                    color:
-                                        isDark ? Colors.white : Colors.black),
+                                        color: Colors.white),
                               ),
                             ),
                         ],
@@ -996,15 +957,15 @@ class _CurriculumManagementScreenState
     );
   }
 
-  Widget _buildSkeletonList(bool isDark) {
+  Widget _buildSkeletonList() {
     return ListView.builder(
       padding: const EdgeInsets.only(top: 70, bottom: 30, left: 16, right: 16),
       itemCount: 4,
-      itemBuilder: (context, index) => _BranchSkeletonCard(isDark: isDark),
+      itemBuilder: (context, index) => const _BranchSkeletonCard(),
     );
   }
 
-  Widget _buildBranchCard(String branch, bool isDark) {
+  Widget _buildBranchCard(String branch) {
     final info = _branchDataMap[branch];
     final uploadedCount = info?.uploadedSemestersCount ?? 0;
 
@@ -1012,22 +973,18 @@ class _CurriculumManagementScreenState
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark
-              ? const [Color(0xFF303030), Color(0xFF1A1A1A)]
-              : const [Color(0xFFFFFFFF), Color(0xFFF3F4F6)],
+          colors: const [Color(0xFF303030), Color(0xFF1A1A1A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.black.withValues(alpha: 0.06),
+          color: Colors.white.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -1057,9 +1014,7 @@ class _CurriculumManagementScreenState
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? Colors.white
-                                  : const Color(0xFF0F172A),
+                              color: Colors.white,
                               letterSpacing: -0.3,
                             ),
                           ),
@@ -1071,9 +1026,7 @@ class _CurriculumManagementScreenState
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
-                              color: isDark
-                                  ? Colors.white54
-                                  : const Color(0xFF64748B),
+                              color: Colors.white54,
                             ),
                           ),
                         ],
@@ -1082,7 +1035,7 @@ class _CurriculumManagementScreenState
                     Icon(
                       CupertinoIcons.chevron_right,
                       size: 16,
-                      color: isDark ? Colors.white30 : Colors.black26,
+                      color: Colors.white30,
                     ),
                   ],
                 ),
@@ -1097,7 +1050,6 @@ class _CurriculumManagementScreenState
                       icon: CupertinoIcons.arrow_up_doc_fill,
                       label: 'Upload JSON',
                       color: const Color(0xFF10B981), // Emerald Green
-                      isDark: isDark,
                       onTap: () => _uploadCurriculum(branch),
                     ),
                   ),
@@ -1112,7 +1064,6 @@ class _CurriculumManagementScreenState
                           icon: CupertinoIcons.pencil_circle_fill,
                           label: 'Edit',
                           color: const Color(0xFFF59E0B), // Amber
-                          isDark: isDark,
                           onTap: () => _editCurriculum(branch),
                         ),
                       ),
@@ -1123,7 +1074,6 @@ class _CurriculumManagementScreenState
                           icon: CupertinoIcons.trash_fill,
                           label: 'Delete',
                           color: const Color(0xFFDC2626), // Admin Red
-                          isDark: isDark,
                           onTap: () => _deleteCurriculum(branch),
                         ),
                       ),
@@ -1143,7 +1093,6 @@ class _CurriculumManagementScreenState
     required IconData icon,
     required String label,
     required Color color,
-    required bool isDark,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -1151,10 +1100,10 @@ class _CurriculumManagementScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withValues(alpha: isDark ? 0.25 : 0.15),
+            color: color.withValues(alpha: 0.25),
             width: 0.8,
           ),
         ),
@@ -1179,8 +1128,7 @@ class _CurriculumManagementScreenState
 }
 
 class _BranchSkeletonCard extends StatefulWidget {
-  final bool isDark;
-  const _BranchSkeletonCard({required this.isDark});
+  const _BranchSkeletonCard();
 
   @override
   State<_BranchSkeletonCard> createState() => _BranchSkeletonCardState();
@@ -1212,8 +1160,7 @@ class _BranchSkeletonCardState extends State<_BranchSkeletonCard>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor =
-        widget.isDark ? const Color(0xFF1E1E22) : const Color(0xFFE2E8F0);
+    final baseColor = const Color(0xFF1E1E22);
 
     return AnimatedBuilder(
       animation: _animation,
@@ -1224,12 +1171,10 @@ class _BranchSkeletonCardState extends State<_BranchSkeletonCard>
             margin: const EdgeInsets.only(bottom: 14),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: widget.isDark ? const Color(0xFF141416) : Colors.white,
+              color: const Color(0xFF141416),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: widget.isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.06),
+                color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
             child: Column(

@@ -30,7 +30,6 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final postType = post['postType'] as String? ?? 'news';
     final isEvent = postType == 'event';
     final authorName = post['authorUsername'] ?? 'Unknown';
@@ -46,11 +45,11 @@ class EventCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        color: const Color(0xFF1C1C1E),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -83,11 +82,11 @@ class EventCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                        backgroundColor: Colors.white12,
                         child: Text(
                           authorName.isNotEmpty ? authorName[0].toUpperCase() : '?',
                           style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black,
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -103,7 +102,7 @@ class EventCard extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
-                                color: isDark ? Colors.white : Colors.black,
+                                color: Colors.white,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -124,7 +123,7 @@ class EventCard extends StatelessWidget {
                           _timeAgo(createdAt),
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark ? Colors.white54 : Colors.black54,
+                            color: Colors.white54,
                           ),
                         ),
                     ],
@@ -141,9 +140,9 @@ class EventCard extends StatelessWidget {
                             imageUrl,
                             fit: BoxFit.cover,
                             alignment: Alignment.topCenter,
-                            errorBuilder: (context, error, stackTrace) => _buildPlaceholder(isDark),
+                            errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
                           )
-                        : _buildPlaceholder(isDark),
+                        : _buildPlaceholder(),
                   ),
                 ),
 
@@ -159,7 +158,7 @@ class EventCard extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         height: 1.3,
-                        color: isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
+                        color: Colors.white.withValues(alpha: 0.95),
                       ),
                     ),
                   ),
@@ -171,14 +170,14 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder(bool isDark) {
+  Widget _buildPlaceholder() {
     return Container(
-      color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
+      color: const Color(0xFF2C2C2E),
       child: Center(
         child: Icon(
           CupertinoIcons.photo,
           size: 48,
-          color: isDark ? Colors.white24 : Colors.black26,
+          color: Colors.white24,
         ),
       ),
     );

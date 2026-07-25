@@ -100,28 +100,25 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final accentColor = AuthPalette.coral;
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Profile', style: TextStyle(fontFamily: 'Salena')),
-        backgroundColor: isDark
-            ? CupertinoColors.black.withOpacity(0.7)
-            : CupertinoColors.white.withOpacity(0.7),
+        backgroundColor: CupertinoColors.black.withOpacity(0.7),
       ),
       child: Material(
-        color: isDark ? Colors.black : const Color(0xFFF2F2F7),
+        color: Colors.black,
         child: SafeArea(
           child: isLoading
               ? const Center(child: CupertinoActivityIndicator(radius: 16))
               : error != null
-              ? _buildErrorState(isDark)
+              ? _buildErrorState()
               : FadeTransition(
                   opacity: _fadeAnimation,
                   child: SlideTransition(
                     position: _slideAnimation,
-                    child: _buildContent(isDark, accentColor),
+                    child: _buildContent(accentColor),
                   ),
                 ),
         ),
@@ -129,7 +126,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     );
   }
 
-  Widget _buildErrorState(bool isDark) {
+  Widget _buildErrorState() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -139,15 +136,15 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
             Icon(
               CupertinoIcons.exclamationmark_circle,
               size: 48,
-              color: isDark ? Colors.white38 : Colors.black26,
+              color: Colors.white38,
             ),
             const SizedBox(height: 16),
             Text(
               error!,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 15,
-                color: isDark ? Colors.white60 : Colors.black54,
+                color: Colors.white60,
               ),
             ),
             const SizedBox(height: 24),
@@ -167,7 +164,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     );
   }
 
-  Widget _buildContent(bool isDark, Color accentColor) {
+  Widget _buildContent(Color accentColor) {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       child: Column(
@@ -176,7 +173,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           // Hero header with gradient
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildProfileHeader(isDark, accentColor),
+            child: _buildProfileHeader(accentColor),
           ),
           // Info cards
           Padding(
@@ -185,16 +182,15 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Quick stats row
-                _buildQuickStats(isDark, accentColor),
+                _buildQuickStats(accentColor),
                 const SizedBox(height: 24),
                 // Personal info section
                 _buildSectionHeader(
                   'Personal Information',
                   CupertinoIcons.person_fill,
-                  isDark,
                 ),
                 const SizedBox(height: 12),
-                _buildGroupedCard(isDark, [
+                _buildGroupedCard([
                   _InfoRow(
                     icon: CupertinoIcons.mail,
                     label: 'Email',
@@ -211,10 +207,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                 _buildSectionHeader(
                   'Academic Information',
                   CupertinoIcons.book_fill,
-                  isDark,
                 ),
                 const SizedBox(height: 12),
-                _buildGroupedCard(isDark, [
+                _buildGroupedCard([
                   _InfoRow(
                     icon: CupertinoIcons.rectangle_grid_1x2,
                     label: 'Section',
@@ -231,10 +226,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                 _buildSectionHeader(
                   'Account',
                   CupertinoIcons.shield_fill,
-                  isDark,
                 ),
                 const SizedBox(height: 12),
-                _buildGroupedCard(isDark, [
+                _buildGroupedCard([
                   _InfoRow(
                     icon: CupertinoIcons.star_fill,
                     label: 'Role',
@@ -260,10 +254,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                   _buildSectionHeader(
                     'Admin Access',
                     CupertinoIcons.wrench_fill,
-                    isDark,
                   ),
                   const SizedBox(height: 12),
-                  _buildDebugCard(isDark, accentColor),
+                  _buildDebugCard(accentColor),
                 ],
                 const SizedBox(height: 24),
               ],
@@ -274,7 +267,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     );
   }
 
-  Widget _buildProfileHeader(bool isDark, Color accentColor) {
+  Widget _buildProfileHeader(Color accentColor) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -285,9 +278,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           colors: [
             accentColor,
             accentColor.withValues(alpha: 0.8),
-            isDark
-                ? accentColor.withValues(alpha: 0.4)
-                : accentColor.withValues(alpha: 0.6),
+            accentColor.withValues(alpha: 0.4),
           ],
         ),
         boxShadow: [
@@ -379,16 +370,16 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     );
   }
 
-  Widget _buildQuickStats(bool isDark, Color accentColor) {
+  Widget _buildQuickStats(Color accentColor) {
     final branch = profileData?['branch'] ?? '—';
     final semester = profileData?['semester']?.toString() ?? '—';
 
     return Row(
       children: [
-        Expanded(child: _buildStatChip(branch, 'Branch', isDark, accentColor)),
+        Expanded(child: _buildStatChip(branch, 'Branch', accentColor)),
         const SizedBox(width: 10),
         Expanded(
-          child: _buildStatChip(semester, 'Semester', isDark, accentColor),
+          child: _buildStatChip(semester, 'Semester', accentColor),
         ),
       ],
     );
@@ -397,7 +388,6 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
   Widget _buildStatChip(
     String value,
     String label,
-    bool isDark,
     Color accentColor,
   ) {
     return ClipRRect(
@@ -407,9 +397,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
           decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-                : Colors.grey[200]!.withValues(alpha: 0.65),
+            color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -437,7 +425,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                 label,
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDark ? Colors.white54 : Colors.black45,
+                  color: Colors.white54,
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
@@ -449,17 +437,17 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon, bool isDark) {
+  Widget _buildSectionHeader(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: isDark ? Colors.white54 : Colors.black45),
+        Icon(icon, size: 18, color: Colors.white54),
         const SizedBox(width: 8),
         Text(
           title,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white54 : Colors.black45,
+            color: Colors.white54,
             letterSpacing: 0.5,
           ),
         ),
@@ -467,16 +455,14 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     );
   }
 
-  Widget _buildGroupedCard(bool isDark, List<_InfoRow> rows) {
+  Widget _buildGroupedCard(List<_InfoRow> rows) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-                : Colors.grey[200]!.withValues(alpha: 0.65),
+            color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -521,9 +507,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                                 row.label,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDark
-                                      ? Colors.white54
-                                      : Colors.black45,
+                                  color: Colors.white54,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -532,7 +516,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                                 row.value,
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: isDark ? Colors.white : Colors.black87,
+                                  color: Colors.white,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -547,9 +531,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                       padding: const EdgeInsets.only(left: 64),
                       child: Divider(
                         height: 1,
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.06)
-                            : Colors.black.withValues(alpha: 0.06),
+                        color: Colors.white.withValues(alpha: 0.06),
                       ),
                     ),
                 ],
@@ -591,16 +573,14 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     }
   }
 
-  Widget _buildDebugCard(bool isDark, Color accentColor) {
+  Widget _buildDebugCard(Color accentColor) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-                : Colors.grey[200]!.withValues(alpha: 0.65),
+            color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -620,9 +600,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : Colors.black.withValues(alpha: 0.03),
+                        color: Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -639,7 +617,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                           'View as Admin',
                           style: TextStyle(
                             fontSize: 16,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: Colors.white,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -648,7 +626,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                           'Toggle to see admin UI',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            color: Colors.grey[400],
                           ),
                         ),
                       ],

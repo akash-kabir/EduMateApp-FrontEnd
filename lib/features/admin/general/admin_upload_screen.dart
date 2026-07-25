@@ -12,10 +12,10 @@ class AdminUploadScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFF0A0A0A),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -33,7 +33,7 @@ class AdminUploadScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Salena',
                       letterSpacing: -0.5,
-                      color: isDark ? Colors.white : const Color(0xFF111827),
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -41,7 +41,7 @@ class AdminUploadScreen extends StatelessWidget {
                     'Manage curriculums, timetables, electives, map POIs, and holiday calendars.',
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                      color: Colors.white60,
                     ),
                   ),
                 ],
@@ -59,7 +59,7 @@ class AdminUploadScreen extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.1,
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: Colors.white38,
                 ),
               ),
             ),
@@ -73,7 +73,7 @@ class AdminUploadScreen extends StatelessWidget {
                   title: 'Curriculum',
                   iconColor: const Color(0xFF6366F1),
                   icon: CupertinoIcons.book_fill,
-                  isDark: isDark,
+
                   onTap: () {
                     Navigator.push(
                       context,
@@ -88,7 +88,7 @@ class AdminUploadScreen extends StatelessWidget {
                   title: 'Schedule',
                   iconColor: const Color(0xFFF59E0B),
                   icon: CupertinoIcons.clock_fill,
-                  isDark: isDark,
+
                   onTap: () {
                     Navigator.push(
                       context,
@@ -103,7 +103,7 @@ class AdminUploadScreen extends StatelessWidget {
                   title: 'Electives',
                   iconColor: const Color(0xFF10B981),
                   icon: CupertinoIcons.checkmark_seal_fill,
-                  isDark: isDark,
+
                   onTap: () {
                     Navigator.push(
                       context,
@@ -128,7 +128,7 @@ class AdminUploadScreen extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.1,
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: Colors.white38,
                 ),
               ),
             ),
@@ -142,7 +142,7 @@ class AdminUploadScreen extends StatelessWidget {
                   title: 'POI',
                   iconColor: const Color(0xFFF43F5E),
                   icon: CupertinoIcons.map_pin_ellipse,
-                  isDark: isDark,
+
                   onTap: () {
                     Navigator.push(
                       context,
@@ -157,7 +157,7 @@ class AdminUploadScreen extends StatelessWidget {
                   title: 'Holidays',
                   iconColor: const Color(0xFF06B6D4),
                   icon: CupertinoIcons.calendar_today,
-                  isDark: isDark,
+
                   onTap: () {
                     Navigator.push(
                       context,
@@ -173,7 +173,7 @@ class AdminUploadScreen extends StatelessWidget {
                   subtitle: 'Roll number to section & elective mappings',
                   iconColor: const Color(0xFF06B6D4),
                   icon: CupertinoIcons.person_2_fill,
-                  isDark: isDark,
+
                   onTap: () {
                     Navigator.push(
                       context,
@@ -198,7 +198,7 @@ class _DataManagementCard extends StatelessWidget {
   final String? subtitle;
   final Color iconColor;
   final IconData icon;
-  final bool isDark;
+
   final VoidCallback onTap;
 
   const _DataManagementCard({
@@ -206,7 +206,7 @@ class _DataManagementCard extends StatelessWidget {
     this.subtitle,
     required this.iconColor,
     required this.icon,
-    required this.isDark,
+
     required this.onTap,
   });
 
@@ -218,21 +218,17 @@ class _DataManagementCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isDark
-                ? const [Color(0xFF303030), Color(0xFF1A1A1A)]
-                : const [Color(0xFFFFFFFF), Color(0xFFF3F4F6)],
+            colors: const [Color(0xFF303030), Color(0xFF1A1A1A)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.06),
+            color: Colors.white.withValues(alpha: 0.1),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -268,7 +264,7 @@ class _DataManagementCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF111827),
+                      color: Colors.white,
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -277,7 +273,7 @@ class _DataManagementCard extends StatelessWidget {
                       subtitle!,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                        color: Colors.white60,
                       ),
                     ),
                   ],
@@ -288,7 +284,7 @@ class _DataManagementCard extends StatelessWidget {
             Icon(
               CupertinoIcons.chevron_right,
               size: 16,
-              color: isDark ? Colors.white30 : const Color(0xFF9CA3AF),
+              color: Colors.white30,
             ),
           ],
         ),

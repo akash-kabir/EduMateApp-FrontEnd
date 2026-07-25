@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 class MapSkeletonLoader extends StatefulWidget {
-  final bool isDark;
-  const MapSkeletonLoader({super.key, required this.isDark});
+  const MapSkeletonLoader({super.key});
 
   @override
   State<MapSkeletonLoader> createState() => _MapSkeletonLoaderState();
@@ -34,14 +33,13 @@ class _MapSkeletonLoaderState extends State<MapSkeletonLoader>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = widget.isDark;
-    final baseColor = isDark ? const Color(0xFF2C2C2E) : Colors.grey[300]!;
+    final baseColor = const Color(0xFF2C2C2E);
 
     return AnimatedBuilder(
       animation: _opacityAnimation,
       builder: (context, child) {
         return Container(
-          color: isDark ? const Color(0xFF0F0F11) : const Color(0xFFF2F2F7),
+          color: const Color(0xFF0F0F11),
           child: Stack(
             children: [
               // ── Clean Map Grid Canvas (Enhanced Intensity, No Circles / Shadows) ──
@@ -49,7 +47,7 @@ class _MapSkeletonLoaderState extends State<MapSkeletonLoader>
                 child: Opacity(
                   opacity: _opacityAnimation.value * 0.85,
                   child: CustomPaint(
-                    painter: _MapGridSkeletonPainter(isDark: isDark),
+                    painter: _MapGridSkeletonPainter(),
                   ),
                 ),
               ),
@@ -77,7 +75,7 @@ class _MapSkeletonLoaderState extends State<MapSkeletonLoader>
                             width: 150,
                             height: 14,
                             decoration: BoxDecoration(
-                              color: isDark ? Colors.white24 : Colors.black12,
+                              color: Colors.white24,
                               borderRadius: BorderRadius.circular(7),
                             ),
                           ),
@@ -97,15 +95,12 @@ class _MapSkeletonLoaderState extends State<MapSkeletonLoader>
 
 // Simple Grid Lines Painter (Flat & Clean, No Building Block Circles)
 class _MapGridSkeletonPainter extends CustomPainter {
-  final bool isDark;
-  _MapGridSkeletonPainter({required this.isDark});
+  _MapGridSkeletonPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = isDark
-          ? Colors.white.withValues(alpha: 0.18)
-          : Colors.black.withValues(alpha: 0.10)
+      ..color = Colors.white.withValues(alpha: 0.18)
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 

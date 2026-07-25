@@ -156,10 +156,8 @@ class _AdminStudentDataManagementScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFF0A0A0A),
       body: Stack(
         children: [
           Positioned.fill(
@@ -201,29 +199,22 @@ class _AdminStudentDataManagementScreenState
 
                                 return Container(
                                   decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: isDark
-                                          ? const [
+                                    gradient: const LinearGradient(
+                                      colors: [
                                               Color(0xFF303030),
                                               Color(0xFF1A1A1A)
-                                            ]
-                                          : const [
-                                              Color(0xFFFFFFFF),
-                                              Color(0xFFF3F4F6)
                                             ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     borderRadius: BorderRadius.circular(24),
                                     border: Border.all(
-                                      color: isDark
-                                          ? Colors.white.withValues(alpha: 0.1)
-                                          : Colors.black.withValues(alpha: 0.06),
+                                      color: Colors.white.withValues(alpha: 0.1),
                                     ),
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black
-                                            .withValues(alpha: isDark ? 0.3 : 0.05),
+                                            .withValues(alpha: 0.3),
                                         blurRadius: 16,
                                         offset: const Offset(0, 6),
                                       ),
@@ -243,9 +234,7 @@ class _AdminStudentDataManagementScreenState
                                               fontSize: 20,
                                               fontWeight: FontWeight.bold,
                                               fontFamily: 'Poppins',
-                                              color: isDark
-                                                  ? Colors.white
-                                                  : const Color(0xFF0F172A),
+                                              color: Colors.white,
                                               letterSpacing: -0.4,
                                             ),
                                           ),
@@ -271,12 +260,12 @@ class _AdminStudentDataManagementScreenState
                                         ],
                                       ),
                                       const SizedBox(height: 16),
-                                      _buildInfoRow(isDark, 'Semester:', semester),
+                                      _buildInfoRow('Semester:', semester),
                                       const SizedBox(height: 8),
-                                      _buildInfoRow(isDark, 'Students:', count),
+                                      _buildInfoRow('Students:', count),
                                       if (isConfigured) ...[
                                         const SizedBox(height: 8),
-                                        _buildInfoRow(isDark, 'Uploaded:', date),
+                                        _buildInfoRow('Uploaded:', date),
                                       ],
                                       const SizedBox(height: 20),
                                       Row(
@@ -289,7 +278,6 @@ class _AdminStudentDataManagementScreenState
                                                   : CupertinoIcons.cloud_upload_fill,
                                               label: isConfigured ? 'Replace JSON' : 'Upload JSON',
                                               color: const Color(0xFF10B981), // Emerald Green
-                                              isDark: isDark,
                                               onTap: () => _uploadJson(targetYear: targetYear),
                                             ),
                                           ),
@@ -301,7 +289,6 @@ class _AdminStudentDataManagementScreenState
                                                 icon: CupertinoIcons.trash_fill,
                                                 label: 'Delete',
                                                 color: const Color(0xFFDC2626), // Admin Red
-                                                isDark: isDark,
                                                 onTap: () => _deleteDataset(targetYear, d['semester'] ?? ''),
                                               ),
                                             ),
@@ -333,14 +320,10 @@ class _AdminStudentDataManagementScreenState
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF141414).withValues(alpha: 0.6)
-                        : Colors.white.withValues(alpha: 0.7),
+                    color: const Color(0xFF141414).withValues(alpha: 0.6),
                     border: Border(
                       bottom: BorderSide(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : Colors.black.withValues(alpha: 0.05),
+                        color: Colors.white.withValues(alpha: 0.1),
                       ),
                     ),
                   ),
@@ -354,9 +337,9 @@ class _AdminStudentDataManagementScreenState
                             alignment: Alignment.centerLeft,
                             child: CupertinoButton(
                               padding: EdgeInsets.zero,
-                              child: Icon(
+                              child: const Icon(
                                 CupertinoIcons.back,
-                                color: isDark ? Colors.white : Colors.black,
+                                color: Colors.white,
                               ),
                               onPressed: () => Navigator.pop(context),
                             ),
@@ -365,8 +348,8 @@ class _AdminStudentDataManagementScreenState
                             alignment: Alignment.center,
                             child: Text(
                               'Student Data',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
+                              style: const TextStyle(
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Salena',
                                 fontSize: 17,
@@ -386,24 +369,24 @@ class _AdminStudentDataManagementScreenState
     );
   }
 
-  Widget _buildInfoRow(bool isDark, String label, String value) {
+  Widget _buildInfoRow(String label, String value) {
     return Row(
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white54 : Colors.black54,
+            color: Colors.white54,
           ),
         ),
         const SizedBox(width: 8),
         Text(
           value,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.black87,
+            color: Colors.white,
           ),
         ),
       ],
@@ -415,7 +398,6 @@ class _AdminStudentDataManagementScreenState
     required IconData icon,
     required String label,
     required Color color,
-    required bool isDark,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -423,10 +405,10 @@ class _AdminStudentDataManagementScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withValues(alpha: isDark ? 0.25 : 0.15),
+            color: color.withValues(alpha: 0.25),
             width: 0.8,
           ),
         ),

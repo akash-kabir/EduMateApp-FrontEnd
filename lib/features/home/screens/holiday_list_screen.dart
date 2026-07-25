@@ -115,7 +115,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
     _todayLineIndex = _holidays.length;
   }
 
-  Widget _buildTodayLine(bool isDark) {
+  Widget _buildTodayLine() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Stack(
@@ -154,7 +154,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
     );
   }
 
-  Widget _buildHolidayCard(dynamic holiday, bool isDark, bool isToday) {
+  Widget _buildHolidayCard(dynamic holiday, bool isToday) {
     final startDate = DateTime.parse(holiday['startDate']);
     final endDate = DateTime.parse(holiday['endDate']);
     
@@ -199,17 +199,17 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
             ),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              color: const Color(0xFF1E1E1E),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isToday 
                     ? Colors.redAccent 
-                    : (isDark ? Colors.white.withOpacity(0.05) : Colors.transparent),
+                    : Colors.white.withOpacity(0.05),
                 width: isToday ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.05),
+                  color: Colors.black.withOpacity(0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -271,7 +271,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                                 fontFamily: 'Poppins',
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : Colors.black87,
+                                color: Colors.white,
                                 height: 1.3,
                               ),
                               maxLines: 3,
@@ -283,7 +283,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                                 Icon(
                                   CupertinoIcons.calendar,
                                   size: 14,
-                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                  color: Colors.grey[400],
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -292,7 +292,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: 13,
-                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                      color: Colors.grey[400],
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -306,7 +306,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                                 Icon(
                                   CupertinoIcons.time,
                                   size: 14,
-                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                  color: Colors.grey[400],
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -314,7 +314,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
                                     fontSize: 13,
-                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    color: Colors.grey[400],
                                   ),
                                 ),
                               ],
@@ -325,7 +325,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                                 Icon(
                                   CupertinoIcons.info_circle,
                                   size: 14,
-                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                  color: Colors.grey[400],
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -333,7 +333,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
                                     fontSize: 13,
-                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    color: Colors.grey[400],
                                   ),
                                 ),
                               ],
@@ -354,8 +354,6 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text(
@@ -365,9 +363,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: isDark
-            ? CupertinoColors.black.withOpacity(0.6)
-            : CupertinoColors.white.withOpacity(0.6),
+        backgroundColor: CupertinoColors.black.withOpacity(0.6),
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -382,7 +378,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                         Icon(
                           CupertinoIcons.calendar,
                           size: 64,
-                          color: isDark ? Colors.grey[600] : Colors.grey[400],
+                          color: Colors.grey[600],
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -390,7 +386,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 16,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            color: Colors.grey[400],
                           ),
                         ),
                       ],
@@ -405,7 +401,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                           if (_todayLineIndex == _holidays.length) {
                             return Container(
                               key: _targetKey,
-                              child: _buildTodayLine(isDark),
+                              child: _buildTodayLine(),
                             );
                           }
                           return const SizedBox.shrink();
@@ -418,8 +414,8 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                           key: isTarget ? _targetKey : null,
                           child: Column(
                             children: [
-                              if (index == _todayLineIndex) _buildTodayLine(isDark),
-                              _buildHolidayCard(_holidays[index], isDark, isTodayHoliday),
+                              if (index == _todayLineIndex) _buildTodayLine(),
+                              _buildHolidayCard(_holidays[index], isTodayHoliday),
                             ],
                           ),
                         );

@@ -220,14 +220,14 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
     EduMateToast.showCompact(context, message: 'Subject deleted.', isSuccess: true);
   }
 
-  Widget _buildSummaryItem(String label, String value, bool isDark) {
+  Widget _buildSummaryItem(String label, String value) {
     return Column(
       children: [
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            color: isDark ? Colors.grey[400] : Colors.grey[600],
+            color: Colors.grey[400],
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -236,7 +236,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
           value,
           style: TextStyle(
             fontSize: 16,
-            color: isDark ? Colors.white : Colors.black,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -244,7 +244,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
     );
   }
 
-  void _showSemesterPicker(BuildContext context, bool isDark) {
+  void _showSemesterPicker(BuildContext context) {
     int selectedSem = _currentSemester;
 
     showCupertinoModalPopup(
@@ -255,7 +255,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
           child: Container(
             height: 270,
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+              color: const Color(0xFF1C1C1E),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Column(
@@ -265,7 +265,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: isDark ? Colors.white12 : Colors.black12,
+                        color: Colors.white12,
                       ),
                     ),
                   ),
@@ -278,7 +278,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
-                          color: isDark ? Colors.white : Colors.black,
+                          color: Colors.white,
                         ),
                       ),
                       CupertinoButton(
@@ -318,7 +318,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             fontFamily: 'Poppins',
-                            color: isDark ? Colors.white : Colors.black,
+                            color: Colors.white,
                           ),
                         ),
                       );
@@ -335,10 +335,10 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Scaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+      backgroundColor: CupertinoColors.black,
       extendBodyBehindAppBar: true,
       body: _isLoading
           ? const Center(child: CupertinoActivityIndicator())
@@ -351,7 +351,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                           child: Center(
                             child: Text(
                               'No subjects added yet.',
-                              style: TextStyle(color: isDark ? Colors.grey : Colors.grey[600]),
+                              style: const TextStyle(color: Colors.grey),
                             ),
                           ),
                         )
@@ -364,7 +364,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                               key: ObjectKey(subject),
                               subject: subject,
                               subjectTypes: _subjectTypes,
-                              isDark: isDark,
+                              
                               onChanged: () => setState(() {}),
                               onRemove: () => _removeSubject(index),
                             );
@@ -381,9 +381,9 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                       filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.7),
+                          color: const Color(0xFF141414).withValues(alpha: 0.6),
                           border: Border(
-                            bottom: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                            bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                           ),
                         ),
                         child: SafeArea(
@@ -399,7 +399,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                                       alignment: Alignment.centerLeft,
                                       child: CupertinoButton(
                                         padding: EdgeInsets.zero,
-                                        child: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
+                                        child: const Icon(CupertinoIcons.back, color: Colors.white),
                                         onPressed: () => Navigator.pop(context),
                                       ),
                                     ),
@@ -408,7 +408,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                                       child: Text(
                                         'Edit Curriculum',
                                         style: TextStyle(
-                                          color: isDark ? Colors.white : Colors.black,
+                                          color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                           fontFamily: 'Salena',
                                           fontSize: 18,
@@ -446,19 +446,15 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 child: GestureDetector(
-                                  onTap: () => _showSemesterPicker(context, isDark),
+                                  onTap: () => _showSemesterPicker(context),
                                   child: Container(
                                     height: 48,
                                     padding: const EdgeInsets.symmetric(horizontal: 16),
                                     decoration: BoxDecoration(
-                                      color: isDark
-                                          ? Colors.white.withValues(alpha: 0.08)
-                                          : Colors.black.withValues(alpha: 0.05),
+                                      color: Colors.white.withValues(alpha: 0.08),
                                       borderRadius: BorderRadius.circular(24),
                                       border: Border.all(
-                                        color: isDark
-                                            ? Colors.white.withValues(alpha: 0.12)
-                                            : Colors.black.withValues(alpha: 0.08),
+                                        color: Colors.white.withValues(alpha: 0.12),
                                       ),
                                     ),
                                     child: Row(
@@ -478,7 +474,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.bold,
                                                 fontFamily: 'Poppins',
-                                                color: isDark ? Colors.white : Colors.black,
+                                                color: Colors.white,
                                               ),
                                             ),
                                           ],
@@ -512,9 +508,9 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                                   children: [
-                                    _buildSummaryItem('Branch', widget.branch, isDark),
-                                    _buildSummaryItem('Subjects', '${_subjects.length}', isDark),
-                                    _buildSummaryItem('Credits', '${_subjects.fold(0, (sum, sub) => sum + ((sub['credits'] as int?) ?? 0))}', isDark),
+                                    _buildSummaryItem('Branch', widget.branch),
+                                    _buildSummaryItem('Subjects', '${_subjects.length}'),
+                                    _buildSummaryItem('Credits', '${_subjects.fold(0, (sum, sub) => sum + ((sub['credits'] as int?) ?? 0))}'),
                                   ],
                                 ),
                               ),
@@ -539,7 +535,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6),
+                              color: const Color(0xFF141414).withValues(alpha: 0.6),
                               borderRadius: BorderRadius.circular(21),
                             ),
                             child: ElevatedButton.icon(
@@ -549,7 +545,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 shadowColor: Colors.transparent,
-                                foregroundColor: isDark ? Colors.white : Colors.black,
+                                foregroundColor: Colors.white,
                                 minimumSize: const Size(double.infinity, 55),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
                               ),
@@ -569,7 +565,7 @@ class _CurriculumEditorScreenState extends State<CurriculumEditorScreen> {
 class _SubjectEditCard extends StatefulWidget {
   final Map<String, dynamic> subject;
   final List<String> subjectTypes;
-  final bool isDark;
+
   final VoidCallback onChanged;
   final VoidCallback onRemove;
 
@@ -577,7 +573,7 @@ class _SubjectEditCard extends StatefulWidget {
     super.key,
     required this.subject,
     required this.subjectTypes,
-    required this.isDark,
+
     required this.onChanged,
     required this.onRemove,
   });
@@ -612,7 +608,7 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
       widthFactor: 0.9,
       child: StatefulBuilder(
         builder: (context, setDialogState) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+
           return SingleChildScrollView(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -624,7 +620,7 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
                                 fontFamily: 'Poppins',
                                 fontSize: 20.0,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : Colors.black87,
+                                color: Colors.white,
                                 letterSpacing: -0.5,
                               ),
                               textAlign: TextAlign.center,
@@ -632,7 +628,7 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
                             const SizedBox(height: 24),
                             TextFormField(
                               initialValue: tempName,
-                              style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                              style: const TextStyle(color: Colors.white, fontSize: 15),
                               decoration: _buildInputDecoration('Subject Name'),
                               onChanged: (val) => tempName = val,
                             ),
@@ -643,7 +639,7 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
                                   flex: 1,
                                   child: TextFormField(
                                     initialValue: tempCode,
-                                    style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                                    style: const TextStyle(color: Colors.white, fontSize: 15),
                                     decoration: _buildInputDecoration('Code'),
                                     onChanged: (val) => tempCode = val,
                                   ),
@@ -654,7 +650,7 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
                                   child: TextFormField(
                                     initialValue: tempCredits.toString(),
                                     keyboardType: TextInputType.number,
-                                    style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
+                                    style: const TextStyle(color: Colors.white, fontSize: 15),
                                     decoration: _buildInputDecoration('Credits'),
                                     onChanged: (val) => tempCredits = int.tryParse(val) ?? 0,
                                   ),
@@ -664,7 +660,7 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
                             const SizedBox(height: 16),
                             Container(
                               decoration: BoxDecoration(
-                                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                                color: Colors.white.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: BottomSheetSelector<String>(
@@ -687,8 +683,8 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
                                   child: OutlinedButton(
                                     onPressed: () => Navigator.pop(context),
                                     style: OutlinedButton.styleFrom(
-                                      foregroundColor: isDark ? Colors.white : Colors.black,
-                                      side: BorderSide(color: isDark ? Colors.white24 : Colors.black26),
+                                      foregroundColor: Colors.white,
+                                      side: const BorderSide(color: Colors.white24),
                                       padding: const EdgeInsets.symmetric(vertical: 14),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
@@ -739,9 +735,9 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
   InputDecoration _buildInputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: widget.isDark ? Colors.grey[500] : Colors.grey[600], fontSize: 13),
+      labelStyle: TextStyle(color: Colors.grey[500], fontSize: 13),
       filled: true,
-      fillColor: widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+      fillColor: Colors.white.withValues(alpha: 0.05),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -772,7 +768,7 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             decoration: BoxDecoration(
-              color: widget.isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.65),
+              color: const Color(0xFF141414).withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -786,7 +782,7 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
                       Text(
                         title,
                         style: TextStyle(
-                          color: widget.isDark ? Colors.white : Colors.black,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),
@@ -795,7 +791,7 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          color: widget.isDark ? Colors.grey[400] : Colors.grey[600],
+                          color: Colors.grey[400],
                           fontSize: 14,
                         ),
                       ),
@@ -804,15 +800,15 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
                 ),
                 Divider(
                   height: 1,
-                  color: widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  color: Colors.white.withValues(alpha: 0.1),
                 ),
                 Row(
                   children: [
                     Expanded(
                       child: TextButton.icon(
                         onPressed: () => _showEditDialog(context),
-                        icon: Icon(CupertinoIcons.pencil, size: 18, color: widget.isDark ? Colors.white70 : Colors.black87),
-                        label: Text('Edit', style: TextStyle(color: widget.isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600)),
+                        icon: const Icon(CupertinoIcons.pencil, size: 18, color: Colors.white70),
+                        label: const Text('Edit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16))),
@@ -822,7 +818,7 @@ class _SubjectEditCardState extends State<_SubjectEditCard> {
                     Container(
                       width: 1,
                       height: 48,
-                      color: widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                      color: Colors.white.withValues(alpha: 0.1),
                     ),
                     Expanded(
                       child: TextButton.icon(

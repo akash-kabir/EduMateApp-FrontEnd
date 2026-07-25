@@ -5,7 +5,7 @@ class WeekCalendarGrid extends StatelessWidget {
   final List<DateTime> weekDates;
   final DateTime selectedDate;
   final DateTime now;
-  final bool isDark;
+
   final Function(DateTime selectedDate, bool slideFromRight) onDateSelected;
 
   const WeekCalendarGrid({
@@ -13,7 +13,7 @@ class WeekCalendarGrid extends StatelessWidget {
     required this.weekDates,
     required this.selectedDate,
     required this.now,
-    required this.isDark,
+
     required this.onDateSelected,
   });
 
@@ -79,7 +79,7 @@ class WeekCalendarGrid extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   color: isSelected
                       ? Colors.white
-                      : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                      : Colors.grey[300],
                 ),
               ),
             ),

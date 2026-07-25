@@ -126,7 +126,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final accent = AuthPalette.coral;
 
     return PopScope(
@@ -140,7 +140,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildCurrentStep(isDark, accent),
+                _buildCurrentStep(accent),
               ],
             ),
           ),
@@ -149,7 +149,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
     );
   }
 
-  Widget _buildCurrentStep(bool isDark, Color accent) {
+  Widget _buildCurrentStep(Color accent) {
     switch (_currentStep) {
       case DialogStep.init:
         return const SizedBox(
@@ -158,31 +158,31 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
         );
       
       case DialogStep.emailDetected:
-        return _buildEmailDetected(isDark, accent);
+        return _buildEmailDetected(accent);
       
       case DialogStep.enterRollNo:
-        return _buildEnterRollNo(isDark, accent);
+        return _buildEnterRollNo(accent);
       
       case DialogStep.sending:
-        return _buildAnimationState(isDark, accent, sending: true);
+        return _buildAnimationState(accent, sending: true);
       
       case DialogStep.receiving:
-        return _buildAnimationState(isDark, accent, sending: false);
+        return _buildAnimationState(accent, sending: false);
       
       case DialogStep.dataFound:
-        return _buildDataFound(isDark, accent);
+        return _buildDataFound(accent);
       
       case DialogStep.manualEntry:
-        return _buildManualEntry(isDark, accent);
+        return _buildManualEntry(accent);
       
       case DialogStep.success:
-        return _buildSuccess(isDark, accent);
+        return _buildSuccess(accent);
     }
   }
 
   // ─── Individual Steps ────────────────────────────────────────────────────────
 
-  Widget _buildEmailDetected(bool isDark, Color accent) {
+  Widget _buildEmailDetected(Color accent) {
     return Column(
       children: [
         Icon(CupertinoIcons.checkmark_seal_fill, color: const Color(0xFF10B981), size: 50),
@@ -192,7 +192,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
+            color: Colors.white,
             fontFamily: 'Poppins',
           ),
         ),
@@ -201,7 +201,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           'Roll Number: ${_logic.detectedRollNo}',
           style: TextStyle(
             fontSize: 14,
-            color: isDark ? Colors.grey[400] : Colors.grey[700],
+            color: Colors.grey[400],
           ),
         ),
         const SizedBox(height: 20),
@@ -210,7 +210,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
     );
   }
 
-  Widget _buildEnterRollNo(bool isDark, Color accent) {
+  Widget _buildEnterRollNo(Color accent) {
     return Column(
       children: [
         Icon(CupertinoIcons.person_crop_circle_badge_exclam, color: accent, size: 40),
@@ -220,7 +220,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
+            color: Colors.white,
             fontFamily: 'Poppins',
           ),
         ),
@@ -230,7 +230,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13,
-            color: isDark ? Colors.grey[400] : Colors.grey[700],
+            color: Colors.grey[400],
           ),
         ),
         const SizedBox(height: 20),
@@ -239,11 +239,11 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           placeholder: 'e.g. 2105001',
           padding: const EdgeInsets.only(left: 14, top: 12, bottom: 12, right: 8),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
+            border: Border.all(color: Colors.white24),
           ),
-          style: TextStyle(color: isDark ? Colors.white : Colors.black),
+          style: const TextStyle(color: Colors.white),
           keyboardType: TextInputType.number,
           suffix: Padding(
             padding: const EdgeInsets.only(right: 6),
@@ -268,17 +268,17 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
     );
   }
 
-  Widget _buildAnimationState(bool isDark, Color accent, {required bool sending}) {
+  Widget _buildAnimationState(Color accent, {required bool sending}) {
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(CupertinoIcons.globe, size: 40, color: isDark ? Colors.white70 : Colors.black54),
+            Icon(CupertinoIcons.globe, size: 40, color: Colors.white70),
             const SizedBox(width: 20),
             BarsScaleAnimation(color: accent),
             const SizedBox(width: 20),
-            Icon(CupertinoIcons.device_phone_portrait, size: 40, color: isDark ? Colors.white70 : Colors.black54),
+            Icon(CupertinoIcons.device_phone_portrait, size: 40, color: Colors.white70),
           ],
         ),
         const SizedBox(height: 24),
@@ -287,7 +287,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.black,
+            color: Colors.white,
             fontFamily: 'Poppins',
           ),
         ),
@@ -295,7 +295,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
     );
   }
 
-  Widget _buildDataFound(bool isDark, Color accent) {
+  Widget _buildDataFound(Color accent) {
     return Column(
       children: [
         Icon(CupertinoIcons.checkmark_alt_circle_fill, color: const Color(0xFF10B981), size: 40),
@@ -305,16 +305,16 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
+            color: Colors.white,
             fontFamily: 'Poppins',
           ),
         ),
         const SizedBox(height: 16),
-        _buildInfoRow('Roll No:', _logic.rollNoController.text, isDark),
-        _buildInfoRow('Year:', _logic.selectedYear ?? '-', isDark),
-        _buildInfoRow('Semester:', _logic.selectedSemester ?? '-', isDark),
-        _buildInfoRow('Branch:', _logic.selectedBranch ?? '-', isDark),
-        _buildInfoRow('Section:', _logic.selectedSection ?? '-', isDark),
+        _buildInfoRow('Roll No:', _logic.rollNoController.text),
+        _buildInfoRow('Year:', _logic.selectedYear ?? '-'),
+        _buildInfoRow('Semester:', _logic.selectedSemester ?? '-'),
+        _buildInfoRow('Branch:', _logic.selectedBranch ?? '-'),
+        _buildInfoRow('Section:', _logic.selectedSection ?? '-'),
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
@@ -332,20 +332,20 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
     );
   }
 
-  Widget _buildInfoRow(String label, String value, bool isDark) {
+  Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[700], fontSize: 14)),
-          Text(value, style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600, fontSize: 14)),
+          Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+          Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
         ],
       ),
     );
   }
 
-  Widget _buildManualEntry(bool isDark, Color accent) {
+  Widget _buildManualEntry(Color accent) {
     return Column(
       children: [
         Icon(CupertinoIcons.exclamationmark_triangle_fill, color: Colors.orange, size: 40),
@@ -355,14 +355,14 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
+            color: Colors.white,
             fontFamily: 'Poppins',
           ),
         ),
         const SizedBox(height: 8),
         Text(
           'Please enter your details manually.',
-          style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[400] : Colors.grey[700]),
+          style: TextStyle(fontSize: 13, color: Colors.grey[400]),
         ),
         const SizedBox(height: 20),
         // Just the essentials for dialog
@@ -375,7 +375,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
             _logic.selectedYear = val;
             _logic.updateSemester(null);
           },
-          isDark: isDark,
+
         ),
         const SizedBox(height: 12),
         _buildDropdown(
@@ -385,7 +385,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           items: ProfileSetupConstants.semestersByYear[_logic.selectedYear] ?? [],
           onChanged: (val) => _logic.updateSemester(val),
           enabled: _logic.selectedYear != null,
-          isDark: isDark,
+
         ),
         const SizedBox(height: 12),
         _logic.loadingSections
@@ -399,9 +399,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
                         : null,
                     items: const [], // Intercepted by gesture
                     onChanged: (v) {},
-                    isDark: isDark,
-                    enabled: true,
-                    onTapOverride: () => _showTwoColumnPicker(context, isDark),
+                    onTapOverride: () => _showTwoColumnPicker(context),
                   )
                 : const SizedBox.shrink(),
         if (_errorMessage.isNotEmpty) ...[
@@ -428,7 +426,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
     required String? value,
     required List<String> items,
     required Function(String?) onChanged,
-    required bool isDark,
+
     bool enabled = true,
     VoidCallback? onTapOverride,
   }) {
@@ -455,7 +453,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white12 : Colors.black.withOpacity(0.05),
+          color: Colors.white12,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -463,7 +461,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           children: [
             Text(
               value ?? hint,
-              style: TextStyle(color: value == null ? Colors.grey : (isDark ? Colors.white : Colors.black)),
+              style: TextStyle(color: value == null ? Colors.grey : Colors.white),
             ),
             const Icon(CupertinoIcons.chevron_down, size: 16, color: Colors.grey),
           ],
@@ -472,7 +470,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
     );
   }
 
-  Widget _buildSuccess(bool isDark, Color accent) {
+  Widget _buildSuccess(Color accent) {
     return Column(
       children: [
         Container(
@@ -490,14 +488,14 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
+            color: Colors.white,
             fontFamily: 'Poppins',
           ),
         ),
       ],
     );
   }
-  void _showTwoColumnPicker(BuildContext context, bool isDark) {
+  void _showTwoColumnPicker(BuildContext context) {
     if (_logic.dynamicSections.isEmpty) {
       return;
     }

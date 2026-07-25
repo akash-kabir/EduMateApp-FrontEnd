@@ -356,17 +356,15 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return CupertinoPageScaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+      backgroundColor: CupertinoColors.black,
       navigationBar: CupertinoNavigationBar(
         middle: const Text('CGPA Calculator',
                   style: TextStyle(
                   fontFamily: 'Salena')),
-        backgroundColor: isDark
-            ? CupertinoColors.black.withOpacity(0.6)
-            : CupertinoColors.white.withOpacity(0.6),
+        backgroundColor: CupertinoColors.black.withOpacity(0.6),
         border: Border(
           bottom: BorderSide(color: CupertinoColors.separator, width: 0.5),
         ),
@@ -384,7 +382,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
               ),
             )
           : Material(
-              color: isDark ? CupertinoColors.black : CupertinoColors.white,
+              color: CupertinoColors.black,
               child: SafeArea(
                 child: Stack(
                   children: [
@@ -398,7 +396,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                       Text(
                         'Calculate your CGPA for the selected semester',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          color: Colors.grey[400],
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -451,9 +449,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-                                    : Colors.grey[200]!.withValues(alpha: 0.65),
+                                color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -471,7 +467,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: isDark ? Colors.white : Colors.black,
+                                      color: Colors.white,
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -489,14 +485,10 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                     decoration: InputDecoration(
                                       hintText: 'Your CGPA',
                                       hintStyle: TextStyle(
-                                        color: isDark
-                                            ? Colors.grey[500]
-                                            : Colors.grey[400],
+                                        color: Colors.grey[500],
                                       ),
                                       filled: true,
-                                      fillColor: isDark
-                                          ? const Color(0xFF1C1C1E)
-                                          : Colors.grey[100],
+                                      fillColor: const Color(0xFF1C1C1E),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide(
@@ -522,7 +514,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                       ),
                                     ),
                                     style: TextStyle(
-                                      color: isDark ? Colors.white : Colors.black,
+                                      color: Colors.white,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
@@ -530,9 +522,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                     'Enter your previous CGPA to include it in the calculation.',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: isDark
-                                          ? Colors.grey[400]
-                                          : Colors.grey[600],
+                                      color: Colors.grey[400],
                                     ),
                                   ),
                                 ],
@@ -554,7 +544,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    color: isDark ? Colors.white : Colors.black,
+                                    color: Colors.white,
                                   ),
                             ),
                             const SizedBox(height: 12),
@@ -585,9 +575,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: isDark
-                                            ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-                                            : Colors.grey[200]!.withValues(alpha: 0.65),
+                                        color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
@@ -607,9 +595,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
-                                          color: isDark
-                                              ? Colors.white
-                                              : Colors.black,
+                                          color: Colors.white,
                                         ),
                                       ),
                                       const SizedBox(height: 8),
@@ -618,9 +604,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                         'Credit: $credits',
                                         style: TextStyle(
                                           fontSize: 13,
-                                          color: isDark
-                                              ? Colors.grey[400]
-                                              : Colors.grey[600],
+                                          color: Colors.grey[400],
                                         ),
                                       ),
                                       const SizedBox(height: 10),
@@ -628,7 +612,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                       _buildGradeSlider(
                                         subjectName: subjectName,
                                         credits: (credits as num).toDouble(),
-                                        isDark: isDark,
+
                                       ),
                                     ],
                                   ),
@@ -681,9 +665,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: isDark
-                                          ? Colors.grey[800]
-                                          : Colors.grey[200],
+                                      color: Colors.grey[800],
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -730,9 +712,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                     vertical: 12,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: isDark
-                                        ? Colors.grey[800]
-                                        : Colors.grey[200],
+                                    color: Colors.grey[800],
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Center(
@@ -742,9 +722,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                           .textTheme
                                           .bodyLarge
                                           ?.copyWith(
-                                            color: isDark
-                                                ? Colors.white
-                                                : Colors.black,
+                                            color: Colors.white,
                                             fontWeight: FontWeight.w600,
                                           ),
                                     ),
@@ -767,9 +745,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 width: MediaQuery.of(context).size.width - 32,
                                 padding: const EdgeInsets.all(20.0),
                                 decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-                                      : Colors.grey[200]!.withValues(alpha: 0.65),
+                                  color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -798,9 +774,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w600,
-                                                color: isDark
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                                color: Colors.white,
                                               ),
                                             ),
                                             const SizedBox(height: 4),
@@ -809,9 +783,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                               style: TextStyle(
                                                 fontSize: 24,
                                                 fontWeight: FontWeight.w600,
-                                                color: isDark
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                                color: Colors.white,
                                               ),
                                             ),
                                           ],
@@ -854,9 +826,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 width: MediaQuery.of(context).size.width - 32,
                                 padding: const EdgeInsets.all(20.0),
                                 decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-                                      : Colors.grey[200]!.withValues(alpha: 0.65),
+                                  color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -885,9 +855,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w600,
-                                                color: isDark
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                                color: Colors.white,
                                               ),
                                             ),
                                             const SizedBox(height: 4),
@@ -896,9 +864,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                               style: TextStyle(
                                                 fontSize: 24,
                                                 fontWeight: FontWeight.w600,
-                                                color: isDark
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                                color: Colors.white,
                                               ),
                                             ),
                                           ],
@@ -941,9 +907,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 width: MediaQuery.of(context).size.width - 32,
                                 padding: const EdgeInsets.all(20.0),
                                 decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-                                      : Colors.grey[200]!.withValues(alpha: 0.65),
+                                  color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -972,9 +936,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w600,
-                                                color: isDark
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                                color: Colors.white,
                                               ),
                                             ),
                                             const SizedBox(height: 4),
@@ -983,9 +945,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                               style: TextStyle(
                                                 fontSize: 24,
                                                 fontWeight: FontWeight.w600,
-                                                color: isDark
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                                color: Colors.white,
                                               ),
                                             ),
                                           ],
@@ -1023,30 +983,24 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(12.0),
                             decoration: BoxDecoration(
-                              color: isDark ? Colors.red[900] : Colors.red[50],
+                              color: Colors.red[900],
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: isDark
-                                    ? Colors.red[800]!
-                                    : Colors.red[300]!,
+                                color: Colors.red[800]!,
                               ),
                             ),
                             child: Row(
                               children: [
                                 Icon(
                                   CupertinoIcons.exclamationmark_circle,
-                                  color: isDark
-                                      ? Colors.red[200]
-                                      : Colors.red[700],
+                                  color: Colors.red[200],
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     errorMessage!,
                                     style: TextStyle(
-                                      color: isDark
-                                          ? Colors.red[200]
-                                          : Colors.red[700],
+                                      color: Colors.red[200],
                                       fontSize: 12,
                                     ),
                                   ),
@@ -1097,10 +1051,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                         vertical: 14,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: isDark
-                                            ? const Color(0xFF1E1E23)
-                                                .withValues(alpha: 0.55)
-                                            : Colors.white
+                                        color: const Color(0xFF1E1E23)
                                                 .withValues(alpha: 0.55),
                                         borderRadius:
                                             BorderRadius.circular(20),
@@ -1124,16 +1075,13 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                             _getGradientForCGPA(
                                               calculatedCGPA!,
                                             ),
-                                            isDark,
+
                                           ),
                                           Container(
                                             width: 1,
                                             height: 28,
-                                            color: isDark
-                                                ? Colors.white
-                                                    .withValues(alpha: 0.1)
-                                                : Colors.black
-                                                    .withValues(alpha: 0.08),
+                                            color: Colors.white
+                                                    .withValues(alpha: 0.1),
                                           ),
                                           _buildPillItem(
                                             'CGPA',
@@ -1160,7 +1108,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                                           Colors.grey,
                                                         ],
                                                       )),
-                                            isDark,
+
                                           ),
                                         ],
                                       ),
@@ -1183,7 +1131,6 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
     String label,
     String value,
     LinearGradient gradient,
-    bool isDark,
   ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1193,7 +1140,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.grey[400] : Colors.grey[600],
+            color: Colors.grey[400],
           ),
         ),
         const SizedBox(width: 8),
@@ -1219,7 +1166,6 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
   Widget _buildGradeSlider({
     required String subjectName,
     required double credits,
-    required bool isDark,
   }) {
     final currentGrade = gradeMap[subjectName];
     final currentIndex = currentGrade != null
@@ -1245,13 +1191,10 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
           data: SliderThemeData(
             trackHeight: 6,
             activeTrackColor: gradeColor,
-            inactiveTrackColor: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.06),
+            inactiveTrackColor: Colors.white.withValues(alpha: 0.08),
             thumbShape: _GradeThumbShape(
               gradeLabel: currentGrade ?? 'F',
               gradeColor: gradeColor,
-              isDark: isDark,
             ),
             overlayColor: gradeColor.withValues(alpha: 0.15),
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
@@ -1290,7 +1233,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                 fontWeight: FontWeight.w500,
                 color: currentGrade != null
                     ? gradeColor
-                    : (isDark ? Colors.grey[500] : Colors.grey[400]),
+                    : Colors.grey[500],
               ),
             ),
             Text(
@@ -1298,7 +1241,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.grey[300] : Colors.grey[700],
+                color: Colors.grey[300],
               ),
             ),
           ],
@@ -1312,12 +1255,11 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
 class _GradeThumbShape extends SliderComponentShape {
   final String gradeLabel;
   final Color gradeColor;
-  final bool isDark;
+
 
   const _GradeThumbShape({
     required this.gradeLabel,
     required this.gradeColor,
-    required this.isDark,
   });
 
   @override
@@ -1354,7 +1296,7 @@ class _GradeThumbShape extends SliderComponentShape {
 
     // Inner circle (white/dark)
     final innerPaint = Paint()
-      ..color = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+      ..color = const Color(0xFF1C1C1E);
     canvas.drawCircle(center, 14, innerPaint);
 
     // Grade letter

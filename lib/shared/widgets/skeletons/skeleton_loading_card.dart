@@ -57,15 +57,13 @@ class _SkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     
-    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-    final accentColor = isDark ? Colors.grey[700]! : Colors.grey[400]!;
+    final baseColor = Colors.grey[800]!;
+    final accentColor = Colors.grey[700]!;
     
     final BoxDecoration cardDecoration = BoxDecoration(
-      color: isDark
-          ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-          : Colors.grey[200]!.withValues(alpha: 0.65),
+      color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
       borderRadius: BorderRadius.circular(16),
       border: Border(left: BorderSide(color: accentColor, width: 4)),
       boxShadow: [

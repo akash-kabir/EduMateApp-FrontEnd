@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 class TodaysScheduleSkeleton extends StatefulWidget {
-  final bool isDark;
-  const TodaysScheduleSkeleton({super.key, required this.isDark});
+  const TodaysScheduleSkeleton({super.key});
 
   @override
   State<TodaysScheduleSkeleton> createState() => _TodaysScheduleSkeletonState();
@@ -33,8 +32,8 @@ class _TodaysScheduleSkeletonState extends State<TodaysScheduleSkeleton> with Si
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.1);
-    final highlightColor = widget.isDark ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.2);
+    final baseColor = Colors.white.withValues(alpha: 0.2);
+    final highlightColor = Colors.white.withValues(alpha: 0.4);
     
     return AnimatedBuilder(
       animation: _animation,

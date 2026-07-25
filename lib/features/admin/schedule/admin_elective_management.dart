@@ -100,10 +100,10 @@ class _AdminElectiveManagementScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFF0A0A0A),
       body: Stack(
         children: [
           Positioned.fill(
@@ -116,7 +116,7 @@ class _AdminElectiveManagementScreenState
                       itemBuilder: (context, index) {
                         final semester = index + 1;
                         final groups = _groupsBySemester[semester] ?? {};
-                        return _buildSemesterCard(context, semester, groups, isDark);
+                        return _buildSemesterCard(context, semester, groups);
                       },
                     ),
             ),
@@ -131,9 +131,9 @@ class _AdminElectiveManagementScreenState
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF141414).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.7),
+                    color: const Color(0xFF141414).withValues(alpha: 0.6),
                     border: Border(
-                      bottom: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                      bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                     ),
                   ),
                   child: SafeArea(
@@ -146,7 +146,7 @@ class _AdminElectiveManagementScreenState
                             alignment: Alignment.centerLeft,
                             child: CupertinoButton(
                               padding: EdgeInsets.zero,
-                              child: Icon(CupertinoIcons.back, color: isDark ? Colors.white : Colors.black),
+                              child: const Icon(CupertinoIcons.back, color: Colors.white),
                               onPressed: () => Navigator.pop(context),
                             ),
                           ),
@@ -155,7 +155,7 @@ class _AdminElectiveManagementScreenState
                             child: Text(
                               'Electives',
                               style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Salena',
                                 fontSize: 17,
@@ -176,7 +176,7 @@ class _AdminElectiveManagementScreenState
   }
 
   Widget _buildSemesterCard(
-      BuildContext context, int semester, Map<String, List<dynamic>> groups, bool isDark) {
+      BuildContext context, int semester, Map<String, List<dynamic>> groups) {
     final groupNames = groups.keys.toList();
 
     return GestureDetector(
@@ -198,21 +198,17 @@ class _AdminElectiveManagementScreenState
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isDark
-                ? const [Color(0xFF303030), Color(0xFF1A1A1A)]
-                : const [Color(0xFFFFFFFF), Color(0xFFF3F4F6)],
+            colors: const [Color(0xFF303030), Color(0xFF1A1A1A)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.08),
+            color: Colors.white.withValues(alpha: 0.1),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+              color: Colors.black.withValues(alpha: 0.25),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -233,7 +229,7 @@ class _AdminElectiveManagementScreenState
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
-                          color: isDark ? Colors.white : Colors.black,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -241,7 +237,7 @@ class _AdminElectiveManagementScreenState
                         '${groups.length} ${groups.length == 1 ? 'Elective Group' : 'Elective Groups'}',
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? Colors.white60 : Colors.black54,
+                          color: Colors.white60,
                         ),
                       ),
                     ],
@@ -262,7 +258,7 @@ class _AdminElectiveManagementScreenState
                 const SizedBox(width: 8),
                 Icon(
                   CupertinoIcons.chevron_right,
-                  color: isDark ? Colors.white38 : Colors.black38,
+                  color: Colors.white38,
                   size: 18,
                 ),
               ],
@@ -276,10 +272,10 @@ class _AdminElectiveManagementScreenState
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF06B6D4).withValues(alpha: isDark ? 0.15 : 0.1),
+                      color: const Color(0xFF06B6D4).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: const Color(0xFF06B6D4).withValues(alpha: isDark ? 0.3 : 0.2),
+                        color: const Color(0xFF06B6D4).withValues(alpha: 0.3),
                       ),
                     ),
                     child: Text(
@@ -288,7 +284,7 @@ class _AdminElectiveManagementScreenState
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
                         fontFamily: 'Poppins',
-                        color: isDark ? const Color(0xFF22D3EE) : const Color(0xFF0891B2),
+                        color: const Color(0xFF22D3EE),
                       ),
                     ),
                   );
@@ -374,7 +370,7 @@ class _SemesterElectiveDetailScreenState
     }
   }
 
-  void _showAddGroupBottomSheet(BuildContext context, bool isDark) {
+  void _showAddGroupBottomSheet(BuildContext context) {
     final TextEditingController customGroupController = TextEditingController();
     final presets = ['PE-1', 'PE-2', 'K-Explore', 'OE-1', 'OE-2'];
 
@@ -388,7 +384,7 @@ class _SemesterElectiveDetailScreenState
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E20) : Colors.white,
+            color: const Color(0xFF1E1E20),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Padding(
@@ -615,22 +611,20 @@ class _SemesterElectiveDetailScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Material(
       color: Colors.transparent,
       child: CupertinoPageScaffold(
-        backgroundColor: isDark ? const Color(0xFF0F0F11) : const Color(0xFFFAFAFA),
+        backgroundColor: const Color(0xFF0F0F11),
         navigationBar: CupertinoNavigationBar(
           middle: Text('Semester ${widget.semester} Electives'),
-          backgroundColor: isDark
-              ? const Color(0xFF0F0F11).withOpacity(0.8)
-              : Colors.white.withOpacity(0.8),
+          backgroundColor: const Color(0xFF0F0F11).withOpacity(0.8),
           trailing: widget.canManage
               ? CupertinoButton(
                   padding: EdgeInsets.zero,
                   child: const Icon(CupertinoIcons.add),
-                  onPressed: () => _showAddGroupBottomSheet(context, isDark),
+                  onPressed: () => _showAddGroupBottomSheet(context),
                 )
               : null,
         ),
@@ -652,7 +646,7 @@ class _SemesterElectiveDetailScreenState
                           if (widget.canManage)
                             CupertinoButton.filled(
                               child: const Text('Add Group'),
-                              onPressed: () => _showAddGroupBottomSheet(context, isDark),
+                              onPressed: () => _showAddGroupBottomSheet(context),
                             ),
                         ],
                       ),
@@ -663,7 +657,7 @@ class _SemesterElectiveDetailScreenState
                       itemBuilder: (context, index) {
                         final groupName = _groups.keys.elementAt(index);
                         final electives = _groups[groupName]!;
-                        return _buildGroupCard(context, groupName, electives, isDark);
+                        return _buildGroupCard(context, groupName, electives);
                       },
                     ),
         ),
@@ -671,7 +665,7 @@ class _SemesterElectiveDetailScreenState
     );
   }
 
-  void _showGroupDetailsDialog(String groupName, List<dynamic> electives, bool isDark) {
+  void _showGroupDetailsDialog(String groupName, List<dynamic> electives) {
     showCupertinoModalPopup(
       context: context,
       builder: (context) {
@@ -683,14 +677,10 @@ class _SemesterElectiveDetailScreenState
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF18181B).withValues(alpha: 0.95)
-                    : Colors.white.withValues(alpha: 0.95),
+                color: const Color(0xFF18181B).withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.12)
-                      : Colors.black.withValues(alpha: 0.08),
+                  color: Colors.white.withValues(alpha: 0.12),
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -716,7 +706,7 @@ class _SemesterElectiveDetailScreenState
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Poppins',
-                              color: isDark ? Colors.white : Colors.black,
+                              color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -724,7 +714,7 @@ class _SemesterElectiveDetailScreenState
                             'Semester ${widget.semester} Elective Subjects',
                             style: TextStyle(
                               fontSize: 13,
-                              color: isDark ? Colors.white60 : Colors.black54,
+                              color: Colors.white60,
                             ),
                           ),
                         ],
@@ -733,7 +723,7 @@ class _SemesterElectiveDetailScreenState
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
                           CupertinoIcons.xmark_circle_fill,
-                          color: isDark ? Colors.white38 : Colors.black38,
+                          color: Colors.white38,
                           size: 24,
                         ),
                       ),
@@ -742,7 +732,7 @@ class _SemesterElectiveDetailScreenState
                   const SizedBox(height: 16),
                   Divider(
                     height: 1,
-                    color: isDark ? Colors.white12 : Colors.black12,
+                    color: Colors.white12,
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -754,7 +744,7 @@ class _SemesterElectiveDetailScreenState
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.0,
-                          color: isDark ? Colors.white38 : Colors.black45,
+                          color: Colors.white38,
                         ),
                       ),
                       Text(
@@ -763,7 +753,7 @@ class _SemesterElectiveDetailScreenState
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.0,
-                          color: isDark ? Colors.white38 : Colors.black45,
+                          color: Colors.white38,
                         ),
                       ),
                     ],
@@ -777,7 +767,7 @@ class _SemesterElectiveDetailScreenState
                           'No subjects available for $groupName',
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDark ? Colors.white54 : Colors.black54,
+                            color: Colors.white54,
                           ),
                         ),
                       ),
@@ -809,14 +799,10 @@ class _SemesterElectiveDetailScreenState
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.04)
-                                  : Colors.black.withValues(alpha: 0.03),
+                              color: Colors.white.withValues(alpha: 0.04),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.06)
-                                    : Colors.black.withValues(alpha: 0.04),
+                                color: Colors.white.withValues(alpha: 0.06),
                               ),
                             ),
                             child: Row(
@@ -829,7 +815,7 @@ class _SemesterElectiveDetailScreenState
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       fontFamily: 'Poppins',
-                                      color: isDark ? Colors.white : Colors.black87,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
@@ -868,31 +854,27 @@ class _SemesterElectiveDetailScreenState
   }
 
   Widget _buildGroupCard(
-      BuildContext context, String groupName, List<dynamic> electives, bool isDark) {
+      BuildContext context, String groupName, List<dynamic> electives) {
     final bool hasSubjects = electives.isNotEmpty;
 
     return GestureDetector(
-      onTap: () => _showGroupDetailsDialog(groupName, electives, isDark),
+      onTap: () => _showGroupDetailsDialog(groupName, electives),
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isDark
-                ? const [Color(0xFF303030), Color(0xFF1A1A1A)]
-                : const [Color(0xFFFFFFFF), Color(0xFFF3F4F6)],
+            colors: const [Color(0xFF303030), Color(0xFF1A1A1A)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.08),
+            color: Colors.white.withValues(alpha: 0.1),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+              color: Colors.black.withValues(alpha: 0.25),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -910,7 +892,7 @@ class _SemesterElectiveDetailScreenState
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Poppins',
-                    color: isDark ? Colors.white : Colors.black,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -938,7 +920,7 @@ class _SemesterElectiveDetailScreenState
                     icon: CupertinoIcons.arrow_up_doc_fill,
                     label: 'Upload JSON',
                     color: const Color(0xFF10B981), // Emerald Green
-                    isDark: isDark,
+
                     onTap: () => _uploadToGroup(groupName),
                   ),
                 ),
@@ -949,7 +931,7 @@ class _SemesterElectiveDetailScreenState
                     icon: CupertinoIcons.trash_fill,
                     label: 'Delete Group',
                     color: const Color(0xFFDC2626), // Admin Red
-                    isDark: isDark,
+
                     onTap: () => _deleteGroup(groupName),
                   ),
                 ),
@@ -966,7 +948,7 @@ class _SemesterElectiveDetailScreenState
     required IconData icon,
     required String label,
     required Color color,
-    required bool isDark,
+
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -974,10 +956,10 @@ class _SemesterElectiveDetailScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withValues(alpha: isDark ? 0.25 : 0.15),
+            color: color.withValues(alpha: 0.25),
             width: 0.8,
           ),
         ),

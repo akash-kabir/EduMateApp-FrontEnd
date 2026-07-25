@@ -179,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         barrierDismissible: false,
         child: Builder(
           builder: (context) {
-            final isDark = Theme.of(context).brightness == Brightness.dark;
+
             return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -189,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             fontFamily: 'Poppins',
                             fontSize: 20.0,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: Colors.white,
                             letterSpacing: -0.5,
                           ),
                           textAlign: TextAlign.center,
@@ -200,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 14.0,
-                            color: isDark ? Colors.grey[400] : Colors.grey[700],
+                            color: Colors.grey[400],
                             height: 1.4,
                           ),
                           textAlign: TextAlign.center,
@@ -256,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 child: Text(
                                   'Close',
                                   style: TextStyle(
-                                    color: isDark ? Colors.white70 : Colors.black54,
+                                    color: Colors.white70,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -271,9 +271,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 },
                                 style: TextButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 14),
-                                  backgroundColor: isDark 
-                                      ? Colors.red.withOpacity(0.15)
-                                      : Colors.red.withOpacity(0.1),
+                                  backgroundColor: Colors.red.withOpacity(0.15),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -304,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       barrierDismissible: false,
       child: Builder(
         builder: (context) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -332,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   fontFamily: 'Poppins',
                   fontSize: 20.0,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: Colors.white,
                   letterSpacing: -0.5,
                 ),
                 textAlign: TextAlign.center,
@@ -343,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 14.0,
-                  color: isDark ? Colors.grey[400] : Colors.grey[700],
+                  color: Colors.grey[400],
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
@@ -384,10 +382,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return CupertinoPageScaffold(
-      backgroundColor: isDark ? CupertinoColors.black : const Color(0xFFF5F5F7),
+      backgroundColor: CupertinoColors.black,
       child: SafeArea(
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -408,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             _userRole.toLowerCase() == 'guest' ? 'Welcome' : 'Welcome back,',
                             style: TextStyle(
                               fontSize: 14,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              color: Colors.grey[400],
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -418,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
+                              color: Colors.white,
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -450,7 +448,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                              color: Colors.white.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: AnimatedSwitcher(
@@ -474,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               transitionDuration: const Duration(milliseconds: 400),
                               reverseTransitionDuration: const Duration(milliseconds: 400),
                               pageBuilder: (context, animation, secondaryAnimation) {
-                                return FullScreenDrawer(animation: animation, isDark: isDark, userFirstName: userFirstName);
+                                return FullScreenDrawer(animation: animation, userFirstName: userFirstName);
                               },
                             ),
                           );
@@ -482,12 +480,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                            color: Colors.white.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             CupertinoIcons.ellipsis,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -501,7 +499,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: TodaysScheduleCard(isDark: isDark),
+                child: TodaysScheduleCard(),
               ),
             ),
 
@@ -593,13 +591,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
 class FullScreenDrawer extends StatefulWidget {
   final Animation<double> animation;
-  final bool isDark;
   final String userFirstName;
 
   const FullScreenDrawer({
     super.key,
     required this.animation,
-    required this.isDark,
     required this.userFirstName,
   });
 
@@ -632,11 +628,11 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
     return ListTile(
       visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-      leading: Icon(icon, color: color ?? (widget.isDark ? Colors.white70 : Colors.black87), size: 24),
+      leading: Icon(icon, color: color ?? Colors.white70, size: 24),
       title: Text(
         title, 
         style: TextStyle(
-          color: color ?? (widget.isDark ? Colors.white : Colors.black87),
+          color: color ?? Colors.white,
           fontSize: 16,
           fontWeight: FontWeight.w500,
         )
@@ -664,9 +660,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                 child: Container(
                   width: MediaQuery.of(context).size.width,
                   height: MediaQuery.of(context).size.height,
-                  color: widget.isDark 
-                      ? Colors.black.withValues(alpha: 0.8) 
-                      : Colors.white.withValues(alpha: 0.85),
+                  color: Colors.black.withValues(alpha: 0.8),
                   child: Material(
                     color: Colors.transparent,
                     child: Padding(
@@ -683,7 +677,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: -1,
-                                color: widget.isDark ? Colors.white : Colors.black87,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -818,10 +812,10 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                   width: 44,
                                   height: 44,
                                   decoration: BoxDecoration(
-                                    color: widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                                    color: Colors.white.withValues(alpha: 0.1),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(CupertinoIcons.person_solid, size: 20, color: widget.isDark ? Colors.white70 : Colors.black54),
+                                  child: Icon(CupertinoIcons.person_solid, size: 20, color: Colors.white70),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
@@ -832,7 +826,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                         'Logged in as',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: widget.isDark ? Colors.white54 : Colors.black54,
+                                          color: Colors.white54,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
@@ -841,7 +835,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
-                                          color: widget.isDark ? Colors.white : Colors.black87,
+                                          color: Colors.white,
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -888,12 +882,12 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                   builder: (context, child) {
                     // Interpolate colors based on animation value
                     final bgColor = Color.lerp(
-                      widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                      Colors.white.withValues(alpha: 0.1),
                       Colors.red.withValues(alpha: 0.1),
                       widget.animation.value,
                     );
                     final iconColor = Color.lerp(
-                      widget.isDark ? Colors.white : Colors.black87,
+                      Colors.white,
                       Colors.red,
                       widget.animation.value,
                     );

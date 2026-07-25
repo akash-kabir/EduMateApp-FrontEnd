@@ -18,7 +18,7 @@ Future<bool?> showConfirmationDialog({
     lightBackgroundAlpha: 0.70,
     child: Builder(
       builder: (ctx) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -46,7 +46,7 @@ Future<bool?> showConfirmationDialog({
                 fontFamily: 'Poppins',
                 fontSize: 20.0,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
+                color: Colors.white,
                 letterSpacing: -0.5,
               ),
               textAlign: TextAlign.center,
@@ -57,7 +57,7 @@ Future<bool?> showConfirmationDialog({
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 14.0,
-                color: isDark ? Colors.grey[400] : Colors.grey[700],
+                color: Colors.grey[400],
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
@@ -69,8 +69,8 @@ Future<bool?> showConfirmationDialog({
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(ctx, false),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: isDark ? Colors.white : Colors.black,
-                      side: BorderSide(color: isDark ? Colors.white24 : Colors.black26),
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white24),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -166,7 +166,7 @@ Future<T?> showGlassmorphicDialog<T>({
     barrierColor: Colors.black.withValues(alpha: 0.5),
     transitionDuration: const Duration(milliseconds: 300),
     pageBuilder: (ctx, anim1, anim2) {
-      final isDark = Theme.of(ctx).brightness == Brightness.dark;
+
       return _KeyboardResponsiveWrapper(
         child: Material(
           type: MaterialType.transparency,
@@ -178,12 +178,10 @@ Future<T?> showGlassmorphicDialog<T>({
                 width: MediaQuery.of(ctx).size.width * widthFactor,
                 padding: const EdgeInsets.all(24.0),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF0F0F11).withValues(alpha: darkBackgroundAlpha ?? 0.75)
-                      : Colors.white.withValues(alpha: lightBackgroundAlpha ?? 0.85),
+                  color: const Color(0xFF0F0F11).withValues(alpha: darkBackgroundAlpha ?? 0.75),
                   borderRadius: BorderRadius.circular(24.0),
                   border: Border.all(
-                    color: isDark ? Colors.white12 : Colors.black12,
+                    color: Colors.white12,
                   ),
                   boxShadow: [
                     BoxShadow(

@@ -3,8 +3,7 @@ import 'package:app/features/schedule/widgets/schedule_class_card.dart';
 
 class ScheduleTimeline extends StatelessWidget {
   final List<Map<String, dynamic>> mergedClasses;
-  final bool isDark;
-  final bool Function(String, String) isOngoing;
+  final bool Function(Map<String, dynamic>) isOngoing;
   final bool Function(String) isPassed;
   final bool isHoliday;
   final String emptyMessage;
@@ -13,7 +12,6 @@ class ScheduleTimeline extends StatelessWidget {
   const ScheduleTimeline({
     super.key,
     required this.mergedClasses,
-    required this.isDark,
     required this.isOngoing,
     required this.isPassed,
     this.isHoliday = false,
@@ -31,7 +29,7 @@ class ScheduleTimeline extends StatelessWidget {
             emptyMessage,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              color: Colors.grey[400],
               fontSize: 14,
               height: 1.5,
             ),
@@ -44,12 +42,11 @@ class ScheduleTimeline extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: List.generate(mergedClasses.length, (index) {
         final classPeriod = mergedClasses[index];
-        final ongoing = isOngoing(classPeriod['startTime'], classPeriod['endTime']);
+        final ongoing = isOngoing(classPeriod);
         final passed = isPassed(classPeriod['endTime']);
 
         return ScheduleClassCard(
           classPeriod: classPeriod,
-          isDark: isDark,
           isOngoing: ongoing,
           isPassed: passed,
           classCount: classPeriod['count'] as int,

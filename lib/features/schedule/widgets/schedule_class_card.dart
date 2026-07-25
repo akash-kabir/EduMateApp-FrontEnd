@@ -5,7 +5,6 @@ import 'package:app/theme/theme.dart';
 
 class ScheduleClassCard extends StatelessWidget {
   final Map<String, dynamic> classPeriod;
-  final bool isDark;
   final bool isOngoing;
   final bool isPassed;
   final int classCount;
@@ -15,7 +14,6 @@ class ScheduleClassCard extends StatelessWidget {
   const ScheduleClassCard({
     super.key,
     required this.classPeriod,
-    required this.isDark,
     required this.isOngoing,
     required this.isPassed,
     required this.classCount,
@@ -32,7 +30,7 @@ class ScheduleClassCard extends StatelessWidget {
     if (effectivelyOngoing) {
       accentColor = CupertinoColors.systemGreen;
     } else if (effectivelyPassed) {
-      accentColor = isDark ? Colors.grey[700]! : Colors.grey[400]!;
+      accentColor = Colors.grey[700]!;
     } else {
       accentColor = AuthPalette.coral;
     }
@@ -70,9 +68,7 @@ class ScheduleClassCard extends StatelessWidget {
       );
     } else {
       cardDecoration = BoxDecoration(
-        color: isDark
-            ? const Color(0xFF1E1E23).withValues(alpha: 0.40)
-            : Colors.grey[200]!.withValues(alpha: 0.65), // Translucent charcoal glass
+        color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
         borderRadius: BorderRadius.circular(16),
         border: Border(left: BorderSide(color: accentColor, width: 4)),
         boxShadow: [
@@ -118,7 +114,7 @@ class ScheduleClassCard extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                           color: effectivelyOngoing
                               ? Colors.white
-                              : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                              : Colors.grey[400],
                         ),
                       ),
                     ],
@@ -133,7 +129,7 @@ class ScheduleClassCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
-                            color: effectivelyOngoing ? Colors.white : (isDark ? Colors.white : Colors.black),
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -148,7 +144,7 @@ class ScheduleClassCard extends StatelessWidget {
                               size: 14,
                               color: effectivelyOngoing
                                   ? Colors.white70
-                                  : (isDark ? Colors.grey[500] : Colors.grey[500]),
+                                  : Colors.grey[500],
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -158,7 +154,7 @@ class ScheduleClassCard extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                                 color: effectivelyOngoing
                                     ? Colors.white
-                                    : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                                    : Colors.grey[400],
                               ),
                             ),
                           ],

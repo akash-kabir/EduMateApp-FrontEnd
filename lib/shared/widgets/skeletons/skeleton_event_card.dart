@@ -56,16 +56,13 @@ class _SkeletonEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final baseColor = Colors.grey[800]!;
 
     return Container(
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: isDark
-                ? Colors.white.withOpacity(0.08)
-                : Colors.black.withOpacity(0.08),
+            color: Colors.white.withOpacity(0.08),
             width: 0.5,
           ),
         ),

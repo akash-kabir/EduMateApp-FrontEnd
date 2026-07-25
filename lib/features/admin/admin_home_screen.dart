@@ -54,13 +54,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Scaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+      backgroundColor: CupertinoColors.black,
       body: SafeArea(
         child: _isLoading
-            ? AdminDashboardSkeleton(isDark: isDark)
+            ? const AdminDashboardSkeleton()
             : RefreshIndicator(
                 onRefresh: _fetchStats,
                 child: SingleChildScrollView(
@@ -77,7 +77,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Salena',
-                            color: isDark ? CupertinoColors.white : CupertinoColors.black,
+                            color: CupertinoColors.white,
                           ),
                         ),
                       ),
@@ -90,7 +90,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         societyHeads: _stats['societyHeads'] ?? 0,
                         admins: _stats['admins'] ?? 0,
                         contributors: _stats['contributors'] ?? 0,
-                        isDark: isDark,
+
                       ),
                       const SizedBox(height: 16),
                       
@@ -101,7 +101,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         subtitle: 'Semesters Configured',
                         icon: CupertinoIcons.calendar,
                         color: Colors.greenAccent,
-                        isDark: isDark,
+
                       ),
                       const SizedBox(height: 16),
                       
@@ -112,7 +112,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         subtitle: 'Active POIs',
                         icon: CupertinoIcons.map_pin_ellipse,
                         color: Colors.orangeAccent,
-                        isDark: isDark,
+
                       ),
                       const SizedBox(height: 16),
 
@@ -123,7 +123,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         subtitle: 'Total Posts',
                         icon: CupertinoIcons.bubble_left_bubble_right,
                         color: Colors.purpleAccent,
-                        isDark: isDark,
+
                       ),
                       
                       const SizedBox(height: 80),
@@ -142,7 +142,7 @@ class _StatCard extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final Color color;
-  final bool isDark;
+
 
   const _StatCard({
     required this.title,
@@ -150,7 +150,7 @@ class _StatCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.color,
-    required this.isDark,
+
   });
 
   @override
@@ -159,22 +159,20 @@ class _StatCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark 
-              ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
-              : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+          colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
+          color: Colors.white.withValues(alpha: 0.05),
         ),
       ),
       child: Column(
@@ -188,7 +186,7 @@ class _StatCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? CupertinoColors.systemGrey : Colors.grey[700],
+                  color: CupertinoColors.systemGrey,
                 ),
               ),
               Container(
@@ -207,7 +205,7 @@ class _StatCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black,
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 4),
@@ -215,7 +213,7 @@ class _StatCard extends StatelessWidget {
             subtitle,
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              color: Colors.grey[400],
             ),
           ),
         ],
@@ -230,7 +228,7 @@ class _DemographicsCard extends StatefulWidget {
   final int societyHeads;
   final int admins;
   final int contributors;
-  final bool isDark;
+
 
   const _DemographicsCard({
     required this.totalUsers,
@@ -238,7 +236,7 @@ class _DemographicsCard extends StatefulWidget {
     required this.societyHeads,
     required this.admins,
     required this.contributors,
-    required this.isDark,
+
   });
 
   @override
@@ -265,20 +263,13 @@ class _DemographicsCardState extends State<_DemographicsCard> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: widget.isDark 
-              ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
-              : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+          colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          if (!widget.isDark)
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
+
         ],
       ),
       child: Column(
@@ -297,7 +288,7 @@ class _DemographicsCardState extends State<_DemographicsCard> {
                       '${widget.totalUsers}',
                       style: TextStyle(
                         fontSize: 56, 
-                        color: widget.isDark ? Colors.white : Colors.black, 
+                        color: Colors.white, 
                         fontWeight: FontWeight.bold,
                         height: 1.0,
                       ),
@@ -307,7 +298,7 @@ class _DemographicsCardState extends State<_DemographicsCard> {
                       widget.totalUsers == 1 ? 'user' : 'users',
                       style: TextStyle(
                         fontSize: 18, 
-                        color: widget.isDark ? Colors.grey[400] : Colors.grey[600], 
+                        color: Colors.grey[400], 
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -353,15 +344,14 @@ class _DemographicsCardState extends State<_DemographicsCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _Indicator(color: Colors.blue, text: 'Students', isSquare: false, isDark: widget.isDark, value: widget.students),
+                      _Indicator(color: Colors.blue, text: 'Students', isSquare: false, value: widget.students),
                       const SizedBox(height: 12),
-                      _Indicator(color: Colors.orange, text: 'Society', isSquare: false, isDark: widget.isDark, value: widget.societyHeads),
+                      _Indicator(color: Colors.orange, text: 'Society', isSquare: false, value: widget.societyHeads),
                       const SizedBox(height: 12),
                       _Indicator(
                         color: Colors.teal, 
                         text: 'Guests', 
                         isSquare: false, 
-                        isDark: widget.isDark, 
                         value: (widget.totalUsers - (widget.students + widget.societyHeads + widget.admins + widget.contributors) > 0) ? widget.totalUsers - (widget.students + widget.societyHeads + widget.admins + widget.contributors) : 0
                       ),
                     ],
@@ -371,9 +361,9 @@ class _DemographicsCardState extends State<_DemographicsCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _Indicator(color: Colors.purple, text: 'Contributors', isSquare: false, isDark: widget.isDark, value: widget.contributors),
+                      _Indicator(color: Colors.purple, text: 'Contributors', isSquare: false, value: widget.contributors),
                       const SizedBox(height: 12),
-                      _Indicator(color: Colors.red, text: 'Admins', isSquare: false, isDark: widget.isDark, value: widget.admins),
+                      _Indicator(color: Colors.red, text: 'Admins', isSquare: false, value: widget.admins),
                     ],
                   ),
                 ),
@@ -384,7 +374,7 @@ class _DemographicsCardState extends State<_DemographicsCard> {
               child: Icon(
                 CupertinoIcons.chevron_up,
                 size: 20,
-                color: widget.isDark ? Colors.grey[400] : Colors.grey[600],
+                color: Colors.grey[400],
               ),
             ),
           ],
@@ -445,14 +435,14 @@ class _Indicator extends StatelessWidget {
   final Color color;
   final String text;
   final bool isSquare;
-  final bool isDark;
+
   final int value;
 
   const _Indicator({
     required this.color,
     required this.text,
     required this.isSquare,
-    required this.isDark,
+
     required this.value,
   });
 
@@ -474,7 +464,7 @@ class _Indicator extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.grey[300] : Colors.grey[700],
+            color: Colors.grey[300],
           ),
         ),
       ],
@@ -483,8 +473,7 @@ class _Indicator extends StatelessWidget {
 }
 
 class AdminDashboardSkeleton extends StatefulWidget {
-  final bool isDark;
-  const AdminDashboardSkeleton({super.key, required this.isDark});
+  const AdminDashboardSkeleton({super.key});
 
   @override
   State<AdminDashboardSkeleton> createState() => _AdminDashboardSkeletonState();
@@ -513,21 +502,19 @@ class _AdminDashboardSkeletonState extends State<AdminDashboardSkeleton> with Si
     super.dispose();
   }
 
-  Widget _buildSkeletonCard({required double height, required bool isDark, required Color baseColor}) {
+  Widget _buildSkeletonCard({required double height, required Color baseColor}) {
     return Container(
       height: height,
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark 
-              ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
-              : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
+          colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
+          color: Colors.white.withValues(alpha: 0.05),
         ),
       ),
     );
@@ -535,8 +522,8 @@ class _AdminDashboardSkeletonState extends State<AdminDashboardSkeleton> with Si
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
-    final titleColor = widget.isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.1);
+    final baseColor = Colors.white.withValues(alpha: 0.1);
+    final titleColor = Colors.white.withValues(alpha: 0.2);
     
     return AnimatedBuilder(
       animation: _animation,
@@ -563,12 +550,12 @@ class _AdminDashboardSkeletonState extends State<AdminDashboardSkeleton> with Si
                 const SizedBox(height: 32),
                 
                 // Demographics Card Skeleton
-                _buildSkeletonCard(height: 350, isDark: widget.isDark, baseColor: baseColor),
+                _buildSkeletonCard(height: 350, baseColor: baseColor),
                 
                 // Stat Card Skeletons
-                _buildSkeletonCard(height: 120, isDark: widget.isDark, baseColor: baseColor),
-                _buildSkeletonCard(height: 120, isDark: widget.isDark, baseColor: baseColor),
-                _buildSkeletonCard(height: 120, isDark: widget.isDark, baseColor: baseColor),
+                _buildSkeletonCard(height: 120, baseColor: baseColor),
+                _buildSkeletonCard(height: 120, baseColor: baseColor),
+                _buildSkeletonCard(height: 120, baseColor: baseColor),
               ],
             ),
           ),

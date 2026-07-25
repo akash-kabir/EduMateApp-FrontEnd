@@ -19,10 +19,10 @@ class _AdminMainAppState extends State<AdminMainApp> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return CupertinoPageScaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+      backgroundColor: CupertinoColors.black,
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, dynamic result) async {
@@ -39,7 +39,7 @@ class _AdminMainAppState extends State<AdminMainApp> {
           }
         },
         child: Scaffold(
-          backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+          backgroundColor: CupertinoColors.black,
           body: SafeArea(
             bottom: false,
             child: IndexedStack(
@@ -71,17 +71,15 @@ class _AdminNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Material(
-      color: isDark ? CupertinoColors.black : CupertinoColors.white,
+      color: CupertinoColors.black,
       child: CupertinoTabBar(
         currentIndex: selectedIndex,
         onTap: (index) => onItemTapped(index),
         height: 60,
-        backgroundColor: isDark
-            ? CupertinoColors.black.withValues(alpha: 0.6)
-            : CupertinoColors.white.withValues(alpha: 0.6),
+        backgroundColor: CupertinoColors.black.withValues(alpha: 0.6),
         activeColor: const Color(0xFFFF1744),
         inactiveColor: CupertinoColors.systemGrey,
         items: [

@@ -361,7 +361,6 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     // Step 3: Build annotation options for the selected POI
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final List<mapbox.PointAnnotationOptions> options = [];
 
     try {
@@ -391,8 +390,8 @@ class _MapScreenState extends State<MapScreen> {
         textField: _selectedPoi!.name,
         textAnchor: mapbox.TextAnchor.TOP,
         textSize: 14,
-        textColor: isDark ? Colors.white.value : Colors.black.value,
-        textHaloColor: isDark ? Colors.black.value : Colors.white.value,
+        textColor: Colors.white.value,
+        textHaloColor: Colors.black.value,
         textHaloWidth: 1.5,
         textOffset: [0, 0.8],
       ));
@@ -435,11 +434,9 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return CupertinoPageScaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: isDark ? Colors.black : CupertinoColors.white,
+      backgroundColor: Colors.black,
       child: SafeArea(
         top: false,
         bottom: false,
@@ -554,7 +551,7 @@ class _MapScreenState extends State<MapScreen> {
                   child: BackdropFilter(
                     filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
-                      color: isDark ? Colors.black.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.4),
+                      color: Colors.black.withValues(alpha: 0.6),
                       child: SafeArea(
                         child: Column(
                           children: [
@@ -569,7 +566,7 @@ class _MapScreenState extends State<MapScreen> {
                                       return Center(
                                         child: Text(
                                           'Search for a location',
-                                          style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 16),
+                                          style: TextStyle(color: Colors.grey[500], fontSize: 16),
                                         ),
                                       );
                                     } else {
@@ -581,7 +578,7 @@ class _MapScreenState extends State<MapScreen> {
                                             child: Text(
                                               'Recent Searches',
                                               style: TextStyle(
-                                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                                color: Colors.grey[400],
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
                                                 letterSpacing: 0.5,
@@ -596,7 +593,7 @@ class _MapScreenState extends State<MapScreen> {
                                                 height: 1, 
                                                 indent: 20, 
                                                 endIndent: 20, 
-                                                color: isDark ? Colors.white12 : Colors.black12,
+                                                color: Colors.white12,
                                               ),
                                               itemBuilder: (context, index) {
                                                 final poi = _recentSearches[index];
@@ -609,9 +606,9 @@ class _MapScreenState extends State<MapScreen> {
                                                       child: Column(
                                                         crossAxisAlignment: CrossAxisAlignment.start,
                                                         children: [
-                                                          Text(poi.name, style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600, fontSize: 16)),
+                                                          Text(poi.name, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
                                                           const SizedBox(height: 2),
-                                                          Text(poi.type, style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 13)),
+                                                          Text(poi.type, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
                                                         ],
                                                       ),
                                                     ),
@@ -627,7 +624,7 @@ class _MapScreenState extends State<MapScreen> {
                                     return Center(
                                       child: Text(
                                         'No results found',
-                                        style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 16),
+                                        style: TextStyle(color: Colors.grey[500], fontSize: 16),
                                       ),
                                     );
                                   } else {
@@ -638,7 +635,7 @@ class _MapScreenState extends State<MapScreen> {
                                         height: 1, 
                                         indent: 20, 
                                         endIndent: 20, 
-                                        color: isDark ? Colors.white12 : Colors.black12,
+                                        color: Colors.white12,
                                       ),
                                       itemBuilder: (context, index) {
                                         final poi = _filteredPois[index];
@@ -654,9 +651,9 @@ class _MapScreenState extends State<MapScreen> {
                                                     child: Column(
                                                       crossAxisAlignment: CrossAxisAlignment.start,
                                                       children: [
-                                                        Text(poi.name, style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600, fontSize: 16)),
+                                                        Text(poi.name, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
                                                         const SizedBox(height: 2),
-                                                        Text(poi.type, style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[500], fontSize: 13)),
+                                                        Text(poi.type, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
                                                       ],
                                                     ),
                                                   ),
@@ -689,7 +686,6 @@ class _MapScreenState extends State<MapScreen> {
                   children: [
                     MapSearchBar(
                       isFullScreenSearch: isFullScreenSearch,
-                      isDark: isDark,
                       controller: _searchController,
                       onChanged: _onSearchChanged,
                       onClear: () {
@@ -724,7 +720,7 @@ class _MapScreenState extends State<MapScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF2C1A1A) : const Color(0xFFFFF0F0),
+                            color: const Color(0xFF2C1A1A),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: Colors.redAccent.withValues(alpha: 0.4),
@@ -754,7 +750,7 @@ class _MapScreenState extends State<MapScreen> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: isDark ? Colors.white : Colors.black87,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -767,7 +763,6 @@ class _MapScreenState extends State<MapScreen> {
                       isFullScreenSearch: isFullScreenSearch,
                       isMapMenuExpanded: isMapMenuExpanded,
                       is3DMode: is3DMode,
-                      isDark: isDark,
                       onToggleMenu: () {
                         setState(() {
                           isMapMenuExpanded = true;
@@ -818,7 +813,7 @@ class _MapScreenState extends State<MapScreen> {
               bottom: _selectedPoi != null ? 85 : -300,
               left: 10,
               right: 10,
-              child: _selectedPoi == null ? const SizedBox() : _buildPoiDetailCard(_selectedPoi!, isDark),
+              child: _selectedPoi == null ? const SizedBox() : _buildPoiDetailCard(_selectedPoi!),
             ),
             
             // Navigation Status Card overlay
@@ -830,7 +825,6 @@ class _MapScreenState extends State<MapScreen> {
               right: 16,
               child: _navigationManager.isNavigating && _navigationManager.target != null 
                   ? NavigationStatusCard(
-                      isDark: isDark,
                       poiName: _navigationManager.target!.name,
                       distanceInMeters: _navigationManager.distanceRemaining,
                       onStopNavigation: () {
@@ -852,7 +846,7 @@ class _MapScreenState extends State<MapScreen> {
                 curve: Curves.easeInOut,
                 child: IgnorePointer(
                   ignoring: !_isMapLoading,
-                  child: MapSkeletonLoader(isDark: isDark),
+                  child: const MapSkeletonLoader(),
                 ),
               ),
             ),
@@ -862,7 +856,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildPoiDetailCard(PoiModel poi, bool isDark) {
+  Widget _buildPoiDetailCard(PoiModel poi) {
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -877,9 +871,9 @@ class _MapScreenState extends State<MapScreen> {
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.5),
+              color: Colors.black.withValues(alpha: 0.4),
               border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                color: Colors.white.withValues(alpha: 0.1),
                 width: 1,
               ),
             ),
@@ -901,7 +895,7 @@ class _MapScreenState extends State<MapScreen> {
                           poi.imageUrl.isNotEmpty
                               ? Image.network(poi.imageUrl, fit: BoxFit.cover)
                               : Container(
-                                  color: isDark ? Colors.black26 : Colors.black12,
+                                  color: Colors.black26,
                                   child: const Icon(CupertinoIcons.photo, size: 40, color: CupertinoColors.systemGrey),
                                 ),
                           // Gradient
@@ -944,7 +938,7 @@ class _MapScreenState extends State<MapScreen> {
                           Text(
                             'University • ${poi.type}',
                             style: TextStyle(
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              color: Colors.grey[400],
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -965,7 +959,7 @@ class _MapScreenState extends State<MapScreen> {
                                   child: Text(
                                     poi.description.isNotEmpty ? poi.description : 'No description available.',
                                     style: TextStyle(
-                                      color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                      color: Colors.grey[400],
                                       fontSize: 14,
                                       height: 1.3,
                                     ),
@@ -1081,7 +1075,7 @@ class _MapScreenState extends State<MapScreen> {
                     duration: const Duration(milliseconds: 300),
                     style: TextStyle(
                       color: _isPoiCardExpanded 
-                          ? (isDark ? Colors.white : Colors.black)
+                          ? Colors.white
                           : Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
