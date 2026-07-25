@@ -425,16 +425,26 @@ class SharedPreferencesService {
     if (user['branch'] != null) {
       await setBranch(user['branch']);
     }
-    if (user['section'] != null) {
+    if (user.containsKey('section') && user['section'] != null) {
       await setSection(user['section']);
       // Also save as selectedClass for timesheet compatibility
       await setString('selectedClass', user['section']);
+    } else if (user.containsKey('section')) {
+      await remove(_sectionKey);
+      await remove('selectedClass');
     }
     if (user['year'] != null) {
       await setString(_yearKey, user['year'].toString());
     }
-    if (user['semester'] != null) {
+    if (user.containsKey('semester') && user['semester'] != null) {
       await setString(_semesterKey, user['semester'].toString());
+    } else if (user.containsKey('semester')) {
+      await remove(_semesterKey);
+    }
+    if (user.containsKey('electives') && user['electives'] != null && user['electives'] is List) {
+      await setStringList('user_electives', List<String>.from(user['electives']));
+    } else if (user.containsKey('electives')) {
+      await remove('user_electives');
     }
     final isCompleted = user['isProfileCompleted'] ?? false;
     await setIsProfileCompleted(isCompleted);
@@ -483,6 +493,12 @@ class SharedPreferencesService {
 
   static Future<String?> getSemester() async {
     return getString(_semesterKey);
+  }
+
+  // ==================== Electives ====================
+
+  static Future<List<String>> getUserElectives() async {
+    return getStringList('user_electives');
   }
 
   // ==================== Profile Completed ====================

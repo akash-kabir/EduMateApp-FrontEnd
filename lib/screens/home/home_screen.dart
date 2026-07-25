@@ -9,7 +9,10 @@ import 'package:flutter/material.dart';
 import '../../widgets/custom_glass_dialog.dart';
 import '../../constants/app_constants.dart';
 import '../../services/shared_preferences_service.dart';
-import '../profile_setup/profile_setup_screen.dart';
+import '../../services/api_service.dart';
+
+
+import '../profile_setup/profile_setup_dialog_flow.dart';
 import 'holiday_list/holiday_list_screen.dart';
 import 'widgets/todays_schedule_card.dart';
 import 'widgets/sapsync_entry_card.dart';
@@ -19,6 +22,8 @@ import '../splash/splash_screen.dart';
 import 'cgpa_calculator/cgpa_calculator_screen.dart';
 import 'package:provider/provider.dart';
 import '../../provider/sap_provider.dart';
+
+enum SyncState { idle, loading, success, failed, incomplete, incompleteNeverAsk }
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToEvent;
@@ -34,22 +39,91 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   String userFirstName = '';
   String? userId;
   String? token;
   bool openAppToTimesheet = false;
   String _userRole = '';
+  
+  SyncState _syncState = SyncState.idle;
+  late AnimationController _syncAnimationController;
 
   @override
   void initState() {
     super.initState();
+    _syncAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
     _initializePreferences();
+  }
+  
+  @override
+  void dispose() {
+    _syncAnimationController.dispose();
+    super.dispose();
   }
 
   Future<void> _initializePreferences() async {
     await _loadUserData();
     _checkAndShowProfileSetupDialog();
+    _performProfileSync();
+  }
+
+  Future<void> _performProfileSync() async {
+    if (_userRole.toLowerCase() == 'guest') return;
+    
+    final isComplete = await SharedPreferencesService.isProfileSetupComplete();
+    final neverAsk = await SharedPreferencesService.isNeverAskProfileSetup();
+    final isProfileCompleted = await SharedPreferencesService.getIsProfileCompleted();
+    
+    if (!isComplete && !isProfileCompleted) {
+      if (!mounted) return;
+      setState(() {
+        _syncState = neverAsk ? SyncState.incompleteNeverAsk : SyncState.incomplete;
+      });
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _syncState = SyncState.loading;
+    });
+    _syncAnimationController.repeat();
+    
+    if (token != null) {
+      try {
+        final result = await ApiService.getUserProfile(token: token!);
+        if (result['success'] == true) {
+          final data = result['data'];
+          if (data != null && data['data'] != null) {
+            await SharedPreferencesService.saveFullUserProfile(data['data'] as Map<String, dynamic>);
+            if (!mounted) return;
+            _syncAnimationController.stop();
+            setState(() {
+              _syncState = SyncState.success;
+            });
+            Future.delayed(const Duration(seconds: 3), () {
+              if (mounted && _syncState == SyncState.success) {
+                setState(() {
+                  _syncState = SyncState.idle;
+                });
+              }
+            });
+            return;
+          }
+        }
+      } catch (e) {
+        debugPrint('Profile sync error: $e');
+      }
+    }
+    
+    if (!mounted) return;
+    _syncAnimationController.stop();
+    setState(() {
+      _syncState = SyncState.failed;
+    });
   }
 
   Future<void> _loadUserData() async {
@@ -106,24 +180,6 @@ class _HomeScreenState extends State<HomeScreen> {
             return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          width: 64.0,
-                          height: 64.0,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AuthPalette.coral.withOpacity(0.15),
-                            border: Border.all(
-                              color: AuthPalette.coral.withOpacity(0.3),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Icon(
-                            CupertinoIcons.person_crop_circle_badge_exclam,
-                            color: AuthPalette.coral,
-                            size: 32.0,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
                         Text(
                           'Complete Your Profile',
                           style: TextStyle(
@@ -137,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Set up your profile to get the most out of EduMate. Your roll number, branch, and section help us personalise your experience.',
+                          'Please set up your profile to personalise your timetable and schedule.',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 14.0,
@@ -151,16 +207,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () {
-                              Navigator.pop(context);
-                              Navigator.of(this.context).push(
-                                CupertinoPageRoute(
-                                  builder: (context) => ProfileSetupScreen(
-                                    userId: userId,
-                                    token: token,
-                                    onProfileSetupComplete: () {
-                                      SharedPreferencesService.setProfileSetupComplete(true);
-                                    },
-                                  ),
+                              Navigator.pop(context); // Close this prompt
+                              showGlassmorphicDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                child: ProfileSetupDialogFlow(
+                                  userId: userId,
+                                  token: token,
+                                  onComplete: () {
+                                    _loadUserData();
+                                  },
                                 ),
                               );
                             },
@@ -367,6 +423,41 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
+                    // Sync Status Indicator
+                    if (_syncState != SyncState.idle)
+                      Hero(
+                        tag: 'sync_button',
+                        child: CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () {
+                            if (_syncState == SyncState.incompleteNeverAsk || _syncState == SyncState.incomplete) {
+                                showGlassmorphicDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  child: ProfileSetupDialogFlow(
+                                    onComplete: () {
+                                      _performProfileSync();
+                                    },
+                                  ),
+                                );
+                            } else if (_syncState == SyncState.failed) {
+                                _performProfileSync();
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                              shape: BoxShape.circle,
+                            ),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: _buildSyncIcon(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (_syncState != SyncState.idle) const SizedBox(width: 8),
                     // Trailing Drawer Toggle Button
                     Hero(
                       tag: 'drawer_button',
@@ -482,6 +573,27 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildSyncIcon() {
+    switch (_syncState) {
+      case SyncState.loading:
+        return RotationTransition(
+          turns: _syncAnimationController,
+          key: const ValueKey('loading'),
+          child: const Icon(CupertinoIcons.arrow_2_circlepath, color: AuthPalette.coral, size: 22),
+        );
+      case SyncState.success:
+        return const Icon(CupertinoIcons.checkmark_alt_circle_fill, color: Color(0xFF4CD97B), size: 22, key: ValueKey('success'));
+      case SyncState.failed:
+        return const Icon(CupertinoIcons.clear_circled, color: Colors.redAccent, size: 22, key: ValueKey('failed'));
+      case SyncState.incomplete:
+        return Icon(CupertinoIcons.cloud, color: Colors.grey.withValues(alpha: 0.5), size: 22, key: const ValueKey('incomplete'));
+      case SyncState.incompleteNeverAsk:
+        return const Icon(CupertinoIcons.exclamationmark_triangle_fill, color: Colors.redAccent, size: 22, key: ValueKey('neverAsk'));
+      default:
+        return const SizedBox.shrink(key: ValueKey('idle'));
+    }
   }
 }
 

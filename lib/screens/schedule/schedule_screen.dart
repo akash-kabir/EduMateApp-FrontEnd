@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import '../../config.dart';
 import '../../constants/app_constants.dart';
 import '../../services/shared_preferences_service.dart';
+import '../../services/api_service.dart';
 import '../../widgets/toast_manager.dart';
 import '../../widgets/skeleton_loading_card.dart';
 import 'schedule_settings_modal.dart';
@@ -90,10 +91,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     if (savePref) {
       await _savePreference(branch, semester.toString(), '1st Year', section, true);
       
+      final List<String> electivesList = [];
       for (final entry in electives.entries) {
         final group = entry.key;
         final val = entry.value;
         if (val != 'Not Selected') {
+          electivesList.add(val);
           await SharedPreferencesService.setString(
             'selectedElective_${semester}_$group',
             val,
@@ -102,6 +105,38 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           await SharedPreferencesService.remove(
             'selectedElective_${semester}_$group',
           );
+        }
+      }
+
+      final token = await SharedPreferencesService.getToken();
+      final rollNo = await SharedPreferencesService.getRollNo();
+      final year = await SharedPreferencesService.getYear();
+      
+      if (token != null && rollNo != null && year != null) {
+        try {
+          final profileData = {
+            'rollNo': rollNo,
+            'year': year,
+            'semester': 'Semester $semester',
+            'branch': branch,
+            'section': section,
+            'electives': electivesList,
+          };
+          
+          final result = await ApiService.updateUserProfileWithFields(
+            token: token,
+            profileData: profileData,
+          );
+          if (result['success'] == true) {
+            final responseData = result['data'];
+            if (responseData != null && responseData['data'] != null) {
+              await SharedPreferencesService.saveFullUserProfile(
+                responseData['data'] as Map<String, dynamic>,
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint('Error syncing electives to backend: $e');
         }
       }
     }
@@ -691,36 +726,69 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   ),
                 ),
               ),
-            if (selectedBranch.isEmpty || selectedSemester.toString().isEmpty)
+            if (selectedBranch.isEmpty || selectedSemester.toString().isEmpty || selectedSection.isEmpty)
               SliverFillRemaining(
                 child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        CupertinoIcons.info_circle,
-                        size: 48,
-                        color: isDark ? Colors.grey[600] : Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Select a Branch and Section',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.grey[300] : Colors.grey[600],
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AuthPalette.coral.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            CupertinoIcons.calendar_badge_plus,
+                            size: 64,
+                            color: AuthPalette.coral,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Tap on the Branch and Section in the header\nto get started',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.grey[500] : Colors.grey[500],
+                        const SizedBox(height: 24),
+                        Text(
+                          'Welcome to the New Session! 🎉',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black,
+                            fontFamily: 'Salena',
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        Text(
+                          'Your classes have been updated. Please configure your new branch, section, and electives to view your timetable.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            color: AuthPalette.coral,
+                            borderRadius: BorderRadius.circular(16),
+                            onPressed: _showSettingsBottomSheet,
+                            child: const Text(
+                              'Configure Timesheet',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               )
@@ -755,7 +823,57 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   ),
                 ),
               )
-            else
+            else ...[
+              if (availableElectives.isNotEmpty && selectedElectives.length < availableElectives.length)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: GestureDetector(
+                      onTap: _showSettingsBottomSheet,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(CupertinoIcons.exclamationmark_circle_fill, color: Colors.red, size: 24),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Set Electives',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                            ),
+                            const Text(
+                              'Tap to configure',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(CupertinoIcons.chevron_right, color: Colors.red, size: 14),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 sliver: SliverFillRemaining(
@@ -834,7 +952,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 ),
               ),
           ],
-        ),
+        ]),
       ),
     );
   }

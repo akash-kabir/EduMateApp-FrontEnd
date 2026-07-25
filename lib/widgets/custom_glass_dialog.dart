@@ -131,6 +131,25 @@ Future<bool?> showDeleteConfirmationDialog({
 }
 
 
+class _KeyboardResponsiveWrapper extends StatelessWidget {
+  final Widget child;
+  const _KeyboardResponsiveWrapper({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    // This explicitly listens to keyboard changes in the overlay
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return AnimatedPadding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      child: Center(
+        child: child,
+      ),
+    );
+  }
+}
+
 Future<T?> showGlassmorphicDialog<T>({
   required BuildContext context,
   required Widget child,
@@ -148,7 +167,7 @@ Future<T?> showGlassmorphicDialog<T>({
     transitionDuration: const Duration(milliseconds: 300),
     pageBuilder: (ctx, anim1, anim2) {
       final isDark = Theme.of(ctx).brightness == Brightness.dark;
-      return Center(
+      return _KeyboardResponsiveWrapper(
         child: Material(
           type: MaterialType.transparency,
           child: ClipRRect(
@@ -175,11 +194,11 @@ Future<T?> showGlassmorphicDialog<T>({
                   ],
                 ),
                 child: child,
-              ),
-            ),
-          ),
-        ),
-      );
+              ), // Container
+            ), // BackdropFilter
+          ), // ClipRRect
+        ), // Material
+      ); // _KeyboardResponsiveWrapper
     },
     transitionBuilder: (ctx, anim1, anim2, child) {
       return Transform.scale(

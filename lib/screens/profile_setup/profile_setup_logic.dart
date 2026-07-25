@@ -8,6 +8,7 @@ import '../../services/shared_preferences_service.dart';
 import '../../services/student_data_service.dart';
 
 class ProfileSetupLogic extends ChangeNotifier {
+  bool _isDisposed = false;
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController rollNoController = TextEditingController();
@@ -92,10 +93,21 @@ class ProfileSetupLogic extends ChangeNotifier {
           detectedElectives = List<String>.from(data['electives']);
         }
         
-        autoSetupSuccess = true;
-        isSearching = false;
-        notifyListeners();
-        return true;
+        // Auto-save quietly in the background
+        final saveRes = await saveProfile();
+        
+        if (saveRes['success'] == true) {
+          autoSetupSuccess = true;
+          isSearching = false;
+          notifyListeners();
+          return true;
+        } else {
+          autoSetupError = saveRes['message'] ?? 'Data found but failed to save';
+          autoSetupSuccess = false;
+          isSearching = false;
+          notifyListeners();
+          return false;
+        }
       } else {
         autoSetupError = result['message'] ?? 'Roll number not found';
         autoSetupSuccess = false;
@@ -217,13 +229,22 @@ class ProfileSetupLogic extends ChangeNotifier {
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     } finally {
-      isLoading = false;
-      notifyListeners();
+      if (!_isDisposed) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   @override
+  void notifyListeners() {
+    if (_isDisposed) return;
+    super.notifyListeners();
+  }
+
+  @override
   void dispose() {
+    _isDisposed = true;
     firstNameController.dispose();
     lastNameController.dispose();
     rollNoController.dispose();

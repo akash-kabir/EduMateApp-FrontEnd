@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../config.dart';
 import '../../services/shared_preferences_service.dart';
 import '../../services/token_refresh_service.dart';
+import '../../services/schedule_database_helper.dart';
 import '../../widgets/toast_manager.dart';
 import 'schedule_screen.dart';
 
@@ -165,6 +166,20 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
 
   Future<void> loadSavedElectivePreferences() async {
     final Map<String, String> tempSelected = {};
+    
+    // First, try loading from the saved user profile electives
+    final userElectives = await SharedPreferencesService.getUserElectives();
+    for (var elective in userElectives) {
+      // Find which group this elective belongs to
+      for (var entry in availableElectives.entries) {
+        if (entry.value.contains(elective)) {
+          tempSelected[entry.key] = elective;
+          break;
+        }
+      }
+    }
+
+    // Then, fallback to or override with explicit shared preferences (if the user manually changed them in the settings)
     for (var group in availableElectives.keys) {
       final newKey = 'selectedElective_${selectedSemester}_$group';
       final legacyKey =
@@ -176,6 +191,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
         tempSelected[group] = saved;
       }
     }
+    
     setState(() {
       selectedElectives = tempSelected;
     });
@@ -328,22 +344,12 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
     }
   }
 
-  Future<void> cacheScheduleData(String semester, dynamic data) async {
-    final cacheKey = 'schedule_$semester';
-    await SharedPreferencesService.setString(cacheKey, jsonEncode(data));
+  Future<void> cacheScheduleData(String semester, dynamic data, {String? updatedAt}) async {
+    await ScheduleDatabaseHelper.instance.cacheScheduleData(semester, data, serverUpdatedAt: updatedAt);
   }
 
   Future<Map<String, dynamic>?> getCachedScheduleData(String semester) async {
-    final cacheKey = 'schedule_$semester';
-    final cachedData = await SharedPreferencesService.getString(cacheKey);
-    if (cachedData != null) {
-      try {
-        return jsonDecode(cachedData) as Map<String, dynamic>?;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
+    return await ScheduleDatabaseHelper.instance.getCachedScheduleData(semester);
   }
 
   Future<void> fetchScheduleFromBackend({bool isPolling = false}) async {
@@ -369,16 +375,17 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
     }
 
     try {
+      String? serverUpdatedAt;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final metaUrl = '${Config.scheduleBaseEndpoint}/$requestedSemester/metadata?t=$timestamp';
       final metaResponse = await TokenRefreshService.authenticatedGet(metaUrl).timeout(const Duration(seconds: 5));
 
       if (metaResponse.statusCode == 200) {
         final metaData = jsonDecode(metaResponse.body);
-        final serverUpdatedAt = metaData['updatedAt'];
+        serverUpdatedAt = metaData['updatedAt'];
 
         if (hasCache && serverUpdatedAt != null) {
-          final localUpdatedAt = cachedData['updatedAt'];
+          final localUpdatedAt = await ScheduleDatabaseHelper.instance.getServerUpdatedAt(requestedSemester.toString());
           
           if (localUpdatedAt == serverUpdatedAt) {
             if (!isPolling && mounted) {
@@ -402,7 +409,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
 
         if (responseData is Map && responseData.containsKey('data')) {
           final classData = responseData['data'];
-          await cacheScheduleData(requestedSemester.toString(), classData);
+          await cacheScheduleData(requestedSemester.toString(), classData, updatedAt: serverUpdatedAt);
 
           if (mounted) {
             setState(() {
@@ -411,7 +418,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
             });
           }
         } else {
-          await cacheScheduleData(requestedSemester.toString(), responseData);
+          await cacheScheduleData(requestedSemester.toString(), responseData, updatedAt: serverUpdatedAt);
           if (mounted) {
             setState(() {
               scheduleData = responseData;
