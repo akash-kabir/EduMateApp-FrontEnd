@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../screens/schedule/schedule_screen.dart';
-import '../screens/map/map_screen.dart';
-import '../screens/event/event_screen.dart';
-import '../screens/home/home_screen.dart';
-import '../services/shared_preferences_service.dart';
-import '../services/map_navigation_store.dart';
-import '../widgets/custom_glass_dialog.dart';
-import '../constants/app_constants.dart';
-import 'nav_bar.dart';
+import 'package:app/features/schedule/screens/schedule_screen.dart';
+import 'package:app/features/navigation/screens/map_screen.dart';
+import 'package:app/features/events/screens/event_screen.dart';
+import 'package:app/features/home/screens/home_screen.dart';
+import 'package:app/shared/services/shared_preferences_service.dart';
+import 'package:app/features/navigation/services/map_navigation_store.dart';
+import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
+import 'package:app/theme/theme.dart';
+import 'package:app/app_navigation/nav_bar.dart';
 
 class AppNavigator extends StatefulWidget {
   const AppNavigator({super.key});

@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:ui';
-import '../../constants/app_constants.dart';
+import 'package:app/theme/theme.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});

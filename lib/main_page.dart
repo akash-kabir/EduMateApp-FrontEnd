@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'app_navigation/app_navigator.dart';
+import 'package:app/app_navigation/app_navigator.dart';
 
 import 'dart:async';
-import 'services/shared_preferences_service.dart';
-import 'services/token_refresh_service.dart';
-import 'config.dart';
-import 'screens/auth/getting_started_screen.dart';
+import 'package:app/shared/services/shared_preferences_service.dart';
+import 'package:app/features/auth_and_profile/services/token_refresh_service.dart';
+import 'package:app/shared/config.dart';
+import 'package:app/features/auth_and_profile/screens/auth/getting_started_screen.dart';
 import 'package:provider/provider.dart';
-import 'provider/sap_provider.dart';
+import 'package:app/features/sapsync/provider/sap_provider.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});

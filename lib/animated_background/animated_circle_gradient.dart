@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../constants/app_constants.dart';
+import 'package:app/theme/theme.dart';
 
 class AnimatedCircleGradient extends StatefulWidget {
   final Color primaryColor;
