@@ -15,7 +15,6 @@ import '../../widgets/skeleton_loading_card.dart';
 import 'schedule_settings_modal.dart';
 import 'widgets/schedule_timeline.dart';
 import 'widgets/week_calendar_grid.dart';
-
 import 'schedule_logic_mixin.dart';
 
 class ScheduleScreen extends StatefulWidget {

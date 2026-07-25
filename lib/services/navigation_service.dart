@@ -10,11 +10,6 @@ class NavigationService {
 
   NavigationService._internal();
 
-  // Reset progress when starting new navigation
-  void resetProgress() {
-    // No longer needed - we update dynamically now
-  }
-
   Future<RouteData> getRoute({
     required double originLatitude,
     required double originLongitude,

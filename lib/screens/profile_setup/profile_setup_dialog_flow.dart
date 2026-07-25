@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../constants/app_constants.dart';
@@ -41,7 +40,6 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
   // Animations
   late AnimationController _fadeController;
   late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
@@ -62,10 +60,6 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
-    
-    _pulseAnimation = Tween<double>(begin: 0.7, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
 
     _runInitSequence();
   }
@@ -118,21 +112,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
     }
   }
 
-  Future<void> _submitProfile() async {
-    final result = await _logic.saveProfile();
-    if (!mounted) return;
-    
-    if (result['success'] == true) {
-      _setStep(DialogStep.success);
-      await Future.delayed(const Duration(milliseconds: 1800));
-      if (mounted) {
-        widget.onComplete?.call();
-        Navigator.pop(context);
-      }
-    } else {
-      setState(() => _errorMessage = result['message'] ?? 'Failed to save');
-    }
-  }
+
 
   @override
   void dispose() {
@@ -148,8 +128,8 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = AuthPalette.coral;
 
-    return WillPopScope(
-      onWillPop: () async => false, // Non-dismissible
+    return PopScope(
+      canPop: false, // Non-dismissible
       child: AnimatedSize(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -258,7 +238,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           placeholder: 'e.g. 2105001',
           padding: const EdgeInsets.only(left: 14, top: 12, bottom: 12, right: 8),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white12 : Colors.black.withOpacity(0.05),
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
           ),
@@ -271,7 +251,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: accent,
+                  color: accent.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(CupertinoIcons.arrow_right, color: Colors.white, size: 18),

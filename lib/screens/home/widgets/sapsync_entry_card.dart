@@ -6,7 +6,7 @@ import '../../sap_attendance_screen.dart';
 import '../../../provider/sap_provider.dart';
 
 class SapSyncEntryCard extends StatelessWidget {
-  const SapSyncEntryCard({Key? key}) : super(key: key);
+  const SapSyncEntryCard({super.key});
 
   String _getAbbreviation(String subject) {
     final clean = subject.trim();
@@ -31,8 +31,6 @@ class SapSyncEntryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final sapProvider = Provider.of<SapProvider>(context);
     final isConnected = sapProvider.isConnected;
-    final overallPct = sapProvider.overallPercentage;
-    final pctColor = overallPct >= sapProvider.attendanceThreshold ? const Color(0xFF4CD97B) : const Color(0xFFFF5252);
     final records = sapProvider.attendanceRecords;
 
     return GestureDetector(
@@ -57,7 +55,7 @@ class SapSyncEntryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -142,7 +140,7 @@ class SapSyncEntryCard extends StatelessWidget {
                                     height: barHeight,
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
-                                        colors: [col, col.withOpacity(0.5)],
+                                        colors: [col, col.withValues(alpha: 0.5)],
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                       ),
@@ -198,7 +196,7 @@ class SapSyncEntryCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blueAccent.withOpacity(0.2),
+                      color: Colors.blueAccent.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(

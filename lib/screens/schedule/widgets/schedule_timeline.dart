@@ -8,6 +8,7 @@ class ScheduleTimeline extends StatelessWidget {
   final bool Function(String) isPassed;
   final bool isHoliday;
   final String emptyMessage;
+  final Map<int, List<String>>? friendsInfo;
 
   const ScheduleTimeline({
     super.key,
@@ -17,6 +18,7 @@ class ScheduleTimeline extends StatelessWidget {
     required this.isPassed,
     this.isHoliday = false,
     this.emptyMessage = 'No classes scheduled for this day',
+    this.friendsInfo,
   });
 
   @override
@@ -52,6 +54,7 @@ class ScheduleTimeline extends StatelessWidget {
           isPassed: passed,
           classCount: classPeriod['count'] as int,
           isHoliday: isHoliday,
+          friends: friendsInfo?[index],
         );
       }),
     );

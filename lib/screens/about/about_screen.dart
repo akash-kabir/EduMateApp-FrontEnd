@@ -1,9 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:ui';
-import '../../theme/app_theme.dart';
 import '../../constants/app_constants.dart';
 
 class AboutScreen extends StatelessWidget {

@@ -182,7 +182,7 @@ class _AdminStudentDataManagementScreenState
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: _years.length,
-                              separatorBuilder: (_, __) =>
+                              separatorBuilder: (_, _) =>
                                   const SizedBox(height: 16),
                               itemBuilder: (context, index) {
                                 final targetYear = _years[index];
@@ -302,7 +302,7 @@ class _AdminStudentDataManagementScreenState
                                                 label: 'Delete',
                                                 color: const Color(0xFFDC2626), // Admin Red
                                                 isDark: isDark,
-                                                onTap: () => _deleteDataset(targetYear, d?['semester'] ?? ''),
+                                                onTap: () => _deleteDataset(targetYear, d['semester'] ?? ''),
                                               ),
                                             ),
                                           ],

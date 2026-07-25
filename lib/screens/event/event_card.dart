@@ -35,7 +35,6 @@ class EventCard extends StatelessWidget {
     final isEvent = postType == 'event';
     final authorName = post['authorUsername'] ?? 'Unknown';
     final title = post['title'] ?? '';
-    final body = post['body'] ?? '';
     final createdAt = post['createdAt'] as String?;
     
     final imageUrl = post['imageUrl'] as String?;
@@ -67,8 +66,8 @@ class EventCard extends StatelessWidget {
                 context,
                 PageRouteBuilder(
                   transitionDuration: const Duration(milliseconds: 500),
-                  pageBuilder: (_, __, ___) => PostDetailScreen(post: post),
-                  transitionsBuilder: (_, animation, __, child) {
+                  pageBuilder: (context, animation, secondaryAnimation) => PostDetailScreen(post: post),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
                     return FadeTransition(opacity: animation, child: child);
                   },
                 ),

@@ -5,7 +5,6 @@ import '../../services/shared_preferences_service.dart';
 import '../../services/sap/sap_auth_service.dart';
 import '../../services/schedule_database_helper.dart';
 import '../splash/splash_screen.dart';
-import '../../theme/app_theme.dart';
 import '../../constants/app_constants.dart';
 
 class SettingsScreen extends StatefulWidget {

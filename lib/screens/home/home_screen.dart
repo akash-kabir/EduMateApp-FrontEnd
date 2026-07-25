@@ -10,6 +10,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/custom_glass_dialog.dart';
 import '../../constants/app_constants.dart';
+import '../friends/friends_schedule_screen.dart';
 import '../../services/shared_preferences_service.dart';
 import '../../services/api_service.dart';
 
@@ -546,15 +547,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       );
                     },
                   ),
-                  // Placeholder for future action
                   DashboardActionCard(
-                    title: 'More',
-                    subtitle: 'Coming soon',
-                    icon: CupertinoIcons.app_badge,
-                    gradientColors: isDark 
-                        ? const [Color(0xFF303030), Color(0xFF1a1a1a)]
-                        : const [Color(0xFFE0E0E0), Color(0xFFBDBDBD)],
-                    onTap: () {},
+                    title: 'Friends',
+                    subtitle: 'Schedule',
+                    icon: CupertinoIcons.person_2,
+                    gradientColors: const [Color(0xFF8A2387), Color(0xFFE94057), Color(0xFFF27121)],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(
+                          builder: (context) => const FriendsScheduleScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ]),
               ),

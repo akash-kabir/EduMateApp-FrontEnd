@@ -256,49 +256,6 @@ class ApiService {
     }
   }
 
-  /// Update user's profile with roll number, year, and semester
-  static Future<Map<String, dynamic>> updateUserProfile({
-    required String token,
-    required String rollNo,
-    required String year,
-    required String semester,
-    required String branch,
-  }) async {
-    try {
-      final response = await _httpClient.put(
-        Uri.parse(Config.updateProfileEndpoint),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'rollNo': rollNo,
-          'year': year,
-          'semester': semester,
-          'branch': branch,
-          'isProfileCompleted': true,
-        }),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        return {
-          'success': true,
-          'message': 'Profile updated successfully',
-          'data': data,
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Failed to update profile',
-        };
-      }
-    } catch (e) {
-      return {'success': false, 'message': 'Error: $e'};
-    }
-  }
-
   /// Update user profile with additional fields
   static Future<Map<String, dynamic>> updateUserProfileWithFields({
     required String token,

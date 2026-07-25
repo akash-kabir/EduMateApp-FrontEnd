@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../config.dart';
-import '../../../constants/app_constants.dart';
 import '../../../widgets/toast_manager.dart';
 import 'schedule_editor_screen.dart';
 

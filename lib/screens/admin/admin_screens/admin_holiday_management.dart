@@ -18,7 +18,6 @@ class AdminHolidayManagementScreen extends StatefulWidget {
 }
 
 class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScreen> {
-  bool _isLoading = true;
   bool _isExpanded = false;
   int _year = DateTime.now().year;
   List<dynamic> _holidays = [];
@@ -30,7 +29,6 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
   }
 
   Future<void> _fetchHolidays() async {
-    setState(() => _isLoading = true);
     try {
       final result = await HolidayService.fetchHolidays(_year);
       if (result['success'] == true && result['data'] != null) {
@@ -56,8 +54,6 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
       }
     } catch (e) {
       debugPrint('Error fetching holidays: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -93,8 +89,6 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
         return;
       }
 
-      setState(() => _isLoading = true);
-
       final response = await TokenRefreshService.authenticatedPost(
         '${Config.holidayBaseEndpoint}/upload',
         body: data,
@@ -119,7 +113,6 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
           message: 'Failed to upload holiday calendar',
           isSuccess: false,
         );
-        setState(() => _isLoading = false);
       }
     } catch (e) {
       if (mounted) {
@@ -128,7 +121,6 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
           message: 'Error: ${e.toString()}',
           isSuccess: false,
         );
-        setState(() => _isLoading = false);
       }
     }
   }
@@ -151,8 +143,6 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
 
     if (confirm != true) return;
 
-    setState(() => _isLoading = true);
-
     try {
       final updatedList = List.from(_holidays)..removeAt(index);
       final payload = {
@@ -174,12 +164,10 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
         if (mounted) {
           EduMateToast.showCompact(context, message: 'Failed to delete holiday', isSuccess: false);
         }
-        setState(() => _isLoading = false);
       }
     } catch (e) {
       if (mounted) {
         EduMateToast.showCompact(context, message: 'Error: $e', isSuccess: false);
-        setState(() => _isLoading = false);
       }
     }
   }
@@ -191,7 +179,6 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
         year: _year,
         onAdd: (newHoliday) async {
           Navigator.pop(context);
-          setState(() => _isLoading = true);
           try {
             final updatedList = List.from(_holidays)..add(newHoliday);
             final payload = {
@@ -212,12 +199,10 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
               if (mounted) {
                 EduMateToast.showCompact(context, message: 'Failed to add holiday', isSuccess: false);
               }
-              setState(() => _isLoading = false);
             }
           } catch (e) {
             if (mounted) {
               EduMateToast.showCompact(context, message: 'Error: $e', isSuccess: false);
-              setState(() => _isLoading = false);
             }
           }
         },

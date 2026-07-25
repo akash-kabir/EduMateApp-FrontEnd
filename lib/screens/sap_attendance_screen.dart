@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../provider/sap_provider.dart';
-import '../models/sap/attendance_record.dart';
-import '../widgets/radial_segment_chart.dart';
 import '../widgets/sleek_attendance_card.dart';
 import '../widgets/sap_hero_visualization.dart';
 
@@ -16,7 +14,6 @@ class SapAttendanceScreen extends StatefulWidget {
 
 class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
   int? _selectedIndex;
-  SapHeroStyle _heroStyle = SapHeroStyle.bentoGrid;
 
   @override
   Widget build(BuildContext context) {
@@ -55,9 +52,9 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.redAccent.withOpacity(0.15),
+                color: Colors.redAccent.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+                border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
               ),
               child: Text(
                 sapProvider.errorMessage,
@@ -96,18 +93,6 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                               totalPresent: sapProvider.totalPresentClasses,
                               totalClasses: sapProvider.totalClassesCount,
                               threshold: sapProvider.attendanceThreshold,
-                              selectedIndex: _selectedIndex,
-                              onSegmentSelected: (index) {
-                                setState(() {
-                                  _selectedIndex = _selectedIndex == index ? null : index;
-                                });
-                              },
-                              activeStyle: _heroStyle,
-                              onStyleChanged: (newStyle) {
-                                setState(() {
-                                  _heroStyle = newStyle;
-                                });
-                              },
                             ),
                             const SizedBox(height: 20),
 
@@ -161,30 +146,6 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
     );
   }
 
-  String _formatAcademicYear(String rawTitle, String userId) {
-    if (rawTitle.isEmpty) return 'Not configured';
-    final yearMatch = RegExp(r'(\d{4})-\d{4}').firstMatch(rawTitle);
-    if (yearMatch != null) {
-      final startYear = int.tryParse(yearMatch.group(1)!) ?? 2024;
-      int studentStartYear = 2024;
-      if (userId.length >= 2) {
-        final prefix = int.tryParse(userId.substring(0, 2));
-        if (prefix != null && prefix >= 15 && prefix <= 30) {
-          studentStartYear = 2000 + prefix;
-        }
-      }
-      final yearDiff = startYear - studentStartYear + 1;
-      String yearName = '1st Year';
-      if (yearDiff == 2) yearName = '2nd Year';
-      else if (yearDiff == 3) yearName = '3rd Year';
-      else if (yearDiff >= 4) yearName = '4th Year';
-
-      final isSpring = rawTitle.toLowerCase().contains('spring');
-      final sessionName = isSpring ? 'Spring Session' : 'Autumn Session';
-      return '$yearName • $sessionName';
-    }
-    return rawTitle;
-  }
 
   List<Map<String, String>> _getTermOptions(String userId) {
     int studentStartYear = 2024;
@@ -261,7 +222,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF1C1C1E),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,7 +321,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF1C1C1E),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 ),
                 child: StatefulBuilder(
                   builder: (context, setModalState) {
@@ -383,7 +344,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                             activeTrackColor: const Color(0xFF4CD97B),
                             inactiveTrackColor: Colors.grey[800],
                             thumbColor: const Color(0xFF4CD97B),
-                            overlayColor: const Color(0xFF4CD97B).withOpacity(0.2),
+                            overlayColor: const Color(0xFF4CD97B).withValues(alpha: 0.2),
                             valueIndicatorColor: const Color(0xFF4CD97B),
                             valueIndicatorTextStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                           ),

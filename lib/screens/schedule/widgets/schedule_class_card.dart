@@ -10,6 +10,7 @@ class ScheduleClassCard extends StatelessWidget {
   final bool isPassed;
   final int classCount;
   final bool isHoliday;
+  final List<String>? friends;
 
   const ScheduleClassCard({
     super.key,
@@ -19,6 +20,7 @@ class ScheduleClassCard extends StatelessWidget {
     required this.isPassed,
     required this.classCount,
     this.isHoliday = false,
+    this.friends,
   });
 
   @override
