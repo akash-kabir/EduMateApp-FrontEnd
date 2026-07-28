@@ -450,11 +450,12 @@ class _SignupScreen2State extends State<SignupScreen2>
                                   await SharedPreferencesService.saveFullUserProfile(user);
 
                                   if (mounted) {
-                                    Navigator.pushReplacement(
+                                    Navigator.pushAndRemoveUntil(
                                       this.context,
                                       MaterialPageRoute(
                                         builder: (_) => const SplashScreenWithApiLoading(),
                                       ),
+                                      (route) => false,
                                     );
                                   }
                                 } else {

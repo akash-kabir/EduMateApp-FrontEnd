@@ -296,6 +296,27 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
       );
     }
 
+    if (!_scheduleData!.hasCachedTimetable) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Today\'s schedule',
+            style: TextStyle(color: subtitleColor, fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No Timetable',
+            style: TextStyle(color: titleColor, fontSize: 32, fontWeight: FontWeight.bold, height: 1.1),
+          ),
+          Text(
+            'Please sync to view your classes.',
+            style: TextStyle(color: subtitleColor, fontSize: 16),
+          ),
+        ],
+      );
+    }
+
     if (_scheduleData!.classes.isEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -574,7 +595,7 @@ class _NextClassRotatorState extends State<_NextClassRotator> {
   @override
   void initState() {
     super.initState();
-    _rotationTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+    _rotationTimer = Timer.periodic(const Duration(milliseconds: 4000), (_) {
       if (mounted) {
         setState(() {
           _showCountdown = !_showCountdown;
@@ -646,8 +667,11 @@ class _NextClassRotatorState extends State<_NextClassRotator> {
   }
 
   Widget _buildCountdown(Duration diff) {
-    final hours = diff.inHours;
-    final mins = diff.inMinutes % 60;
+    final totalSeconds = diff.inSeconds;
+    final totalMinutes = totalSeconds > 0 ? (totalSeconds / 60.0).ceil() : 0;
+    
+    final hours = totalMinutes ~/ 60;
+    final mins = totalMinutes % 60;
     
     String mainNum = '';
     String subText = '';

@@ -16,6 +16,7 @@ import 'package:app/features/schedule/screens/schedule_settings_modal.dart';
 import 'package:app/features/schedule/widgets/schedule_timeline.dart';
 import 'package:app/features/schedule/widgets/week_calendar_grid.dart';
 import 'package:app/features/schedule/screens/schedule_logic_mixin.dart';
+import 'package:app/features/schedule/services/schedule_database_helper.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -174,12 +175,28 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Future<Map<String, List<String>>> _getElectivesForSettings(int semester) async {
-    final cacheKey = 'cached_electives_v2_$semester';
     try {
-      final cached = await SharedPreferencesService.getString(cacheKey);
-      if (cached != null) {
-        final decoded = jsonDecode(cached);
-        if (decoded is Map && decoded.containsKey('grouped')) {
+      Map<String, dynamic>? decoded;
+      try {
+        decoded = await ScheduleDatabaseHelper.instance.getCachedElectiveData(semester.toString());
+      } catch (e) {
+        debugPrint('SQLite error in screen: $e');
+      }
+
+      if (decoded == null) {
+        final cacheKey = 'cached_electives_v2_$semester';
+        String? cachedStr = await SharedPreferencesService.getString(cacheKey);
+        if (cachedStr == null) {
+          cachedStr = await SharedPreferencesService.getString('cached_electives_$semester');
+        }
+        if (cachedStr != null) {
+          decoded = jsonDecode(cachedStr);
+          await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), decoded);
+        }
+      }
+
+      if (decoded != null) {
+        if (decoded.containsKey('grouped')) {
           final Map<String, List<String>> grouped = {};
           (decoded['grouped'] as Map).forEach((key, val) {
             grouped[key] = List<String>.from(val as List);
@@ -196,7 +213,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Future<Map<String, List<String>>> _fetchAndCacheElectives(int semester) async {
-    final cacheKey = 'cached_electives_v2_$semester';
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
@@ -218,7 +234,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             'raw': electivesList,
             'grouped': grouped,
           };
-          await SharedPreferencesService.setString(cacheKey, jsonEncode(cacheData));
+          await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), cacheData, serverUpdatedAt: serverUpdatedAt);
           return grouped;
         }
       }
@@ -229,7 +245,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   void _fetchAndCacheElectivesInBackground(int semester) {
-    final cacheKey = 'cached_electives_v2_$semester';
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     http.get(Uri.parse('${Config.electiveBaseEndpoint}/$semester?t=$timestamp')).then((response) {
       if (response.statusCode == 200) {
@@ -248,7 +263,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             'raw': electivesList,
             'grouped': grouped,
           };
-          SharedPreferencesService.setString(cacheKey, jsonEncode(cacheData));
+          ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), cacheData, serverUpdatedAt: serverUpdatedAt);
         }
       }
     }).catchError((e) {

@@ -199,17 +199,33 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
 
   Future<void> fetchAvailableElectives(int semester,
       {bool isPolling = false, bool skipLoadPreferences = false}) async {
-    final cacheKey = 'cached_electives_v2_$semester';
     bool hasCache = false;
     String? localUpdatedAt;
 
     try {
-      final cached = await SharedPreferencesService.getString(cacheKey);
-      if (cached != null) {
-        final decoded = jsonDecode(cached);
-        if (decoded is Map && decoded.containsKey('raw') && decoded.containsKey('grouped')) {
+      Map<String, dynamic>? decoded;
+      try {
+        decoded = await ScheduleDatabaseHelper.instance.getCachedElectiveData(semester.toString());
+      } catch (e) {
+        debugPrint('SQLite error in mixin: $e');
+      }
+
+      if (decoded == null) {
+        final cacheKey = 'cached_electives_v2_$semester';
+        String? cachedStr = await SharedPreferencesService.getString(cacheKey);
+        if (cachedStr == null) {
+          cachedStr = await SharedPreferencesService.getString('cached_electives_$semester');
+        }
+        if (cachedStr != null) {
+          decoded = jsonDecode(cachedStr);
+          await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), decoded);
+        }
+      }
+
+      if (decoded != null) {
+        if (decoded.containsKey('raw') && decoded.containsKey('grouped')) {
           final raw = decoded['raw'] as List;
-          localUpdatedAt = decoded['updatedAt'] as String?;
+          localUpdatedAt = await ScheduleDatabaseHelper.instance.getServerUpdatedAtForElectives(semester.toString());
           final Map<String, List<String>> grouped = {};
           (decoded['grouped'] as Map).forEach((key, val) {
             grouped[key] = List<String>.from(val as List);
@@ -270,7 +286,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
             'raw': electivesList,
             'grouped': grouped,
           };
-          await SharedPreferencesService.setString(cacheKey, jsonEncode(cacheData));
+          await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), cacheData, serverUpdatedAt: serverUpdatedAtStr);
 
           if (mounted) {
             setState(() {

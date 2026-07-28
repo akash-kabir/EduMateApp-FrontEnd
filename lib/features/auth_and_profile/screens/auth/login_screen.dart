@@ -110,11 +110,12 @@ class _LoginScreenState extends State<LoginScreen>
 
 
         if (mounted) {
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
               builder: (_) => const SplashScreenWithApiLoading(),
             ),
+            (route) => false,
           );
         }
       } else {

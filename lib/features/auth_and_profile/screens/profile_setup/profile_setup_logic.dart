@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:app/features/auth_and_profile/screens/profile_setup/profile_setup_constants.dart';
 import 'package:http/http.dart' as http;
 import 'package:app/shared/config.dart';
+import 'package:app/features/auth_and_profile/services/token_refresh_service.dart';
+import 'package:app/features/schedule/services/schedule_database_helper.dart';
 import 'package:app/shared/services/api_service.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/shared/services/student_data_service.dart';
@@ -224,6 +226,10 @@ class ProfileSetupLogic extends ChangeNotifier {
         await SharedPreferencesService.setString('timesheet_section', selectedSection!);
         await SharedPreferencesService.setString('timesheet_year', selectedYear!);
         await SharedPreferencesService.setBool('timesheet_save_preference', true);
+
+        // Pre-fetch electives so Home Screen can map them immediately
+        final semNum = _getSemesterNumber(selectedSemester!);
+        _prefetchElectives(semNum);
       }
       return result;
     } catch (e) {
@@ -233,6 +239,39 @@ class ProfileSetupLogic extends ChangeNotifier {
         isLoading = false;
         notifyListeners();
       }
+    }
+  }
+
+  Future<void> _prefetchElectives(int semester) async {
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final url = '${Config.electiveBaseEndpoint}/$semester?t=$timestamp';
+      final response = await TokenRefreshService.authenticatedGet(url).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final resData = jsonDecode(response.body);
+        if (resData['success'] == true && resData['data'] != null) {
+          final electivesList = resData['data']['electives'] as List;
+          final serverUpdatedAtStr = resData['data']['updatedAt'] as String?;
+          final Map<String, List<String>> grouped = {};
+          for (var item in electivesList) {
+            final group = item['electiveGroup'] as String;
+            final name = item['name'] as String;
+            grouped.putIfAbsent(group, () => []).add(name);
+          }
+          final cacheData = {
+            'updatedAt': serverUpdatedAtStr,
+            'raw': electivesList,
+            'grouped': grouped,
+          };
+          await ScheduleDatabaseHelper.instance.cacheElectiveData(
+            semester.toString(), 
+            cacheData, 
+            serverUpdatedAt: serverUpdatedAtStr
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error prefetching electives: $e');
     }
   }
 

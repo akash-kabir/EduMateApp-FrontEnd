@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:app/shared/config.dart';
 import 'package:app/features/friends/models/friend_model.dart';
-import 'package:app/features/schedule/services/schedule_database_helper.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
+import 'package:app/features/schedule/services/schedule_database_helper.dart';
 import 'package:app/features/auth_and_profile/services/token_refresh_service.dart';
 
 class FriendsScheduleService {
@@ -47,12 +47,23 @@ class FriendsScheduleService {
     // Fetch raw elective data for semester
     List<dynamic> rawElectiveData = [];
     try {
-      final cacheKey = 'cached_electives_v2_$semesterNum';
-      final cached = await SharedPreferencesService.getString(cacheKey);
-      if (cached != null) {
-        final decoded = jsonDecode(cached);
-        if (decoded is Map && decoded['raw'] is List) {
+      Map<String, dynamic>? decoded = await ScheduleDatabaseHelper.instance.getCachedElectiveData(semesterNum.toString());
+      if (decoded == null) {
+        final cacheKey = 'cached_electives_v2_$semesterNum';
+        final cachedElectivesStr = await SharedPreferencesService.getString(cacheKey);
+        if (cachedElectivesStr != null) {
+          decoded = jsonDecode(cachedElectivesStr);
+        }
+      }
+      
+      Map<String, List<String>> availableElectives = {};
+      
+      if (decoded != null) {
+        if (decoded.containsKey('raw') && decoded.containsKey('grouped')) {
           rawElectiveData = decoded['raw'] as List;
+          (decoded['grouped'] as Map).forEach((key, val) {
+            availableElectives[key] = List<String>.from(val as List);
+          });
         }
       }
 

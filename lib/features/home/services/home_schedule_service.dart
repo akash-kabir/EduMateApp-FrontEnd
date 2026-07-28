@@ -2,16 +2,19 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/shared/services/holiday_service.dart';
+import 'package:app/features/schedule/services/schedule_database_helper.dart';
 
 class HomeScheduleData {
   final bool isHoliday;
   final String? holidayName;
   final List<dynamic> classes;
+  final bool hasCachedTimetable;
 
   HomeScheduleData({
     required this.isHoliday,
     this.holidayName,
     required this.classes,
+    this.hasCachedTimetable = true,
   });
 }
 
@@ -51,9 +54,10 @@ class HomeScheduleService {
     // 2. Fetch today's classes
     final int todayWeekday = now.weekday;
     if (todayWeekday > 5) { // Weekend
-      return HomeScheduleData(isHoliday: false, classes: []);
+      return HomeScheduleData(isHoliday: false, classes: [], hasCachedTimetable: true);
     }
 
+    bool hasCached = false;
     List<dynamic> todaysClasses = [];
     try {
       final savedSemesterStr = await SharedPreferencesService.getString('timesheet_semester');
@@ -61,11 +65,18 @@ class HomeScheduleService {
       
       final int semester = int.tryParse(savedSemesterStr?.replaceAll(RegExp(r'[^0-9]'), '') ?? '1') ?? 1;
       
-      final cacheKey = 'schedule_$semester';
-      final cachedData = await SharedPreferencesService.getString(cacheKey);
+      Map<String, dynamic>? scheduleData = await ScheduleDatabaseHelper.instance.getCachedScheduleData(semester.toString());
       
-      if (cachedData != null) {
-        final Map<String, dynamic> scheduleData = jsonDecode(cachedData);
+      if (scheduleData == null) {
+        final cacheKey = 'schedule_$semester';
+        final cachedDataStr = await SharedPreferencesService.getString(cacheKey);
+        if (cachedDataStr != null) {
+          scheduleData = jsonDecode(cachedDataStr);
+        }
+      }
+      
+      if (scheduleData != null) {
+        hasCached = true;
         final List<dynamic>? classesList = scheduleData['classes'] as List<dynamic>?;
         
         if (classesList != null && classesList.isNotEmpty && savedSection != null) {
@@ -97,14 +108,35 @@ class HomeScheduleService {
       
       // Load electives
       final Map<String, String> selectedElectives = {};
-      final cacheKeyElectives = 'cached_electives_v2_$semester';
-      final cachedElectives = await SharedPreferencesService.getString(cacheKeyElectives);
+      Map<String, dynamic>? decoded;
+      try {
+        decoded = await ScheduleDatabaseHelper.instance.getCachedElectiveData(semester.toString());
+      } catch (e) {
+        debugPrint('Error reading SQLite electives: $e');
+      }
+
+      if (decoded == null) {
+        try {
+          final cacheKeyElectives = 'cached_electives_v2_$semester';
+          String? cachedElectivesStr = await SharedPreferencesService.getString(cacheKeyElectives);
+          if (cachedElectivesStr == null) {
+            cachedElectivesStr = await SharedPreferencesService.getString('cached_electives_$semester');
+          }
+          if (cachedElectivesStr != null) {
+            decoded = jsonDecode(cachedElectivesStr);
+            // Auto-migrate to SQLite for next time
+            await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), decoded);
+          }
+        } catch (e) {
+          debugPrint('Error reading SP electives: $e');
+        }
+      }
+
       List<dynamic> rawElectiveData = [];
       Map<String, List<String>> availableElectives = {};
       
-      if (cachedElectives != null) {
-        final decoded = jsonDecode(cachedElectives);
-        if (decoded is Map && decoded.containsKey('raw') && decoded.containsKey('grouped')) {
+      if (decoded != null) {
+        if (decoded.containsKey('raw') && decoded.containsKey('grouped')) {
           rawElectiveData = decoded['raw'] as List;
           (decoded['grouped'] as Map).forEach((key, val) {
             availableElectives[key] = List<String>.from(val as List);
@@ -113,6 +145,18 @@ class HomeScheduleService {
       }
       
       // Load selected electives
+      // First, try loading from the saved user profile electives
+      final userElectives = await SharedPreferencesService.getUserElectives();
+      for (var elective in userElectives) {
+        for (var entry in availableElectives.entries) {
+          if (entry.value.contains(elective)) {
+            selectedElectives[entry.key] = elective;
+            break;
+          }
+        }
+      }
+
+      // Then, fallback to or override with explicit shared preferences
       for (var group in availableElectives.keys) {
         final newKey = 'selectedElective_${semester}_$group';
         final saved = await SharedPreferencesService.getString(newKey);
@@ -222,6 +266,27 @@ class HomeScheduleService {
         return aTime.compareTo(bTime);
       });
 
+      // Merge consecutive classes (Bug D2: Lab merge)
+      if (todaysClasses.isNotEmpty) {
+        List<dynamic> mergedClasses = [];
+        for (int i = 0; i < todaysClasses.length; i++) {
+          final current = todaysClasses[i];
+          if (mergedClasses.isEmpty) {
+            mergedClasses.add(Map<String, dynamic>.from(current));
+          } else {
+            final last = mergedClasses.last;
+            if (current['className'] == last['className'] && 
+                current['room'] == last['room'] && 
+                current['startTime'] == last['endTime']) {
+              last['endTime'] = current['endTime'];
+            } else {
+              mergedClasses.add(Map<String, dynamic>.from(current));
+            }
+          }
+        }
+        todaysClasses = mergedClasses;
+      }
+
     } catch (e) {
       debugPrint('Error loading cached schedule: $e');
     }
@@ -229,6 +294,7 @@ class HomeScheduleService {
     return HomeScheduleData(
       isHoliday: false,
       classes: todaysClasses,
+      hasCachedTimetable: hasCached,
     );
   }
 }

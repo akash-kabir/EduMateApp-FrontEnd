@@ -48,11 +48,12 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
         await SharedPreferencesService.saveFullUserProfile(data['user']);
 
         if (mounted) {
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
               builder: (_) => const SplashScreenWithApiLoading(),
             ),
+            (route) => false,
           );
         }
       } else {
