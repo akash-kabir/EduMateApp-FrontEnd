@@ -5,18 +5,42 @@ import 'package:app/shared/config.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 
 class PoiService {
+  // --- In-memory client-side cache ---
+  static List<PoiModel>? _cachedPois;
+  static DateTime? _cacheTime;
+  static const Duration _cacheTtl = Duration(minutes: 5);
+
+  static bool get _isCacheValid =>
+      _cachedPois != null &&
+      _cacheTime != null &&
+      DateTime.now().difference(_cacheTime!) < _cacheTtl;
+
+  static void _bustCache() {
+    _cachedPois = null;
+    _cacheTime = null;
+  }
+  // ------------------------------------
+
   static Future<List<PoiModel>> getPOIs() async {
+    // Return from cache if still fresh
+    if (_isCacheValid) return _cachedPois!;
+
     final response = await http.get(Uri.parse('${Config.BASE_URL}/api/poi'));
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       if (jsonResponse['success']) {
         final List data = jsonResponse['data'];
-        return data.map((json) => PoiModel.fromJson(json)).toList();
+        final pois = data.map((json) => PoiModel.fromJson(json)).toList();
+        // Store in cache
+        _cachedPois = pois;
+        _cacheTime = DateTime.now();
+        return pois;
       }
     }
     throw Exception('Failed to load POIs');
   }
+
 
   static Future<PoiModel> createPOI(PoiModel poi) async {
     final token = await SharedPreferencesService.getToken();
@@ -32,6 +56,7 @@ class PoiService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       if (jsonResponse['success']) {
+        _bustCache(); // invalidate cache so next getPOIs() fetches fresh data
         return PoiModel.fromJson(jsonResponse['data']);
       }
     }
@@ -52,6 +77,7 @@ class PoiService {
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       if (jsonResponse['success']) {
+        _bustCache(); // invalidate cache so next getPOIs() fetches fresh data
         return PoiModel.fromJson(jsonResponse['data']);
       }
     }
@@ -70,5 +96,6 @@ class PoiService {
     if (response.statusCode != 200) {
       throw Exception('Failed to delete POI: ${response.body}');
     }
+    _bustCache(); // invalidate cache so next getPOIs() fetches fresh data
   }
 }

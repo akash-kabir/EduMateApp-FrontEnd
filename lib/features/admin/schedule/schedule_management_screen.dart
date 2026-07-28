@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:app/shared/config.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 import 'package:app/features/admin/schedule/schedule_editor_screen.dart';
+import 'package:app/shared/services/shared_preferences_service.dart';
 
 class ScheduleManagementScreen extends StatefulWidget {
   const ScheduleManagementScreen({super.key});
@@ -99,11 +100,30 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
         throw Exception('Invalid JSON format: missing classes array');
       }
 
-      final response = await http.post(
-        Uri.parse('${Config.scheduleBaseEndpoint}/$semester'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(jsonData),
-      );
+      final token = await SharedPreferencesService.getToken();
+
+      final isUpdate = _schedules.containsKey(semester);
+
+      http.Response response;
+      if (isUpdate) {
+        response = await http.put(
+          Uri.parse('${Config.scheduleBaseEndpoint}/$semester'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(jsonData),
+        );
+      } else {
+        response = await http.post(
+          Uri.parse('${Config.scheduleBaseEndpoint}/$semester'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(jsonData),
+        );
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (mounted) {

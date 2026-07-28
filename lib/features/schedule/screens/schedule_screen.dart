@@ -715,73 +715,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   ),
                 ),
               ),
-            if (selectedBranch.isEmpty || selectedSemester.toString().isEmpty || selectedSection.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: AuthPalette.coral.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            CupertinoIcons.calendar_badge_plus,
-                            size: 64,
-                            color: AuthPalette.coral,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Welcome to the New Session! 🎉',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontFamily: 'Salena',
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Your classes have been updated. Please configure your new branch, section, and electives to view your timetable.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: CupertinoButton(
-                            padding: EdgeInsets.zero,
-                            color: AuthPalette.coral,
-                            borderRadius: BorderRadius.circular(16),
-                            onPressed: _showSettingsBottomSheet,
-                            child: const Text(
-                              'Configure Timesheet',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            else if (isLoading)
+            if (isLoading)
               SliverFillRemaining(
                 child: Padding(
                   padding: EdgeInsets.only(top: 16.0),
