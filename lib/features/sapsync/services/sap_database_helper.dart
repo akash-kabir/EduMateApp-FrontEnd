@@ -63,6 +63,20 @@ CREATE TABLE attendance_records (
     await batch.commit(noResult: true);
   }
 
+  Future<void> replaceAttendanceForSemester(String semesterId, List<AttendanceRecord> records) async {
+    final db = await instance.database;
+    final batch = db.batch();
+    batch.delete(
+      'attendance_records',
+      where: 'semesterId = ?',
+      whereArgs: [semesterId],
+    );
+    for (var record in records) {
+      batch.insert('attendance_records', record.toMap());
+    }
+    await batch.commit(noResult: true);
+  }
+
   Future<List<AttendanceRecord>> getAttendanceForSemester(String semesterId) async {
     final db = await instance.database;
     final maps = await db.query(

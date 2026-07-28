@@ -9,6 +9,7 @@ class SapProvider with ChangeNotifier {
   final SapWebViewScraper _scraper = SapWebViewScraper.instance;
   
   bool _isLoading = false;
+  bool _isFetching = false;
   String _errorMessage = '';
   bool _isConnected = false;
 
@@ -104,6 +105,8 @@ class SapProvider with ChangeNotifier {
   }
 
   Future<void> fetchAttendance() async {
+    if (_isFetching) return;
+    _isFetching = true;
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
@@ -158,8 +161,15 @@ class SapProvider with ChangeNotifier {
         }
 
         print('SAP_DEBUG [Provider]: Extracted ${records.length} records.');
-        await SapDatabaseHelper.instance.clearAttendanceForSemester(_currentSemester!.id);
-        await SapDatabaseHelper.instance.insertBatch(records);
+        
+        // Deduplicate records to avoid doubling up subjects
+        final uniqueRecordsMap = <String, AttendanceRecord>{};
+        for (var r in records) {
+          uniqueRecordsMap[r.subject] = r;
+        }
+        final uniqueRecords = uniqueRecordsMap.values.toList();
+        
+        await SapDatabaseHelper.instance.replaceAttendanceForSemester(_currentSemester!.id, uniqueRecords);
       } else {
         final err = result != null ? result['error'] : 'Unknown error';
         print('SAP_DEBUG [Provider]: Extraction failed: $err');
@@ -175,6 +185,7 @@ class SapProvider with ChangeNotifier {
       // Clean up the webview after sync
       await _scraper.dispose();
       _isLoading = false;
+      _isFetching = false;
       notifyListeners();
     }
   }
