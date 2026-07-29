@@ -25,11 +25,19 @@ class AdminUserDetailsScreen extends StatefulWidget {
 class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
   late Map<String, dynamic> _user;
   bool _isLoading = false;
+  late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
     _user = Map<String, dynamic>.from(widget.user);
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   String _normalizeRole(String? role) {
@@ -135,7 +143,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: Colors.black.withOpacity(0.2),
                 blurRadius: 20,
                 offset: const Offset(0, -5),
               ),
@@ -199,7 +207,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                     title: 'Contributor',
                     description: 'Can create content for curriculum and schedules.',
                     icon: CupertinoIcons.doc_text,
-                    color: CupertinoColors.systemRed.withValues(alpha: 0.8),
+                    color: CupertinoColors.systemRed.withOpacity(0.8),
                     onTap: () {
                       Navigator.pop(context);
                       _updateUserRole('Contributer');
@@ -227,7 +235,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF2C2C2E),
+          color: const Color(0xFF141110),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white12),
         ),
@@ -236,7 +244,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
+                color: color.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
@@ -380,178 +388,225 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
       backgroundColor: CupertinoColors.black,
       body: Stack(
         children: [
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 16),
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: roleColor.withValues(alpha: 0.2),
-                    child: Text(
-                      initials.isEmpty ? '?' : initials,
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: roleColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '$firstName $lastName',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: roleColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _roleLabel(normalizedRole),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: roleColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  
-                  // Buttons Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : () => _showRoleManagementSheet(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2C2C2E),
-                              foregroundColor: Colors.white,
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child: const Text(
-                              'Manage Role',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      SizedBox(
-                        height: 56,
-                        width: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _deleteUser,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2C2C2E),
-                            foregroundColor: CupertinoColors.systemRed,
-                            elevation: 2,
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                          ),
-                          child: const Icon(CupertinoIcons.trash, size: 24),
-                        ),
-                      ),
+          AnimatedBuilder(
+            animation: _scrollController,
+            builder: (context, child) {
+              final fadeIntensity = _scrollController.hasClients
+                  ? (_scrollController.offset / 40.0).clamp(0.0, 1.0)
+                  : 0.0;
+              return ShaderMask(
+                shaderCallback: (Rect rect) {
+                  return LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(1.0 - fadeIntensity),
+                      Colors.black,
                     ],
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Details Card
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF303030), Color(0xFF1a1a1a)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
+                    stops: const [0.0, 0.08],
+                  ).createShader(rect);
+                },
+                blendMode: BlendMode.dstIn,
+                child: child,
+              );
+            },
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildDetailRow('Email', _user['email']?.toString() ?? ''),
-                        const Divider(color: Colors.white12),
-                        _buildDetailRow('Username', _user['username']?.toString() ?? ''),
+                        SizedBox(height: MediaQuery.of(context).padding.top + 16),
+                        // Hero back button and title
+                        Row(
+                          children: [
+                            Hero(
+                              tag: 'back_button_user_management', // Same tag to animate from previous screen
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => Navigator.pop(context, true),
+                                  customBorder: const CircleBorder(),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: CupertinoColors.black.withOpacity(0.5),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white24, width: 1),
+                                    ),
+                                    child: const Icon(CupertinoIcons.back, color: Colors.white, size: 24),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Text(
+                                'User Details',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
                         
-                        if (normalizedRole != 'guest') ...[
-                          const Divider(color: Colors.white12),
-                          _buildDetailRow('Roll Number', _user['rollNo']?.toString() ?? ''),
-                          const Divider(color: Colors.white12),
-                          _buildDetailRow('Year', _user['year']?.toString() ?? ''),
-                          const Divider(color: Colors.white12),
-                          Row(
+                        // Profile Info Centered
+                        Center(
+                          child: Column(
                             children: [
-                              Expanded(child: _buildDetailRow('Semester', _user['semester']?.toString() ?? '')),
-                              Expanded(child: _buildDetailRow('Section', _user['section']?.toString() ?? '')),
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundColor: roleColor.withOpacity(0.2),
+                                child: Text(
+                                  initials.isEmpty ? '?' : initials,
+                                  style: TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: roleColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '$firstName $lastName',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: roleColor.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  _roleLabel(normalizedRole),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: roleColor,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                          const Divider(color: Colors.white12),
-                          _buildDetailRow('Profile Complete', _user['isProfileComplete'] == true ? 'Yes' : 'No'),
-                        ] else ...[
-                          const Divider(color: Colors.white12),
-                          _buildDetailRow('Guest Access', '$daysLeft Days Left'),
-                        ],
+                        ),
+                        const SizedBox(height: 32),
+                        
+                        // Buttons Row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 56,
+                                child: ElevatedButton(
+                                  onPressed: _isLoading ? null : () => _showRoleManagementSheet(context),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF141110),
+                                    foregroundColor: Colors.white,
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      side: const BorderSide(color: Colors.white12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Manage Role',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            SizedBox(
+                              height: 56,
+                              width: 56,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _deleteUser,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF141110),
+                                  foregroundColor: CupertinoColors.systemRed,
+                                  elevation: 2,
+                                  padding: EdgeInsets.zero,
+                                  shape: const CircleBorder(),
+                                  side: const BorderSide(color: Colors.white12),
+                                ),
+                                child: const Icon(CupertinoIcons.trash, size: 24),
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Details Card
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF141110),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildDetailRow('Email', _user['email']?.toString() ?? ''),
+                              const Divider(color: Colors.white12),
+                              _buildDetailRow('Username', _user['username']?.toString() ?? ''),
+                              
+                              if (normalizedRole != 'guest') ...[
+                                const Divider(color: Colors.white12),
+                                _buildDetailRow('Roll Number', _user['rollNo']?.toString() ?? ''),
+                                const Divider(color: Colors.white12),
+                                _buildDetailRow('Year', _user['year']?.toString() ?? ''),
+                                const Divider(color: Colors.white12),
+                                Row(
+                                  children: [
+                                    Expanded(child: _buildDetailRow('Semester', _user['semester']?.toString() ?? '')),
+                                    Expanded(child: _buildDetailRow('Section', _user['section']?.toString() ?? '')),
+                                  ],
+                                ),
+                                const Divider(color: Colors.white12),
+                                _buildDetailRow('Profile Complete', _user['isProfileCompleted'] == true ? 'Yes' : 'No'),
+                              ] else ...[
+                                const Divider(color: Colors.white12),
+                                _buildDetailRow('Guest Access', '$daysLeft Days Left'),
+                              ],
 
-                        const Divider(color: Colors.white12),
-                        _buildDetailRow('Joined', createdAtFormatted),
+                              const Divider(color: Colors.white12),
+                              _buildDetailRow('Joined', createdAtFormatted),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 40),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          
-          // Hero Back Button
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context, true),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.black45,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(CupertinoIcons.back, color: Colors.white),
                 ),
-              ),
+              ],
             ),
           ),
           
           if (_isLoading)
             Container(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withOpacity(0.3),
               child: const Center(
                 child: CupertinoActivityIndicator(),
               ),

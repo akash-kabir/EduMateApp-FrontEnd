@@ -197,11 +197,7 @@ class _AdminElectiveManagementScreenState
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: const [Color(0xFF303030), Color(0xFF1A1A1A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: const Color(0xFF141110),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.1),
@@ -618,12 +614,17 @@ class _SemesterElectiveDetailScreenState
       child: CupertinoPageScaffold(
         backgroundColor: const Color(0xFF0F0F11),
         navigationBar: CupertinoNavigationBar(
-          middle: Text('Semester ${widget.semester} Electives'),
+          middle: Text('Semester ${widget.semester} Electives', style: const TextStyle(color: Colors.white)),
           backgroundColor: const Color(0xFF0F0F11).withOpacity(0.8),
+          leading: CupertinoNavigationBarBackButton(
+            color: Colors.white,
+            previousPageTitle: null,
+            onPressed: () => Navigator.pop(context),
+          ),
           trailing: widget.canManage
               ? CupertinoButton(
                   padding: EdgeInsets.zero,
-                  child: const Icon(CupertinoIcons.add),
+                  child: const Icon(CupertinoIcons.add, color: Colors.white),
                   onPressed: () => _showAddGroupBottomSheet(context),
                 )
               : null,
@@ -863,11 +864,7 @@ class _SemesterElectiveDetailScreenState
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: const [Color(0xFF303030), Color(0xFF1A1A1A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: const Color(0xFF141110),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.1),

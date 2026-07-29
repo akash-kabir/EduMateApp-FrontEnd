@@ -13,7 +13,8 @@ import 'package:app/theme/theme.dart';
 import 'package:app/features/friends/screens/friends_schedule_screen.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/shared/services/api_service.dart';
-
+import 'package:url_launcher/url_launcher.dart';
+import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 
 import 'package:app/features/auth_and_profile/screens/profile_setup/profile_setup_dialog_flow.dart';
 import 'package:app/features/home/screens/holiday_list_screen.dart';
@@ -737,7 +738,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                   }
                                 ),
                                 _buildDrawerItem(
-                                  icon: CupertinoIcons.settings, 
+                                  icon: Icons.settings, 
                                   title: 'Settings', 
                                   onTap: () {
                                     Navigator.pop(context);
@@ -796,12 +797,30 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                 _buildDrawerItem(
                                   icon: CupertinoIcons.doc_text, 
                                   title: 'Privacy Policy', 
-                                  onTap: () => Navigator.pop(context)
+                                  onTap: () async {
+                                    final Uri url = Uri.parse('https://www.edumateapp.com/privacy-policy.html');
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                                    } else {
+                                      if (context.mounted) {
+                                        EduMateToast.showCompact(context, message: 'Could not open Privacy Policy', isSuccess: false);
+                                      }
+                                    }
+                                  }
                                 ),
                                 _buildDrawerItem(
                                   icon: CupertinoIcons.doc_checkmark, 
                                   title: 'Terms of Service', 
-                                  onTap: () => Navigator.pop(context)
+                                  onTap: () async {
+                                    final Uri url = Uri.parse('https://www.edumateapp.com/terms-of-service.html');
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                                    } else {
+                                      if (context.mounted) {
+                                        EduMateToast.showCompact(context, message: 'Could not open Terms of Service', isSuccess: false);
+                                      }
+                                    }
+                                  }
                                 ),
                                 if (isAdminOrContributor)
                                   _buildDrawerItem(

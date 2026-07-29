@@ -396,7 +396,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24.0, vertical: 16.0),
+                          horizontal: 8.0, vertical: 16.0),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [

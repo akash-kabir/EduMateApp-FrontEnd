@@ -39,6 +39,7 @@ class _AdminMainAppState extends State<AdminMainApp> {
           }
         },
         child: Scaffold(
+          extendBody: true,
           backgroundColor: CupertinoColors.black,
           body: SafeArea(
             bottom: false,
@@ -74,7 +75,7 @@ class _AdminNavBar extends StatelessWidget {
 
 
     return Material(
-      color: CupertinoColors.black,
+      color: Colors.transparent,
       child: CupertinoTabBar(
         currentIndex: selectedIndex,
         onTap: (index) => onItemTapped(index),
@@ -100,7 +101,7 @@ class _AdminNavBar extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Padding(
               padding: const EdgeInsets.only(top: 16.0),
-              child: Icon(CupertinoIcons.settings),
+              child: Icon(Icons.settings),
             ),
             label: '',
           ),

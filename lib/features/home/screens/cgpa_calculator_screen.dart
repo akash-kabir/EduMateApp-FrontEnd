@@ -487,7 +487,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
@@ -532,7 +532,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                     color: Color(0xFF141110),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(CupertinoIcons.settings, color: Colors.white),
+                                  child: const Icon(Icons.settings, color: Colors.white),
                                 ),
                               ),
                             ),

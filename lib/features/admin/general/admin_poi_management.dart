@@ -277,11 +277,7 @@ class _AdminPoiManagementScreenState extends State<AdminPoiManagementScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: const [Color(0xFF303030), Color(0xFF1A1A1A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: const Color(0xFF141110),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.1),
@@ -634,8 +630,8 @@ class _PoiFormDialogState extends State<_PoiFormDialog> {
                   controller: _descController,
                   placeholder: 'Description...',
                   padding: const EdgeInsets.all(14),
-                  maxLines: 4,
-                  maxLength: 400,
+                  maxLines: 6,
+                  maxLength: 250,
                   style: const TextStyle(color: Colors.white),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.08),

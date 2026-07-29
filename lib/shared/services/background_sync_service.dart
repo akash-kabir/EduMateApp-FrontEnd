@@ -220,6 +220,12 @@ Future<void> _performEventSync() async {
 
 class BackgroundSyncService {
   static Future<void> initialize() async {
+    final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+    
+    // Request notification permissions for Android 13+
+    await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+
     await Workmanager().initialize(
       callbackDispatcher,
     );

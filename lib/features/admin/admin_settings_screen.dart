@@ -22,12 +22,20 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   int _currentMonthCount = 0;
   int _monthlyLimit = 85000;
   bool _isLoadingConfig = false;
+  late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _loadRole();
     _fetchSystemConfig();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   bool get _isAdmin => (_currentUserRole ?? '').toLowerCase() == 'admin';
@@ -112,120 +120,154 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-
     return Scaffold(
-      backgroundColor: CupertinoColors.black,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        bottom: false,
+        child: Stack(
           children: [
-            const SizedBox(height: 20),
-            Text(
-              'Admin Settings',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Salena',
-                color: CupertinoColors.white,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Manage users, services, and system content',
-              style: TextStyle(
-                fontSize: 16,
-                color: CupertinoColors.systemGrey,
-              ),
-            ),
-            const SizedBox(height: 30),
-
-            // ── Kill Switch Card ──
-            if (_isAdmin) ...[
-              _MapKillSwitchCard(
-
-                isNavigationActive: _isNavigationActive,
-                currentMonthCount: _currentMonthCount,
-                monthlyLimit: _monthlyLimit,
-                isLoading: _isLoadingConfig,
-                onToggle: _toggleNavigation,
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            _SettingsCard(
-              title: 'User Management',
-              description: 'View users, change roles, and remove accounts',
-              icon: CupertinoIcons.group_solid,
-
-              onTap: () {
-                if (!_isAdmin) {
-                  EduMateToast.showCompact(
-                    context,
-                    message: 'Only Admin can access User Management',
-                    isSuccess: false,
-                  );
-                  return;
-                }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminUserManagementScreen(),
-                  ),
+            AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                final fadeIntensity = _scrollController.hasClients
+                    ? (_scrollController.offset / 40.0).clamp(0.0, 1.0)
+                    : 0.0;
+                return ShaderMask(
+                  shaderCallback: (Rect rect) {
+                    return LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black,
+                      ],
+                      stops: const [0.0, 0.08],
+                    ).createShader(rect);
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: child,
                 );
               },
-            ),
-            const SizedBox(height: 16),
-            _SettingsCard(
-              title: 'Post Management',
-              description: 'View and moderate community posts',
-              icon: CupertinoIcons.bubble_left_bubble_right_fill,
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics()),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Admin Settings',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Salena',
+                              color: CupertinoColors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Manage users, services, and system content',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: CupertinoColors.systemGrey,
+                            ),
+                          ),
+                          const SizedBox(height: 30),
 
-              onTap: () {
-                if (!_isAdmin) {
-                  EduMateToast.showCompact(
-                    context,
-                    message: 'Only Admin can access Post Management',
-                    isSuccess: false,
-                  );
-                  return;
-                }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminPostManagementScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 40),
-            Center(
-              child: CupertinoButton(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 12,
-                ),
-                color: const Color(0xFFFF1744),
-                onPressed: () async {
-                  await SharedPreferencesService.clearUserData();
-                  if (context.mounted) {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                          // ── Kill Switch Card ──
+                          if (_isAdmin) ...[
+                            _MapKillSwitchCard(
+                              isNavigationActive: _isNavigationActive,
+                              currentMonthCount: _currentMonthCount,
+                              monthlyLimit: _monthlyLimit,
+                              isLoading: _isLoadingConfig,
+                              onToggle: _toggleNavigation,
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+
+                          _SettingsCard(
+                            title: 'User Management',
+                            description: 'View users, change roles, and remove accounts',
+                            icon: CupertinoIcons.group_solid,
+                            onTap: () {
+                              if (!_isAdmin) {
+                                EduMateToast.showCompact(
+                                  context,
+                                  message: 'Only Admin can access User Management',
+                                  isSuccess: false,
+                                );
+                                return;
+                              }
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AdminUserManagementScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _SettingsCard(
+                            title: 'Post Management',
+                            description: 'View and moderate community posts',
+                            icon: CupertinoIcons.bubble_left_bubble_right_fill,
+                            onTap: () {
+                              if (!_isAdmin) {
+                                EduMateToast.showCompact(
+                                  context,
+                                  message: 'Only Admin can access Post Management',
+                                  isSuccess: false,
+                                );
+                                return;
+                              }
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AdminPostManagementScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 40),
+                          Center(
+                            child: CupertinoButton(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 12,
+                              ),
+                              color: const Color(0xFFFF1744),
+                              onPressed: () async {
+                                await SharedPreferencesService.clearUserData();
+                                if (context.mounted) {
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const LoginScreen(),
+                                    ),
+                                    (route) => false,
+                                  );
+                                }
+                              },
+                              child: const Text(
+                                'Log Out',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 100),
+                        ],
                       ),
-                      (route) => false,
-                    );
-                  }
-                },
-                child: const Text(
-                  'Log Out',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 80),
           ],
         ),
       ),
@@ -234,7 +276,6 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 }
 
 class _MapKillSwitchCard extends StatelessWidget {
-
   final bool isNavigationActive;
   final int currentMonthCount;
   final int monthlyLimit;
@@ -242,7 +283,6 @@ class _MapKillSwitchCard extends StatelessWidget {
   final ValueChanged<bool> onToggle;
 
   const _MapKillSwitchCard({
-
     required this.isNavigationActive,
     required this.currentMonthCount,
     required this.monthlyLimit,
@@ -263,14 +303,10 @@ class _MapKillSwitchCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: const [Color(0xFF2C2C2E), Color(0xFF1C1C1E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: const Color(0xFF141110),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: statusColor.withValues(alpha: 0.3),
+          color: statusColor.withOpacity(0.3),
           width: 1.5,
         ),
       ),
@@ -282,7 +318,7 @@ class _MapKillSwitchCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.15),
+                  color: statusColor.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -296,7 +332,7 @@ class _MapKillSwitchCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Campus Navigation Kill Switch',
                       style: TextStyle(
                         fontSize: 16,
@@ -336,12 +372,12 @@ class _MapKillSwitchCard extends StatelessWidget {
                 'Monthly Directions Usage:',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Colors.white.withOpacity(0.7),
                 ),
               ),
               Text(
                 '$currentMonthCount / $monthlyLimit routes',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -359,14 +395,12 @@ class _SettingsCard extends StatelessWidget {
   final String title;
   final String description;
   final IconData icon;
-
   final VoidCallback onTap;
 
   const _SettingsCard({
     required this.title,
     required this.description,
     required this.icon,
-
     required this.onTap,
   });
 
@@ -377,29 +411,15 @@ class _SettingsCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: const Color(0xFF141110),
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.05),
-          ),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -415,7 +435,7 @@ class _SettingsCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,

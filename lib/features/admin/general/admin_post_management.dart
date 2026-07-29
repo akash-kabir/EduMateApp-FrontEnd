@@ -19,6 +19,7 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
   bool _isLoading = true;
   List<dynamic> _posts = [];
   String? _currentUserRole;
+  late ScrollController _scrollController;
 
   String _searchQuery = '';
   String _selectedTypeFilter = 'All';
@@ -28,8 +29,15 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _loadCurrentUserRole();
     _fetchPosts();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCurrentUserRole() async {
@@ -110,8 +118,6 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-
     final filteredPosts = _posts.where((post) {
       final body = post['body']?.toString().toLowerCase() ?? '';
       final authorUsername = post['authorUsername']?.toString().toLowerCase() ?? '';
@@ -140,169 +146,222 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
       return 0;
     });
 
-    return CupertinoPageScaffold(
+    return Scaffold(
       backgroundColor: CupertinoColors.black,
-      navigationBar: CupertinoNavigationBar(
-        backgroundColor: CupertinoColors.black.withValues(alpha: 0.8),
-        middle: const Text('Post Management'),
-        leading: CupertinoNavigationBarBackButton(
-          color: CupertinoColors.systemRed,
-          previousPageTitle: null,
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      child: SafeArea(
-        child: Material(
-          type: MaterialType.transparency,
-          child: Column(
-            children: [
-              // Search and Filter Header
-              Container(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                color: CupertinoColors.black,
-                child: Column(
-                  children: [
-                    Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[850],
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(left: 16, right: 12),
-                            child: Icon(
-                              CupertinoIcons.search,
-                              color: CupertinoColors.systemGrey,
-                            ),
-                          ),
-                          Expanded(
-                            child: CupertinoTextField(
-                              placeholder: 'Search by content or author...',
-                              onChanged: (value) {
-                                setState(() {
-                                  _searchQuery = value;
-                                });
-                              },
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                              decoration: null, // removes default border
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
+      body: Stack(
+        children: [
+          AnimatedBuilder(
+            animation: _scrollController,
+            builder: (context, child) {
+              final fadeIntensity = _scrollController.hasClients
+                  ? (_scrollController.offset / 40.0).clamp(0.0, 1.0)
+                  : 0.0;
+              return ShaderMask(
+                shaderCallback: (Rect rect) {
+                  return LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(1.0 - fadeIntensity),
+                      Colors.black,
+                    ],
+                    stops: const [0.0, 0.08],
+                  ).createShader(rect);
+                },
+                blendMode: BlendMode.dstIn,
+                child: child,
+              );
+            },
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: PopupMenuButton<String>(
-                            initialValue: _sortBy,
-                            onSelected: (value) {
-                              if (value == _sortBy) {
-                                setState(() => _sortAsc = !_sortAsc);
-                              } else {
-                                setState(() {
-                                  _sortBy = value;
-                                  _sortAsc = false; // default newest first for Date
-                                });
-                              }
-                            },
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            color: const Color(0xFF2C2C2E),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF2C2C2E),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(CupertinoIcons.sort_down, size: 16, color: Colors.white),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '$_sortBy ${_sortAsc ? '↑' : '↓'}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                        SizedBox(height: MediaQuery.of(context).padding.top + 16),
+                        // Hero back button and title
+                        Row(
+                          children: [
+                            Hero(
+                              tag: 'back_button_post_management',
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => Navigator.pop(context),
+                                  customBorder: const CircleBorder(),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: CupertinoColors.black.withOpacity(0.5),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white24, width: 1),
                                     ),
-                                    overflow: TextOverflow.ellipsis,
+                                    child: const Icon(CupertinoIcons.back, color: Colors.white, size: 24),
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(value: 'Date', child: Text('Sort by Date')),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Text(
+                                'Post Management',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        // Search and Filter Header
+                        Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF141110),
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(left: 16, right: 12),
+                                child: Icon(
+                                  CupertinoIcons.search,
+                                  color: CupertinoColors.systemGrey,
+                                ),
+                              ),
+                              Expanded(
+                                child: CupertinoTextField(
+                                  placeholder: 'Search by content or author...',
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _searchQuery = value;
+                                    });
+                                  },
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                  decoration: null, // removes default border
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: PopupMenuButton<String>(
-                            initialValue: _selectedTypeFilter,
-                            onSelected: (value) {
-                              setState(() {
-                                _selectedTypeFilter = value;
-                              });
-                            },
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            color: const Color(0xFF2C2C2E),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: PopupMenuButton<String>(
+                                initialValue: _sortBy,
+                                onSelected: (value) {
+                                  if (value == _sortBy) {
+                                    setState(() => _sortAsc = !_sortAsc);
+                                  } else {
+                                    setState(() {
+                                      _sortBy = value;
+                                      _sortAsc = false; // default newest first for Date
+                                    });
+                                  }
+                                },
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                 color: const Color(0xFF2C2C2E),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(CupertinoIcons.line_horizontal_3_decrease, size: 16, color: Colors.white),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _selectedTypeFilter == 'All' ? 'Filter Type' : _selectedTypeFilter,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF141110),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.white12),
                                   ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(CupertinoIcons.sort_down, size: 16, color: Colors.white),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '$_sortBy ${_sortAsc ? '↑' : '↓'}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(value: 'Date', child: Text('Sort by Date')),
                                 ],
                               ),
                             ),
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(value: 'All', child: Text('All Posts')),
-                              const PopupMenuItem(value: 'News', child: Text('News')),
-                              const PopupMenuItem(value: 'Event', child: Text('Events')),
-                            ],
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: PopupMenuButton<String>(
+                                initialValue: _selectedTypeFilter,
+                                onSelected: (value) {
+                                  setState(() {
+                                    _selectedTypeFilter = value;
+                                  });
+                                },
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                color: const Color(0xFF2C2C2E),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF141110),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.white12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(CupertinoIcons.line_horizontal_3_decrease, size: 16, color: Colors.white),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _selectedTypeFilter == 'All' ? 'Filter Type' : _selectedTypeFilter,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(value: 'All', child: Text('All Posts')),
+                                  const PopupMenuItem(value: 'News', child: Text('News')),
+                                  const PopupMenuItem(value: 'Event', child: Text('Events')),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 24),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CupertinoActivityIndicator())
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: filteredPosts.length,
-                        itemBuilder: (context, index) {
+                if (_isLoading)
+                  const SliverFillRemaining(
+                    child: Center(child: CupertinoActivityIndicator()),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
                           final post = filteredPosts[index];
                           final author = post['author'];
                           final authorName = author != null ? '${author['firstName']} ${author['lastName']}' : 'Unknown';
@@ -318,15 +377,8 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                             margin: const EdgeInsets.only(bottom: 16),
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: const Color(0xFF141110),
                               borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-
-                              ],
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,8 +390,8 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: isEvent 
-                                            ? Colors.orange.withValues(alpha: 0.2) 
-                                            : Colors.blue.withValues(alpha: 0.2),
+                                            ? Colors.orange.withOpacity(0.2) 
+                                            : Colors.blue.withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
@@ -357,7 +409,7 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                                         child: Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: CupertinoColors.destructiveRed.withValues(alpha: 0.1),
+                                            color: CupertinoColors.destructiveRed.withOpacity(0.1),
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(CupertinoIcons.trash, color: CupertinoColors.destructiveRed, size: 18),
@@ -385,7 +437,7 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                                   body,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.white),
                                 ),
                                 
                                 if (isEvent && eventDetails != null && eventDetails['startDate'] != null) ...[
@@ -429,11 +481,15 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                             ),
                           );
                         },
+                        childCount: filteredPosts.length,
                       ),
-              ),
-            ],
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 40)),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

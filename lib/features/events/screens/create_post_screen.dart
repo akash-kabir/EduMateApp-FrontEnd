@@ -751,13 +751,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       // Modern Toggle Selector (matching WeekCalendarGrid style)
                       Container(
                         width: double.infinity,
-                        height: 55,
+                        height: 60,
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                             color: const Color(0xFFFF9B7A).withValues(alpha: 0.4),
-                            width: 1.5,
+                            width: 2.0,
                           ),
                         ),
                         child: Row(
@@ -769,10 +769,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 250),
                                   curve: Curves.easeInOut,
-                                  height: 40,
+                                  height: 42,
                                   decoration: BoxDecoration(
                                     color: postType == 'news' ? const Color(0xFFFF9B7A) : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(19),
                                     border: Border.all(
                                       color: Colors.transparent,
                                       width: 1.5,

@@ -198,7 +198,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
         builder: (context, setModalState) {
           return Container(
             height: 300,
-            color: const Color(0xFF1C1C1E),
+            color: const Color(0xFF141110),
             child: SafeArea(
               top: false,
               child: Column(
@@ -313,7 +313,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
       context: context,
       builder: (_) => Container(
         height: 300,
-        color: const Color(0xFF1C1C1E),
+        color: const Color(0xFF141110),
         child: SafeArea(
           top: false,
           child: Column(
@@ -448,7 +448,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
           filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1D).withValues(alpha: 0.92),
+              color: const Color(0xFF141110).withValues(alpha: 0.92),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
             ),

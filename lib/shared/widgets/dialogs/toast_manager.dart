@@ -11,6 +11,14 @@ class EduMateToast {
     _currentOverlayEntry = null;
   }
 
+  static String _formatMessage(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('socketexception') || lower.contains('failed host lookup') || lower.contains('connection refused') || lower.contains('handshakeexception')) {
+      return 'No internet connection';
+    }
+    return message;
+  }
+
   /// Displays the slide-and-expand top notification bar
   static void showCompact(
     BuildContext context, {
@@ -28,7 +36,7 @@ class EduMateToast {
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (context) => CompactToastWidget(
-        message: message,
+        message: _formatMessage(message),
         isSuccess: isSuccess,
         actionLabel: actionLabel,
         onActionTap: () {

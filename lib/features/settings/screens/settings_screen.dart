@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/features/sapsync/services/sap_auth_service.dart';
 import 'package:app/features/schedule/services/schedule_database_helper.dart';
 import 'package:app/features/splash/screens/splash_screen.dart';
 import 'package:app/theme/theme.dart';
+import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,6 +16,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final SapAuthService _sapAuthService = SapAuthService();
+  late ScrollController _scrollController;
 
   bool _scheduleUpdatesEnabled = true;
   bool _holidayRemindersEnabled = true;
@@ -25,7 +26,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _loadPreferences();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPreferences() async {
@@ -75,8 +83,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirm == true) {
       await _sapAuthService.saveCredentials('', '');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('SAP Credentials cleared successfully.')),
+        EduMateToast.showCompact(
+          context,
+          message: 'SAP Credentials cleared successfully.',
+          isSuccess: true,
         );
       }
     }
@@ -108,8 +118,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirm == true) {
       await ScheduleDatabaseHelper.instance.clearCache();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('App cache and preferences cleared.')),
+        EduMateToast.showCompact(
+          context,
+          message: 'App cache and preferences cleared.',
+          isSuccess: true,
         );
       }
     }
@@ -156,32 +168,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.05),
-            Colors.white.withValues(alpha: 0.02),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
-        ],
+        color: const Color(0xFF141110),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Material(
-            color: Colors.transparent,
-            child: child,
-          ),
+        borderRadius: BorderRadius.circular(16),
+        child: Material(
+          color: Colors.transparent,
+          child: child,
         ),
       ),
     );
@@ -201,7 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
       ),
       trailing: trailing,
       onTap: onTap,
@@ -210,149 +204,225 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: UserColors.background,
-      navigationBar: const CupertinoNavigationBar(
-        backgroundColor: Colors.transparent,
-        border: null,
-        middle: Text('Settings', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-      ),
-      child: SafeArea(
-        child: Material(
-          type: MaterialType.transparency,
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            children: [
-            // Connectivity Section
-            const Padding(
-              padding: EdgeInsets.only(left: 8, bottom: 8),
-              child: Text(
-                'Connectivity & Data',
-                style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ),
-            _buildGlassCard(
-              child: Column(
-                children: [
-                  _buildListTile(
-                    title: 'Disconnect SAP',
-                    subtitle: 'Clear your portal credentials',
-                    trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.white54, size: 20),
-                    onTap: _handleDisconnectSap,
-                  ),
-                  Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 20),
-                  _buildListTile(
-                    title: 'Clear Preferences',
-                    subtitle: 'Wipe local cache and configs',
-                    trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.white54, size: 20),
-                    onTap: _handleClearPreferences,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // Notifications Section
-            const Padding(
-              padding: EdgeInsets.only(left: 8, bottom: 8),
-              child: Text(
-                'Notifications',
-                style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ),
-            _buildGlassCard(
-              child: Column(
-                children: [
-                  _buildListTile(
-                    title: 'Schedule Updates',
-                    subtitle: 'Alerts when your timetable changes',
-                    trailing: CupertinoSwitch(
-                      activeColor: AuthPalette.coral,
-                      value: _scheduleUpdatesEnabled,
-                      onChanged: (val) {
-                        setState(() => _scheduleUpdatesEnabled = val);
-                        _togglePreference('pref_schedule_updates', val);
-                      },
-                    ),
-                  ),
-                  Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 20),
-                  _buildListTile(
-                    title: 'Holiday Reminders',
-                    subtitle: 'Get notified at 9 PM the day before',
-                    trailing: CupertinoSwitch(
-                      activeColor: AuthPalette.coral,
-                      value: _holidayRemindersEnabled,
-                      onChanged: (val) {
-                        setState(() => _holidayRemindersEnabled = val);
-                        _togglePreference('pref_holiday_reminders', val);
-                      },
-                    ),
-                  ),
-                  Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 20),
-                  _buildListTile(
-                    title: 'Announcements',
-                    subtitle: 'New events and feed posts',
-                    trailing: CupertinoSwitch(
-                      activeColor: AuthPalette.coral,
-                      value: _announcementsEnabled,
-                      onChanged: (val) {
-                        setState(() => _announcementsEnabled = val);
-                        _togglePreference('pref_announcements', val);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // Accessibility Section
-            const Padding(
-              padding: EdgeInsets.only(left: 8, bottom: 8),
-              child: Text(
-                'Accessibility',
-                style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ),
-            _buildGlassCard(
-              child: _buildListTile(
-                title: 'Starts up to TimeSheet',
-                subtitle: 'Open timetable automatically on launch',
-                trailing: CupertinoSwitch(
-                  activeColor: AuthPalette.coral,
-                  value: _startUpToTimeSheetEnabled,
-                  onChanged: (val) {
-                    setState(() => _startUpToTimeSheetEnabled = val);
-                    SharedPreferencesService.setBool('openToTimesheet', val);
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                final fadeIntensity = _scrollController.hasClients
+                    ? (_scrollController.offset / 40.0).clamp(0.0, 1.0)
+                    : 0.0;
+                return ShaderMask(
+                  shaderCallback: (Rect rect) {
+                    return LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black,
+                      ],
+                      stops: const [0.0, 0.08],
+                    ).createShader(rect);
                   },
-                ),
-              ),
-            ),
+                  blendMode: BlendMode.dstIn,
+                  child: child,
+                );
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics()),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0, vertical: 16.0),
+                      child: Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Hero(
+                                  tag: 'back_button',
+                                  child: CupertinoButton(
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF141110),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(CupertinoIcons.back,
+                                          color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const Text(
+                                'Settings',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontFamily: 'Salena',
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                  color: Color(0xFFFF9B7A),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Connectivity Section
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8, bottom: 8),
+                            child: Text(
+                              'Connectivity & Data',
+                              style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                          _buildGlassCard(
+                            child: Column(
+                              children: [
+                                _buildListTile(
+                                  title: 'Disconnect SAP',
+                                  subtitle: 'Clear your portal credentials',
+                                  trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.white54, size: 20),
+                                  onTap: _handleDisconnectSap,
+                                ),
+                                Divider(color: Colors.white.withOpacity(0.1), height: 1, indent: 20),
+                                _buildListTile(
+                                  title: 'Clear Preferences',
+                                  subtitle: 'Wipe local cache and configs',
+                                  trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.white54, size: 20),
+                                  onTap: _handleClearPreferences,
+                                ),
+                              ],
+                            ),
+                          ),
 
-            const SizedBox(height: 20),
+                          const SizedBox(height: 10),
 
-            // Danger Zone
-            const Padding(
-              padding: EdgeInsets.only(left: 8, bottom: 8),
-              child: Text(
-                'Danger Zone',
-                style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ),
-            _buildGlassCard(
-              child: _buildListTile(
-                title: 'Delete Account',
-                subtitle: 'Permanently remove all your data',
-                trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.white54, size: 20),
-                onTap: _handleDeleteAccount,
+                          // Notifications Section
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8, bottom: 8),
+                            child: Text(
+                              'Notifications',
+                              style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                          _buildGlassCard(
+                            child: Column(
+                              children: [
+                                _buildListTile(
+                                  title: 'Schedule Updates',
+                                  subtitle: 'Alerts when your timetable changes',
+                                  trailing: CupertinoSwitch(
+                                    activeColor: AuthPalette.coral,
+                                    value: _scheduleUpdatesEnabled,
+                                    onChanged: (val) {
+                                      setState(() => _scheduleUpdatesEnabled = val);
+                                      _togglePreference('pref_schedule_updates', val);
+                                    },
+                                  ),
+                                ),
+                                Divider(color: Colors.white.withOpacity(0.1), height: 1, indent: 20),
+                                _buildListTile(
+                                  title: 'Holiday Reminders',
+                                  subtitle: 'Get notified at 9 PM the day before',
+                                  trailing: CupertinoSwitch(
+                                    activeColor: AuthPalette.coral,
+                                    value: _holidayRemindersEnabled,
+                                    onChanged: (val) {
+                                      setState(() => _holidayRemindersEnabled = val);
+                                      _togglePreference('pref_holiday_reminders', val);
+                                    },
+                                  ),
+                                ),
+                                Divider(color: Colors.white.withOpacity(0.1), height: 1, indent: 20),
+                                _buildListTile(
+                                  title: 'Announcements',
+                                  subtitle: 'New events and feed posts',
+                                  trailing: CupertinoSwitch(
+                                    activeColor: AuthPalette.coral,
+                                    value: _announcementsEnabled,
+                                    onChanged: (val) {
+                                      setState(() => _announcementsEnabled = val);
+                                      _togglePreference('pref_announcements', val);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          // Accessibility Section
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8, bottom: 8),
+                            child: Text(
+                              'Accessibility',
+                              style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                          _buildGlassCard(
+                            child: _buildListTile(
+                              title: 'Starts up to TimeSheet',
+                              subtitle: 'Open timetable automatically on launch',
+                              trailing: CupertinoSwitch(
+                                activeColor: AuthPalette.coral,
+                                value: _startUpToTimeSheetEnabled,
+                                onChanged: (val) {
+                                  setState(() => _startUpToTimeSheetEnabled = val);
+                                  SharedPreferencesService.setBool('openToTimesheet', val);
+                                },
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Danger Zone
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8, bottom: 8),
+                            child: Text(
+                              'Danger Zone',
+                              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                          _buildGlassCard(
+                            child: _buildListTile(
+                              title: 'Delete Account',
+                              subtitle: 'Permanently remove all your data',
+                              trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.white54, size: 20),
+                              onTap: _handleDeleteAccount,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-    ));
+    );
   }
 }

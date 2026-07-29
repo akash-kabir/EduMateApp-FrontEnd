@@ -273,6 +273,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   Future<List<String>> _fetchSectionsList(int semester) async {
     try {
+      final sqliteData = await ScheduleDatabaseHelper.instance.getCachedScheduleData(semester.toString());
+      if (sqliteData != null && sqliteData.containsKey('classes')) {
+        final classesList = sqliteData['classes'] as List;
+        return classesList.map((c) => c['name'] as String).toList()..sort();
+      }
+
       final cacheKey = 'schedule_$semester';
       final cachedData = await SharedPreferencesService.getString(cacheKey);
       if (cachedData != null) {

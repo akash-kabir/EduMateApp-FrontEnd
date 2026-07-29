@@ -6,6 +6,7 @@ import 'package:app/features/friends/services/friends_storage_service.dart';
 import 'package:app/theme/theme.dart';
 import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
 import 'package:app/features/friends/widgets/add_friend_dialog_flow.dart';
+import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 
 class FriendsSettingsScreen extends StatefulWidget {
   const FriendsSettingsScreen({super.key});
@@ -34,8 +35,10 @@ class _FriendsSettingsScreenState extends State<FriendsSettingsScreen> {
 
   void _showAddFriendDialog() {
     if (_friends.length >= 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You can only add up to 10 friends.')),
+      EduMateToast.showCompact(
+        context,
+        message: 'You can only add up to 10 friends.',
+        isSuccess: false,
       );
       return;
     }

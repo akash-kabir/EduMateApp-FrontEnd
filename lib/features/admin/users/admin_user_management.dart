@@ -22,6 +22,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   String _selectedRoleFilter = 'All';
   String _sortBy = 'Role';
   bool _sortAsc = true;
+  late ScrollController _scrollController;
 
   String _normalizeRole(String? role) {
     final r = (role ?? 'student').toLowerCase().trim();
@@ -67,8 +68,15 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _loadCurrentUserRole();
     _fetchUsers();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCurrentUserRole() async {
@@ -106,8 +114,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-
     final filteredUsers = _users.where((user) {
       final role = _normalizeRole(user['role']?.toString());
       final email = (user['email']?.toString() ?? '').toLowerCase();
@@ -144,173 +150,227 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       return _sortAsc ? nameA.compareTo(nameB) : nameB.compareTo(nameA);
     });
 
-    return CupertinoPageScaffold(
+    return Scaffold(
       backgroundColor: CupertinoColors.black,
-      navigationBar: CupertinoNavigationBar(
-        backgroundColor: CupertinoColors.black.withValues(alpha: 0.8),
-        middle: const Text('User Management'),
-        leading: CupertinoNavigationBarBackButton(
-          color: CupertinoColors.systemRed,
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      child: SafeArea(
-        child: Material(
-          type: MaterialType.transparency,
-          child: Column(
-            children: [
-              // Search and Filter Header
-              Container(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                color: CupertinoColors.black,
-                child: Column(
-                  children: [
-                    Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[850],
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(left: 16, right: 12),
-                            child: Icon(
-                              CupertinoIcons.search,
-                              color: CupertinoColors.systemGrey,
-                            ),
-                          ),
-                          Expanded(
-                            child: CupertinoTextField(
-                              placeholder: 'Search by email or name...',
-                              onChanged: (value) {
-                                setState(() {
-                                  _searchQuery = value;
-                                });
-                              },
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                              decoration: null, // removes default border
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
+      body: Stack(
+        children: [
+          AnimatedBuilder(
+            animation: _scrollController,
+            builder: (context, child) {
+              final fadeIntensity = _scrollController.hasClients
+                  ? (_scrollController.offset / 40.0).clamp(0.0, 1.0)
+                  : 0.0;
+              return ShaderMask(
+                shaderCallback: (Rect rect) {
+                  return LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(1.0 - fadeIntensity),
+                      Colors.black,
+                    ],
+                    stops: const [0.0, 0.08],
+                  ).createShader(rect);
+                },
+                blendMode: BlendMode.dstIn,
+                child: child,
+              );
+            },
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: PopupMenuButton<String>(
-                            initialValue: _sortBy,
-                            onSelected: (value) {
-                              if (value == _sortBy) {
-                                setState(() => _sortAsc = !_sortAsc);
-                              } else {
-                                setState(() {
-                                  _sortBy = value;
-                                  _sortAsc = true;
-                                });
-                              }
-                            },
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            color: const Color(0xFF2C2C2E),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF2C2C2E),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(CupertinoIcons.sort_down, size: 16, color: Colors.white),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '$_sortBy ${_sortAsc ? '↓' : '↑'}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                        SizedBox(height: MediaQuery.of(context).padding.top + 16),
+                        // Hero back button and title
+                        Row(
+                          children: [
+                            Hero(
+                              tag: 'back_button_user_management',
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => Navigator.pop(context),
+                                  customBorder: const CircleBorder(),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: CupertinoColors.black.withOpacity(0.5),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white24, width: 1),
                                     ),
-                                    overflow: TextOverflow.ellipsis,
+                                    child: const Icon(CupertinoIcons.back, color: Colors.white, size: 24),
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(value: 'Role', child: Text('Sort by Role')),
-                              const PopupMenuItem(value: 'Date Created', child: Text('Sort by Date Created')),
-                              const PopupMenuItem(value: 'Name', child: Text('Sort by Name')),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Text(
+                                'User Management',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        // Search and Filter Header
+                        Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF141110),
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(left: 16, right: 12),
+                                child: Icon(
+                                  CupertinoIcons.search,
+                                  color: CupertinoColors.systemGrey,
+                                ),
+                              ),
+                              Expanded(
+                                child: CupertinoTextField(
+                                  placeholder: 'Search by email or name...',
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _searchQuery = value;
+                                    });
+                                  },
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                  decoration: null, // removes default border
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: PopupMenuButton<String>(
-                            initialValue: _selectedRoleFilter,
-                            onSelected: (value) {
-                              setState(() {
-                                _selectedRoleFilter = value;
-                              });
-                            },
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            color: const Color(0xFF2C2C2E),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: PopupMenuButton<String>(
+                                initialValue: _sortBy,
+                                onSelected: (value) {
+                                  if (value == _sortBy) {
+                                    setState(() => _sortAsc = !_sortAsc);
+                                  } else {
+                                    setState(() {
+                                      _sortBy = value;
+                                      _sortAsc = true;
+                                    });
+                                  }
+                                },
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                 color: const Color(0xFF2C2C2E),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(CupertinoIcons.line_horizontal_3_decrease, size: 16, color: Colors.white),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _selectedRoleFilter == 'All' ? 'Filter Roles' : _selectedRoleFilter,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF141110),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.white12),
                                   ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(CupertinoIcons.sort_down, size: 16, color: Colors.white),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '$_sortBy ${_sortAsc ? '↓' : '↑'}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(value: 'Role', child: Text('Sort by Role')),
+                                  const PopupMenuItem(value: 'Date Created', child: Text('Sort by Date Created')),
+                                  const PopupMenuItem(value: 'Name', child: Text('Sort by Name')),
                                 ],
                               ),
                             ),
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(value: 'All', child: Text('All Roles')),
-                              const PopupMenuItem(value: 'Admin', child: Text('Admin')),
-                              const PopupMenuItem(value: 'Contributer', child: Text('Contributer')),
-                              const PopupMenuItem(value: 'Societ', child: Text('Society')),
-                              const PopupMenuItem(value: 'Student', child: Text('Student')),
-                              const PopupMenuItem(value: 'guest', child: Text('Guest')),
-                            ],
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: PopupMenuButton<String>(
+                                initialValue: _selectedRoleFilter,
+                                onSelected: (value) {
+                                  setState(() {
+                                    _selectedRoleFilter = value;
+                                  });
+                                },
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                color: const Color(0xFF2C2C2E),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF141110),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.white12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(CupertinoIcons.line_horizontal_3_decrease, size: 16, color: Colors.white),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _selectedRoleFilter == 'All' ? 'Filter Roles' : _selectedRoleFilter,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(value: 'All', child: Text('All Roles')),
+                                  const PopupMenuItem(value: 'Admin', child: Text('Admin')),
+                                  const PopupMenuItem(value: 'Contributer', child: Text('Contributer')),
+                                  const PopupMenuItem(value: 'Societ', child: Text('Society')),
+                                  const PopupMenuItem(value: 'Student', child: Text('Student')),
+                                  const PopupMenuItem(value: 'guest', child: Text('Guest')),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 24),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CupertinoActivityIndicator())
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: filteredUsers.length,
-                        itemBuilder: (context, index) {
+                if (_isLoading)
+                  const SliverFillRemaining(
+                    child: Center(child: CupertinoActivityIndicator()),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
                           final user = filteredUsers[index];
                           final normalizedRole = _normalizeRole(
                             user['role']?.toString(),
@@ -342,15 +402,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: const Color(0xFF141110),
                               borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-
-                              ],
                             ),
                             child: InkWell(
                               borderRadius: BorderRadius.circular(24),
@@ -374,9 +427,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 24,
-                                      backgroundColor: roleColor.withValues(
-                                        alpha: 0.2,
-                                      ),
+                                      backgroundColor: roleColor.withOpacity(0.2),
                                       child: Text(
                                         initials.isEmpty ? '?' : initials,
                                         style: TextStyle(
@@ -388,12 +439,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             '$firstName $lastName',
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white,
@@ -402,7 +452,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                           const SizedBox(height: 4),
                                           Text(
                                             user['email'] ?? '',
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 13,
                                               color: CupertinoColors.systemGrey,
                                             ),
@@ -419,9 +469,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: roleColor.withValues(
-                                          alpha: 0.15,
-                                        ),
+                                        color: roleColor.withOpacity(0.15),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
@@ -439,11 +487,15 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                             ),
                           );
                         },
+                        childCount: filteredUsers.length,
                       ),
-              ),
-            ],
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 40)),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

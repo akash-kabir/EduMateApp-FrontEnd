@@ -5,6 +5,7 @@ import 'package:app/theme/theme.dart';
 import 'package:app/features/navigation/models/poi_model.dart';
 import 'package:app/features/navigation/services/poi_service.dart';
 import 'package:app/features/navigation/services/map_navigation_store.dart';
+import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 
 class PostDetailScreen extends StatelessWidget {
   final Map<String, dynamic> post;
@@ -29,8 +30,10 @@ class PostDetailScreen extends StatelessWidget {
     final Uri url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not launch $urlString')),
+        EduMateToast.showCompact(
+          context,
+          message: 'Could not launch $urlString',
+          isSuccess: false,
         );
       }
     }
@@ -47,7 +50,7 @@ class PostDetailScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF2C2C2E),
+        backgroundColor: const Color(0xFF141110),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
@@ -93,7 +96,7 @@ class PostDetailScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           decoration: BoxDecoration(
-            color: const Color(0xFF1C1C1E),
+            color: const Color(0xFF141110),
             borderRadius: BorderRadius.circular(16),
             boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
           ),
@@ -218,7 +221,7 @@ class PostDetailScreen extends StatelessWidget {
     final typeColor = isEvent ? AuthPalette.deepTeal : AuthPalette.coral;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: const Color(0xFF000000),
       body: CustomScrollView(
         slivers: [
           // ── Hero Image App Bar ──
@@ -226,7 +229,7 @@ class PostDetailScreen extends StatelessWidget {
             expandedHeight: 400,
             pinned: true,
             stretch: true,
-            backgroundColor: const Color(0xFF1C1C1E),
+            backgroundColor: const Color(0xFF000000),
             leading: Padding(
               padding: const EdgeInsets.all(8.0),
               child: CircleAvatar(
@@ -256,7 +259,7 @@ class PostDetailScreen extends StatelessWidget {
           // ── Post Content ──
           SliverToBoxAdapter(
             child: Container(
-              color: const Color(0xFF1C1C1E),
+              color: const Color(0xFF000000),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,7 +322,7 @@ class PostDetailScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2C2C2E),
+                      color: const Color(0xFF141110),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
@@ -448,7 +451,7 @@ class PostDetailScreen extends StatelessWidget {
                               icon: const Icon(CupertinoIcons.globe, size: 18),
                               label: const Text('Website'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF2C2C2E),
+                                backgroundColor: const Color(0xFF141110),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -495,7 +498,7 @@ class PostDetailScreen extends StatelessWidget {
 
   Widget _buildPlaceholder() {
     return Container(
-      color: const Color(0xFF2C2C2E),
+      color: const Color(0xFF141110),
       child: Center(
         child: Icon(
           CupertinoIcons.photo,

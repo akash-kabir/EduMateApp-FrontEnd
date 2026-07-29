@@ -218,6 +218,9 @@ class _MapScreenState extends State<MapScreen> {
       _selectedPoi = poi;
       _isPoiCardExpanded = false;
     });
+    if (widget.onNavBarVisibilityChange != null && !_navigationManager.isNavigating) {
+      widget.onNavBarVisibilityChange!(true);
+    }
     _renderPOIs();
     
     // Move camera
@@ -547,6 +550,9 @@ class _MapScreenState extends State<MapScreen> {
                     setState(() {
                       isFullScreenSearch = false;
                     });
+                    if (widget.onNavBarVisibilityChange != null && !_navigationManager.isNavigating) {
+                      widget.onNavBarVisibilityChange!(true);
+                    }
                   },
                   child: BackdropFilter(
                     filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -699,6 +705,9 @@ class _MapScreenState extends State<MapScreen> {
                             _searchController.clear();
                             _filteredPois = List.from(_pois);
                           }); 
+                          if (widget.onNavBarVisibilityChange != null && !_navigationManager.isNavigating) {
+                            widget.onNavBarVisibilityChange!(true);
+                          }
                           _renderPOIs();
                           FocusScope.of(context).unfocus();
                         } else {
@@ -710,55 +719,13 @@ class _MapScreenState extends State<MapScreen> {
                               _renderPOIs();
                             }
                           });
+                          if (widget.onNavBarVisibilityChange != null) {
+                            widget.onNavBarVisibilityChange!(false);
+                          }
                         }
                       },
                     ),
-                    if (!_isServiceAvailable) ...[
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2C1A1A),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: Colors.redAccent.withValues(alpha: 0.4),
-                              width: 1.2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                CupertinoIcons.exclamationmark_triangle_fill,
-                                color: Colors.redAccent,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  _serviceStatusMessage.isNotEmpty
-                                      ? _serviceStatusMessage
-                                      : 'Campus navigation service is currently paused.',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+
                     MapActionButtons(
                       isFullScreenSearch: isFullScreenSearch,
                       isMapMenuExpanded: isMapMenuExpanded,
@@ -839,6 +806,57 @@ class _MapScreenState extends State<MapScreen> {
                     )
                   : const SizedBox(),
             ),
+            
+            // Service Unavailable Alert (Bottom)
+            if (!_isServiceAvailable && !_navigationManager.isNavigating && !isFullScreenSearch && _selectedPoi == null)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                bottom: 85,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2C1A1A),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.4),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        CupertinoIcons.exclamationmark_triangle_fill,
+                        color: Colors.redAccent,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _serviceStatusMessage.isNotEmpty
+                              ? _serviceStatusMessage
+                              : 'Campus navigation service is currently paused.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
             Positioned.fill(
               child: AnimatedOpacity(
                 opacity: _isMapLoading ? 1.0 : 0.0,
@@ -955,7 +973,7 @@ class _MapScreenState extends State<MapScreen> {
                                 const SizedBox(height: 16),
                                 // Description
                                 SizedBox(
-                                  height: 95,
+                                  height: 110,
                                   child: Text(
                                     poi.description.isNotEmpty ? poi.description : 'No description available.',
                                     style: TextStyle(
@@ -963,7 +981,7 @@ class _MapScreenState extends State<MapScreen> {
                                       fontSize: 14,
                                       height: 1.3,
                                     ),
-                                    maxLines: 5,
+                                    maxLines: 6,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -981,6 +999,15 @@ class _MapScreenState extends State<MapScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               borderRadius: BorderRadius.circular(12),
                               onPressed: () async {
+                                if (!_isServiceAvailable) {
+                                  EduMateToast.showCompact(
+                                    context,
+                                    message: 'Service Offline',
+                                    isSuccess: false,
+                                  );
+                                  return;
+                                }
+
                                 if (currentLatitude == null || currentLongitude == null || mapboxMap == null) {
                                   EduMateToast.showCompact(
                                     context,

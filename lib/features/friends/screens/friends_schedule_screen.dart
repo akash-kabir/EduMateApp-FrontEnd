@@ -213,7 +213,7 @@ class _FriendsScheduleScreenState extends State<FriendsScheduleScreen> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24.0, vertical: 16.0),
+                          horizontal: 8.0, vertical: 16.0),
                       child: Column(
                         children: [
                           Stack(
@@ -267,7 +267,7 @@ class _FriendsScheduleScreenState extends State<FriendsScheduleScreen> {
                                       color: Color(0xFF141110),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(CupertinoIcons.settings,
+                                    child: const Icon(Icons.settings,
                                         color: Colors.white),
                                   ),
                                 ),

@@ -1,11 +1,29 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:ui';
 import 'package:app/theme/theme.dart';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
+
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  late ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
@@ -14,76 +32,18 @@ class AboutScreen extends StatelessWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: UserColors.background,
-      navigationBar: const CupertinoNavigationBar(
-        backgroundColor: Colors.transparent,
-        border: null,
-        middle: Text('About', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-      ),
-      child: SafeArea(
-        child: Material(
-          type: MaterialType.transparency,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-            child: Column(
-              children: [
-                _buildAppInfoCard(),
-                const SizedBox(height: 20),
-                _buildSocialLinksCard(),
-                const SizedBox(height: 40),
-                const Center(
-                  child: Text(
-                    "Created By Kabir",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AuthPalette.coral,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildGlassCard({required Widget child, EdgeInsetsGeometry? padding}) {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
+        color: const Color(0xFF141110),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.05),
-            Colors.white.withValues(alpha: 0.02),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
-        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Material(
-            color: Colors.transparent,
-            child: child,
-          ),
+        child: Material(
+          color: Colors.transparent,
+          child: child,
         ),
       ),
     );
@@ -110,7 +70,7 @@ class AboutScreen extends StatelessWidget {
             "Built with Flutter for a seamless, modern experience.",
             style: TextStyle(
               fontSize: 15,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white.withOpacity(0.8),
               height: 1.5,
             ),
           ),
@@ -128,13 +88,13 @@ class AboutScreen extends StatelessWidget {
             iconUrl: "https://img.icons8.com/color/48/linkedin.png",
             onTap: () => _launchUrl("https://www.linkedin.com/in/mirza-akash-kabir/"),
           ),
-          Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 60),
+          Divider(color: Colors.white.withOpacity(0.1), height: 1, indent: 60),
           _buildLinkButton(
             title: "GitHub",
             iconUrl: "https://img.icons8.com/fluency/48/github.png",
             onTap: () => _launchUrl("https://github.com/akash-kabir"),
           ),
-          Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 60),
+          Divider(color: Colors.white.withOpacity(0.1), height: 1, indent: 60),
           _buildLinkButton(
             title: "Instagram",
             iconUrl: "https://img.icons8.com/fluency/48/instagram-new.png",
@@ -155,7 +115,7 @@ class AboutScreen extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: Colors.white.withOpacity(0.05),
           shape: BoxShape.circle,
         ),
         child: Image.network(
@@ -183,6 +143,118 @@ class AboutScreen extends StatelessWidget {
         color: Colors.white54,
       ),
       onTap: onTap,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                final fadeIntensity = _scrollController.hasClients
+                    ? (_scrollController.offset / 40.0).clamp(0.0, 1.0)
+                    : 0.0;
+                return ShaderMask(
+                  shaderCallback: (Rect rect) {
+                    return LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black,
+                      ],
+                      stops: const [0.0, 0.08],
+                    ).createShader(rect);
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: child,
+                );
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics()),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0, vertical: 16.0),
+                      child: Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Hero(
+                                  tag: 'back_button',
+                                  child: CupertinoButton(
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF141110),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(CupertinoIcons.back,
+                                          color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const Text(
+                                'About',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontFamily: 'Salena',
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                  color: Color(0xFFFF9B7A),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        children: [
+                          _buildAppInfoCard(),
+                          const SizedBox(height: 20),
+                          _buildSocialLinksCard(),
+                          const SizedBox(height: 40),
+                          const Center(
+                            child: Text(
+                              "Created By Kabir",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AuthPalette.coral,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

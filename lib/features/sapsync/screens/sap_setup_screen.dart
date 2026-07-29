@@ -109,7 +109,7 @@ class SapSetupScreenState extends State<SapSetupScreen> {
       backgroundColor: Colors.black, // Pitch black theme
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
