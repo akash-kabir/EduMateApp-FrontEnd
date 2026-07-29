@@ -22,24 +22,16 @@ class Validators {
       return 'Password is required';
     }
 
-    if (password.length < 8) {
-      return 'Password must be at least 8 characters long';
-    }
+    int metCount = 0;
+    
+    if (password.length >= 8) metCount++;
+    if (password.contains(RegExp(r'[A-Z]'))) metCount++;
+    if (password.contains(RegExp(r'[a-z]'))) metCount++;
+    if (password.contains(RegExp(r'[0-9]'))) metCount++;
+    if (RegExp(r'[!@#$%^&*()_+=\[\]{};:,.<>?/\\|`~-]').hasMatch(password)) metCount++;
 
-    if (!password.contains(RegExp(r'[A-Z]'))) {
-      return 'Password must contain an uppercase letter';
-    }
-
-    if (!password.contains(RegExp(r'[a-z]'))) {
-      return 'Password must contain a lowercase letter';
-    }
-
-    if (!password.contains(RegExp(r'[0-9]'))) {
-      return 'Password must contain a number';
-    }
-
-    if (!RegExp(r'[!@#$%^&*()_+=\[\]{};:,.<>?/\\|`~-]').hasMatch(password)) {
-      return 'Password must contain a special character';
+    if (metCount < 3) {
+      return 'Password must meet at least 3 requirements (length >= 8, uppercase, lowercase, number, special character)';
     }
 
     return null;

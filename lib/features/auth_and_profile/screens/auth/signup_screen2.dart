@@ -165,10 +165,14 @@ class _SignupScreen2State extends State<SignupScreen2>
 
   Future<void> _checkEmailAvailability(String email) async {
     String? basicError = Validators.validateEmail(email);
+    if (basicError == null && !email.toLowerCase().endsWith('@kiit.ac.in')) {
+      basicError = 'Please use a valid @kiit.ac.in email address';
+    }
+    
     if (basicError != null) {
       setState(() {
         _isEmailError = true;
-        _emailErrorMsg = 'Please enter a valid email address';
+        _emailErrorMsg = basicError!;
         _checkingEmail = false;
         _emailAvailable = false;
       });
@@ -237,10 +241,14 @@ class _SignupScreen2State extends State<SignupScreen2>
     }
 
     String? emailError = Validators.validateEmail(email);
+    if (emailError == null && !email.toLowerCase().endsWith('@kiit.ac.in')) {
+      emailError = 'Please use a valid @kiit.ac.in email address';
+    }
+    
     if (emailError != null) {
       setState(() {
         _isEmailError = true;
-        _emailErrorMsg = emailError;
+        _emailErrorMsg = emailError!;
       });
       hasError = true;
     } else if (!_emailAvailable) {
