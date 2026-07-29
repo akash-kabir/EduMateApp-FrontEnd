@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- Privacy Keys Required for App Store Publication -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Edumate needs your location to show your position on the campus map and calculate navigation routes to university buildings.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Edumate requires camera access to allow you to take and upload a profile picture or post images.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Edumate requires photo library access to allow you to choose and upload a profile picture or post images.</string>
 </dict>
 </plist>
