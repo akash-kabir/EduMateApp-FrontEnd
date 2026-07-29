@@ -46,6 +46,7 @@ class FriendsScheduleService {
 
     // Fetch raw elective data for semester
     List<dynamic> rawElectiveData = [];
+    Map<String, List<String>> availableElectives = {};
     try {
       Map<String, dynamic>? decoded = await ScheduleDatabaseHelper.instance.getCachedElectiveData(semesterNum.toString());
       if (decoded == null) {
@@ -55,8 +56,6 @@ class FriendsScheduleService {
           decoded = jsonDecode(cachedElectivesStr);
         }
       }
-      
-      Map<String, List<String>> availableElectives = {};
       
       if (decoded != null) {
         if (decoded.containsKey('raw') && decoded.containsKey('grouped')) {
@@ -112,10 +111,21 @@ class FriendsScheduleService {
                 break;
               }
             }
-
-            substitutedName ??= electivesMap.values.first;
           } else if (fElectives.isNotEmpty) {
-            substitutedName = fElectives.first;
+            final upperClass = className.toUpperCase().replaceAll(RegExp(r'[\s\-_]+'), '');
+            for (var friendElec in fElectives) {
+              for (var entry in availableElectives.entries) {
+                final groupName = entry.key;
+                final upperGroup = groupName.toUpperCase().replaceAll(RegExp(r'[\s\-_]+'), '');
+                if (upperClass.contains(upperGroup) || upperGroup.contains(upperClass)) {
+                  if (entry.value.contains(friendElec)) {
+                    substitutedName = friendElec;
+                    break;
+                  }
+                }
+              }
+              if (substitutedName != null) break;
+            }
           }
 
           if (substitutedName != null && substitutedName.isNotEmpty) {
@@ -175,7 +185,6 @@ class FriendsScheduleService {
             if (epDay == dayOfWeek) {
               final timeStr = '${ep['startTime']} - ${ep['endTime']}';
               if (!occupiedSlots.contains(timeStr)) {
-                debugPrint('➕ Appending Standalone Elective for Day $dayOfWeek: $chosenElective ($timeStr)');
                 processed.add({
                   'subject': chosenElective,
                   'className': chosenElective,

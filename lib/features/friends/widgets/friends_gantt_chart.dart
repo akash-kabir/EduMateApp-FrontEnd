@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
@@ -29,17 +30,22 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
 
   static const double _pixelsPerMinute = 2.4;
   static const double _rowHeight = 78.0;
-  static const double _yAxisWidth = 96.0;
+  static const double _yAxisWidth = 72.0;
   static const double _headerHeight = 48.0;
 
   double _minMinutes = 480; // Default 8:00 AM
   double _maxMinutes = 1020; // Default 5:00 PM
   bool _isSyncingScroll = false;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _calculateTimeBounds();
+
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
 
     // Synchronize top time ruler scroll with main grid horizontal scroll
     _horizontalScrollController.addListener(() {
@@ -71,10 +77,48 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
 
   @override
   void dispose() {
+    _timer?.cancel();
     _horizontalScrollController.dispose();
     _gridHorizontalScrollController.dispose();
     _verticalScrollController.dispose();
     super.dispose();
+  }
+
+  List<Map<String, dynamic>> _mergeAdjacentPeriods(List<dynamic> rawPeriods) {
+    if (rawPeriods.isEmpty) return [];
+    
+    List<Map<String, dynamic>> processed = [];
+    for (var p in rawPeriods) {
+      final times = _parseStartAndEndMinutes(p);
+      final start = times['start']!;
+      final end = times['end']!;
+      if (start <= 0) continue;
+      
+      processed.add({
+        'original': p,
+        'start': start,
+        'end': end,
+        'subject': _extractSubjectName(p),
+      });
+    }
+    
+    processed.sort((a, b) => (a['start'] as double).compareTo(b['start'] as double));
+    
+    List<Map<String, dynamic>> merged = [];
+    for (var current in processed) {
+      if (merged.isEmpty) {
+        merged.add(current);
+      } else {
+        var previous = merged.last;
+        if (previous['end'] == current['start'] && previous['subject'] == current['subject']) {
+          previous['end'] = current['end'];
+        } else {
+          merged.add(current);
+        }
+      }
+    }
+    
+    return merged;
   }
 
   bool _isSameDay(dynamic dayValue, String targetDayName) {
@@ -187,7 +231,7 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
       minM = 480; // 8:00 AM
       maxM = 1020; // 5:00 PM
     } else {
-      minM = (minM - 30).clamp(0, 24 * 60);
+      minM = (minM - 5).clamp(0, 24 * 60);
       maxM = (maxM + 30).clamp(0, 24 * 60);
     }
 
@@ -234,6 +278,28 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
     final hasCurrentTime = currentMinutes >= _minMinutes && currentMinutes <= _maxMinutes;
     final currentTimeX = (currentMinutes - _minMinutes) * _pixelsPerMinute;
 
+    bool intersectsClass = false;
+    for (var p in widget.userSchedule) {
+      final t = _parseStartAndEndMinutes(p);
+      if (t['start']! > 0 && currentMinutes >= t['start']! && currentMinutes < t['end']!) {
+        intersectsClass = true;
+        break;
+      }
+    }
+    if (!intersectsClass) {
+      for (var f in widget.friends) {
+        for (var p in _getFriendTodayPeriods(f.rollNo)) {
+          final t = _parseStartAndEndMinutes(p);
+          if (t['start']! > 0 && currentMinutes >= t['start']! && currentMinutes < t['end']!) {
+            intersectsClass = true;
+            break;
+          }
+        }
+        if (intersectsClass) break;
+      }
+    }
+    final pointerColor = intersectsClass ? const Color(0xFF10B981) : Colors.redAccent;
+
     return Container(
       color: UserColors.background,
       child: Column(
@@ -243,30 +309,14 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
             height: _headerHeight,
             child: Row(
               children: [
-                // Top-Left corner Y-Axis Title Pill
+                // Top-Left corner Y-Axis Title
                 Container(
                   width: _yAxisWidth,
                   height: _headerHeight,
                   alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E2024),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(CupertinoIcons.clock_fill, size: 12, color: AuthPalette.teal),
-                        SizedBox(width: 4),
-                        Text(
-                          'TIME',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
-                        ),
-                      ],
-                    ),
+                  child: const Text(
+                    'TIME',
+                    style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.0),
                   ),
                 ),
                 // Top-Right Scrollable Time Scale Header
@@ -288,13 +338,11 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFFFF416C), Color(0xFFFF4B2B)],
-                                  ),
+                                  color: pointerColor,
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.redAccent.withValues(alpha: 0.5),
+                                      color: pointerColor.withValues(alpha: 0.5),
                                       blurRadius: 8,
                                     ),
                                   ],
@@ -360,10 +408,10 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
                                 child: Container(
                                   width: 2,
                                   decoration: BoxDecoration(
-                                    color: Colors.redAccent,
+                                    color: pointerColor,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.redAccent.withValues(alpha: 0.6),
+                                        color: pointerColor.withValues(alpha: 0.6),
                                         blurRadius: 6,
                                         spreadRadius: 1,
                                       ),
@@ -389,61 +437,31 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
     return Container(
       width: _yAxisWidth,
       height: _rowHeight,
-      alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        decoration: BoxDecoration(
-          color: isUser ? AuthPalette.teal.withValues(alpha: 0.15) : const Color(0xFF1E2024),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isUser ? AuthPalette.teal.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.08),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isUser ? AuthPalette.teal : const Color(0xFF3A3F47),
-              ),
-              child: Center(
-                child: Text(
-                  label.substring(0, 1).toUpperCase(),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: isUser ? AuthPalette.teal : Colors.white,
-                  fontWeight: isUser ? FontWeight.bold : FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: isUser ? AuthPalette.teal : Colors.white.withValues(alpha: 0.8),
+          fontWeight: isUser ? FontWeight.w800 : FontWeight.w600,
+          fontSize: 13,
         ),
       ),
     );
   }
 
-  Widget _buildTimelineRow(List<dynamic> periods, {bool isUser = false, required double nowMinutes}) {
+  Widget _buildTimelineRow(List<dynamic> rawPeriods, {bool isUser = false, required double nowMinutes}) {
+    final mergedPeriods = _mergeAdjacentPeriods(rawPeriods);
+    
     return SizedBox(
       height: _rowHeight,
       child: Stack(
-        children: periods.map((p) {
-          final times = _parseStartAndEndMinutes(p);
-          final start = times['start']!;
-          final end = times['end']!;
-          if (start <= 0) return const SizedBox.shrink();
+        children: mergedPeriods.map((pMap) {
+          final p = pMap['original'];
+          final start = pMap['start'] as double;
+          final end = pMap['end'] as double;
 
           final duration = (end > start) ? (end - start) : 50.0;
           final left = (start - _minMinutes) * _pixelsPerMinute;
@@ -482,11 +500,11 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
             borderColor = Colors.amberAccent.withValues(alpha: 0.85);
             textColor = Colors.amberAccent;
           } else if (isUser) {
-            cardColor = const Color(0xFF282C34);
+            cardColor = const Color(0xFF141110);
             borderColor = AuthPalette.teal.withValues(alpha: 0.5);
             textColor = Colors.white;
           } else {
-            cardColor = const Color(0xFF1E2024);
+            cardColor = const Color(0xFF141110);
             borderColor = Colors.white.withValues(alpha: 0.12);
             textColor = Colors.white;
           }
@@ -573,19 +591,22 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
           Positioned(
             left: x,
             bottom: 6,
-            child: Column(
-              children: [
-                Text(
-                  '$displayHour $amPm',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 2),
-                Container(
-                  width: 1.5,
-                  height: 6,
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
-              ],
+            child: FractionalTranslation(
+              translation: const Offset(-0.5, 0),
+              child: Column(
+                children: [
+                  Text(
+                    '$displayHour $amPm',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    width: 1.5,
+                    height: 6,
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ],
+              ),
             ),
           ),
         );

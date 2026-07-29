@@ -199,14 +199,25 @@ Future<T?> showGlassmorphicDialog<T>({
       ); // _KeyboardResponsiveWrapper
     },
     transitionBuilder: (ctx, anim1, anim2, child) {
-      return Transform.scale(
-        scale: Tween<double>(begin: 0.85, end: 1.0).animate(
-          CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
-        ).value,
-        child: FadeTransition(
-          opacity: anim1,
-          child: child,
-        ),
+      return Stack(
+        children: [
+          FadeTransition(
+            opacity: anim1,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+              child: const SizedBox.expand(),
+            ),
+          ),
+          Transform.scale(
+            scale: Tween<double>(begin: 0.85, end: 1.0).animate(
+              CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+            ).value,
+            child: FadeTransition(
+              opacity: anim1,
+              child: child,
+            ),
+          ),
+        ],
       );
     },
   );

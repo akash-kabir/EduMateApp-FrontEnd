@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:app/features/friends/models/friend_model.dart';
 import 'package:app/features/friends/services/friends_storage_service.dart';
-import 'package:app/shared/services/student_data_service.dart';
 import 'package:app/theme/theme.dart';
+import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
+import 'package:app/features/friends/widgets/add_friend_dialog_flow.dart';
 
 class FriendsSettingsScreen extends StatefulWidget {
   const FriendsSettingsScreen({super.key});
@@ -39,121 +40,10 @@ class _FriendsSettingsScreenState extends State<FriendsSettingsScreen> {
       return;
     }
 
-    final rollNoController = TextEditingController();
-    final nameTagController = TextEditingController();
-    bool isSearching = false;
-
-    showCupertinoDialog(
+    showGlassmorphicDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return CupertinoAlertDialog(
-              title: const Text('Add Friend'),
-              content: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  CupertinoTextField(
-                    controller: rollNoController,
-                    placeholder: 'Roll Number (e.g., 2405001)',
-                    keyboardType: TextInputType.number,
-                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
-                  ),
-                  const SizedBox(height: 12),
-                  CupertinoTextField(
-                    controller: nameTagController,
-                    placeholder: 'Name Tag (e.g., John)',
-                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
-                  ),
-                  if (isSearching)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 16.0),
-                      child: CupertinoActivityIndicator(),
-                    ),
-                ],
-              ),
-              actions: [
-                CupertinoDialogAction(
-                  isDestructiveAction: true,
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                CupertinoDialogAction(
-                  isDefaultAction: true,
-                  onPressed: isSearching
-                      ? null
-                      : () async {
-                          final rollNo = rollNoController.text.trim();
-                          final nameTag = nameTagController.text.trim();
-                          
-                          if (rollNo.isEmpty || nameTag.isEmpty) {
-                            return;
-                          }
-
-                          setStateDialog(() => isSearching = true);
-
-                          final result = await StudentDataService.lookupRollNo(rollNo);
-                          
-                          if (!mounted) return;
-
-                          if (result['success'] == true && result['data'] != null) {
-                            final data = result['data'];
-                            
-                            List<String> friendElectives = [];
-                            if (data['electives'] is List) {
-                              friendElectives = List<String>.from((data['electives'] as List).map((e) => e.toString()));
-                            }
-
-                            final friend = FriendModel(
-                              rollNo: data['rollNo'] ?? rollNo,
-                              nameTag: nameTag,
-                              semester: data['semester'] ?? '',
-                              section: data['section'] ?? '',
-                              electives: friendElectives,
-                            );
-
-                            debugPrint('Added Friend: ${friend.nameTag} (${friend.rollNo}) with electives: $friendElectives');
-
-                            final added = await FriendsStorageService.addFriend(friend);
-                            
-                            if (!context.mounted) return;
-
-                            if (added) {
-                              Navigator.pop(context);
-                              _loadFriends();
-                            } else {
-                              setStateDialog(() => isSearching = false);
-                              _showErrorDialog(context, 'Could not add friend. They might already exist.');
-                            }
-                          } else {
-                            if (!context.mounted) return;
-                            setStateDialog(() => isSearching = false);
-                            _showErrorDialog(context, result['message'] ?? 'Roll number not found');
-                          }
-                        },
-                  child: const Text('Add'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showErrorDialog(BuildContext context, String message) {
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
-        actions: [
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
-          ),
-        ],
+      child: AddFriendDialogFlow(
+        onComplete: _loadFriends,
       ),
     );
   }
@@ -204,32 +94,45 @@ class _FriendsSettingsScreenState extends State<FriendsSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: UserColors.background,
-      navigationBar: const CupertinoNavigationBar(
-        backgroundColor: Colors.transparent,
-        border: null,
-        middle: Text(
-          'Friend Settings',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF141110),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
         child: Material(
           type: MaterialType.transparency,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.only(
+              left: 16.0,
+              right: 16.0,
+              top: 12.0,
+              bottom: 16.0,
+            ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Your Friends',
+                      'Manage Friends',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
+                        fontFamily: 'Salena',
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -247,7 +150,8 @@ class _FriendsSettingsScreenState extends State<FriendsSettingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Expanded(
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.5,
                   child: _isLoading
                       ? const Center(child: CupertinoActivityIndicator())
                       : _friends.isEmpty
