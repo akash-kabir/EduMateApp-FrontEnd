@@ -449,7 +449,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
+                                color: const Color(0xFF000000).withValues(alpha: 0.40),
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -575,7 +575,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
+                                        color: const Color(0xFF000000).withValues(alpha: 0.40),
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
@@ -745,7 +745,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 width: MediaQuery.of(context).size.width - 32,
                                 padding: const EdgeInsets.all(20.0),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
+                                  color: const Color(0xFF000000).withValues(alpha: 0.40),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -826,7 +826,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 width: MediaQuery.of(context).size.width - 32,
                                 padding: const EdgeInsets.all(20.0),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
+                                  color: const Color(0xFF000000).withValues(alpha: 0.40),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -907,7 +907,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 width: MediaQuery.of(context).size.width - 32,
                                 padding: const EdgeInsets.all(20.0),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
+                                  color: const Color(0xFF000000).withValues(alpha: 0.40),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -1051,7 +1051,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                         vertical: 14,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF1E1E23)
+                                        color: const Color(0xFF000000)
                                                 .withValues(alpha: 0.55),
                                         borderRadius:
                                             BorderRadius.circular(20),

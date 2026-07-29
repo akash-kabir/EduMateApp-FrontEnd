@@ -74,6 +74,13 @@ class FriendsScheduleService {
           final resData = jsonDecode(response.body);
           if (resData['success'] == true && resData['data'] != null) {
             rawElectiveData = resData['data']['electives'] as List? ?? [];
+            
+            // 💡 NEW: Cache the fetched electives into SQLite for offline use later!
+            try {
+              await ScheduleDatabaseHelper.instance.cacheElectiveData(semesterNum.toString(), resData['data']);
+            } catch (e) {
+              debugPrint('Error caching fetched friend electives to SQLite: $e');
+            }
           }
         }
       }

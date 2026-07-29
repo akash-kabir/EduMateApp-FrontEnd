@@ -384,7 +384,7 @@ class _SemesterElectiveDetailScreenState
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E20),
+            color: const Color(0xFF000000),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Padding(

@@ -228,17 +228,12 @@ class _AppNavigatorState extends State<AppNavigator> {
           child: _pages[_selectedIndex],
         ),
       ),
-      bottomNavigationBar: AnimatedSlide(
-        duration: Duration(milliseconds: _isMapNavBarVisible ? 250 : 800),
-        curve: Curves.easeInOut,
-        offset: (_selectedIndex == 3 && !_isMapNavBarVisible)
-            ? const Offset(0, 1.2) // slide down below the screen
-            : Offset.zero,
-        child: CupertinoBottomTabBar(
-          selectedIndex: _selectedIndex,
-          onItemTapped: _onItemTapped,
-        ),
-      ),
+      bottomNavigationBar: (_selectedIndex == 3 && !_isMapNavBarVisible) 
+          ? const SizedBox.shrink()
+          : CupertinoBottomTabBar(
+              selectedIndex: _selectedIndex,
+              onItemTapped: _onItemTapped,
+            ),
     );
   }
 }

@@ -263,7 +263,7 @@ class _CurriculumManagementScreenState
                           fontSize: 15,
                         ),
                         filled: true,
-                        fillColor: const Color(0xFF1E1E22),
+                        fillColor: const Color(0xFF000000),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 14),
                         border: OutlineInputBorder(
@@ -1160,7 +1160,7 @@ class _BranchSkeletonCardState extends State<_BranchSkeletonCard>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = const Color(0xFF1E1E22);
+    final baseColor = const Color(0xFF000000);
 
     return AnimatedBuilder(
       animation: _animation,

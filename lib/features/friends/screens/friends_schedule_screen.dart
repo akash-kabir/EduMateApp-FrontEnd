@@ -31,7 +31,17 @@ class _FriendsScheduleScreenState extends State<FriendsScheduleScreen> {
   }
 
   String _getCurrentDayName() {
-    return 'Monday';
+    final weekday = DateTime.now().weekday;
+    switch (weekday) {
+      case 1: return 'Monday';
+      case 2: return 'Tuesday';
+      case 3: return 'Wednesday';
+      case 4: return 'Thursday';
+      case 5: return 'Friday';
+      case 6: return 'Saturday';
+      case 7: return 'Sunday';
+      default: return 'Monday';
+    }
   }
 
   Future<void> _loadData() async {
@@ -76,8 +86,10 @@ class _FriendsScheduleScreenState extends State<FriendsScheduleScreen> {
 
           if (sectionObj != null && sectionObj['schedule'] is List) {
             final userScheduleList = sectionObj['schedule'] as List;
+            final currentDayIndex = DateTime.now().weekday;
+            final currentDayName = _getCurrentDayName().toLowerCase();
             final todayObj = userScheduleList.firstWhere(
-              (d) => d['day'] == 1 || d['day'] == '1' || d['day']?.toString().toLowerCase() == 'monday',
+              (d) => d['day'] == currentDayIndex || d['day'] == currentDayIndex.toString() || d['day']?.toString().toLowerCase() == currentDayName,
               orElse: () => null,
             );
 
@@ -97,8 +109,10 @@ class _FriendsScheduleScreenState extends State<FriendsScheduleScreen> {
           );
           final userSchedMap = await FriendsScheduleService.getSchedulesForFriends([dummyUser]);
           final userDays = userSchedMap['__user__'] ?? [];
+          final currentDayIndex = DateTime.now().weekday;
+          final currentDayName = _getCurrentDayName().toLowerCase();
           final todayObj = userDays.firstWhere(
-            (d) => d['day'] == 1 || d['day'] == '1' || d['day']?.toString().toLowerCase() == 'monday',
+            (d) => d['day'] == currentDayIndex || d['day'] == currentDayIndex.toString() || d['day']?.toString().toLowerCase() == currentDayName,
             orElse: () => null,
           );
           if (todayObj != null && todayObj['periods'] != null) {

@@ -53,7 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: const Color(0xFF000000),
         title: const Text('Disconnect SAP?', style: TextStyle(color: Colors.white)),
         content: const Text(
           'Are you sure you want to clear your SAP credentials? You will need to log in again to view your attendance.',
@@ -86,7 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: const Color(0xFF000000),
         title: const Text('Clear App Cache?', style: TextStyle(color: Colors.white)),
         content: const Text(
           'This will clear local cache including timetable and saved preferences. Are you sure?',
@@ -119,7 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: const Color(0xFF000000),
         title: const Text('Delete Account', style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold)),
         content: const Text(
           'This action is irreversible. All your data will be permanently deleted from the device. Are you absolutely sure?',

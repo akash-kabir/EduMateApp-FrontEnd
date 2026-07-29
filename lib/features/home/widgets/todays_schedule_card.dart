@@ -455,19 +455,21 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
       return const SizedBox.shrink(); // Hide carousel if holiday or weekend
     }
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    // The card is 220px wide, and we want 24px padding on the left.
-    // The right padding should push the last card to the left side of the screen.
-    final rightPadding = (screenWidth - 24 - 220).clamp(24.0, double.infinity);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // constraints.maxWidth is the exact width of the carousel container.
+        // We subtract 24 for the left padding, and 220 for the card width.
+        // This perfectly aligns the last card with the left edge padding.
+        final rightPadding = (constraints.maxWidth - 24 - 220).clamp(24.0, double.infinity);
 
-    return SizedBox(
-      height: 120,
-      child: ListView.separated(
-        controller: _scrollController,
-        padding: EdgeInsets.only(left: 24, right: rightPadding),
-        scrollDirection: Axis.horizontal,
-        itemCount: _scheduleData!.classes.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        return SizedBox(
+          height: 120,
+          child: ListView.separated(
+            controller: _scrollController,
+            padding: EdgeInsets.only(left: 24, right: rightPadding),
+            scrollDirection: Axis.horizontal,
+            itemCount: _scheduleData!.classes.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final c = _scheduleData!.classes[index];
           final isOngoing = _isClassOngoing(c);
@@ -568,6 +570,8 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
           );
         },
       ),
+    );
+      },
     );
   }
 }

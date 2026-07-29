@@ -30,7 +30,7 @@ class BottomSheetSelector<T> extends StatelessWidget {
 
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: const Color(0xFF000000),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
       ),
@@ -114,7 +114,7 @@ class BottomSheetSelector<T> extends StatelessWidget {
           child: ElevatedButton(
             onPressed: () => _showBottomSheet(context),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E1E1E),
+              backgroundColor: const Color(0xFF000000),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(

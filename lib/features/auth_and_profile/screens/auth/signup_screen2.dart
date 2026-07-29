@@ -346,7 +346,7 @@ class _SignupScreen2State extends State<SignupScreen2>
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF1E1E1E),
+                  color: Color(0xFF000000),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
                 ),
                 child: Column(

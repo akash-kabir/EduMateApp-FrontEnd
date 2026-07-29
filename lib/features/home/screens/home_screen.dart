@@ -43,7 +43,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  String userFirstName = '';
+  String userFullName = '';
   String? userId;
   String? token;
   bool openAppToTimesheet = false;
@@ -131,9 +131,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Future<void> _loadUserData() async {
     final firstName = await SharedPreferencesService.getFirstName();
-    final newFirstName = (firstName != null && firstName.isNotEmpty)
-        ? firstName
-        : (await SharedPreferencesService.getUserName() ?? 'User');
+    final lastName = await SharedPreferencesService.getLastName();
+    String newFullName = '';
+    
+    if (firstName != null && firstName.isNotEmpty) {
+      newFullName = firstName;
+      if (lastName != null && lastName.isNotEmpty) {
+        newFullName += ' $lastName';
+      }
+    } else {
+      newFullName = await SharedPreferencesService.getUserName() ?? 'User';
+    }
+    
     final newUserId = await SharedPreferencesService.getUserId();
     final newToken = await SharedPreferencesService.getToken();
     final openTimesheetPref = await SharedPreferencesService.getBool('openToTimesheet');
@@ -141,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     if (!mounted) return;
     setState(() {
-      userFirstName = newFirstName;
+      userFullName = newFullName;
       userId = newUserId;
       token = newToken;
       openAppToTimesheet = openTimesheetPref;
@@ -385,16 +394,30 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.black,
-      child: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Top Welcome Header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 24, 12, 24),
-                child: Row(
+      backgroundColor: const Color(0xFF000000),
+      child: Stack(
+        children: [
+          ShaderMask(
+            shaderCallback: (Rect rect) {
+              return LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: const [
+                  Colors.transparent,
+                  Colors.black,
+                ],
+                stops: const [0.0, 0.08], // Fades top 8% of the scroll view
+              ).createShader(rect);
+            },
+            blendMode: BlendMode.dstIn,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // Top Welcome Header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(12, MediaQuery.of(context).padding.top + 16, 12, 24),
+                  child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -411,13 +434,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            _userRole.toLowerCase() == 'guest' ? 'Guest' : (userFirstName.isEmpty ? 'User' : userFirstName),
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _userRole.toLowerCase() == 'guest' ? 'Guest' : (userFullName.isEmpty ? 'User' : userFullName),
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                              ),
                             ),
                           ),
                         ],
@@ -472,7 +499,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               transitionDuration: const Duration(milliseconds: 400),
                               reverseTransitionDuration: const Duration(milliseconds: 400),
                               pageBuilder: (context, animation, secondaryAnimation) {
-                                return FullScreenDrawer(animation: animation, userFirstName: userFirstName);
+                                return FullScreenDrawer(animation: animation, userFullName: userFullName);
                               },
                             ),
                           );
@@ -561,9 +588,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ]),
               ),
             ),
-          ],
+            // Extra padding at the bottom so the last item can clear the nav bar
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 65),
+            ),
+          ]),
         ),
-      ),
+      ]),
     );
   }
 
@@ -591,12 +622,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
 class FullScreenDrawer extends StatefulWidget {
   final Animation<double> animation;
-  final String userFirstName;
+  final String userFullName;
 
   const FullScreenDrawer({
     super.key,
     required this.animation,
-    required this.userFirstName,
+    required this.userFullName,
   });
 
   @override
@@ -805,7 +836,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                           
                           // User Info Card at bottom (Sleek, transparent)
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                            padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom + 12 : 24),
                             child: Row(
                               children: [
                                 Container(
@@ -911,7 +942,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
               ),
             ),
           ),
-        ],
+      ],
       ),
     );
   }

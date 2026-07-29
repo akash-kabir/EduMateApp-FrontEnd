@@ -131,7 +131,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E24),
+            color: const Color(0xFF000000),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             boxShadow: [
               BoxShadow(

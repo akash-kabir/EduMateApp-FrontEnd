@@ -559,7 +559,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                           );
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF1E1E1E),
+                                          backgroundColor: const Color(0xFF000000),
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(vertical: 14),
                                           shape: RoundedRectangleBorder(

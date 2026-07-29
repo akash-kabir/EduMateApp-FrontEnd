@@ -397,7 +397,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
+            color: const Color(0xFF000000).withValues(alpha: 0.40),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -462,7 +462,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
+            color: const Color(0xFF000000).withValues(alpha: 0.40),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -580,7 +580,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
+            color: const Color(0xFF000000).withValues(alpha: 0.40),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(

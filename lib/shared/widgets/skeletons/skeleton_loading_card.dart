@@ -63,7 +63,7 @@ class _SkeletonCard extends StatelessWidget {
     final accentColor = Colors.grey[700]!;
     
     final BoxDecoration cardDecoration = BoxDecoration(
-      color: const Color(0xFF1E1E23).withValues(alpha: 0.40),
+      color: const Color(0xFF000000).withValues(alpha: 0.40),
       borderRadius: BorderRadius.circular(16),
       border: Border(left: BorderSide(color: accentColor, width: 4)),
       boxShadow: [

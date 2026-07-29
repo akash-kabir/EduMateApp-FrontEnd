@@ -98,7 +98,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           uiSettings: [
             AndroidUiSettings(
               toolbarTitle: 'Crop Image (4:5)',
-              toolbarColor: const Color(0xFF1E1E1E),
+              toolbarColor: const Color(0xFF000000),
               toolbarWidgetColor: Colors.white,
               activeControlsWidgetColor: const Color(0xFFFF9B7A),
               lockAspectRatio: true,
@@ -356,7 +356,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               decoration: const BoxDecoration(
-                color: Color(0xFF1E1E1E),
+                color: Color(0xFF000000),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: Column(
@@ -689,7 +689,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E),
+          color: const Color(0xFF000000),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: value != null ? const Color(0xFFFF9B7A).withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.05)),
           boxShadow: [
@@ -907,7 +907,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               height: 160,
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E1E1E),
+                                color: const Color(0xFF000000),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                               ),
@@ -977,7 +977,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E1E1E),
+                              color: const Color(0xFF000000),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: _selectedPoi != null
@@ -1326,7 +1326,7 @@ class _SleekTextFieldState extends State<SleekTextField> {
         AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           decoration: BoxDecoration(
-            color: widget.readOnly ? const Color(0xFF161616) : const Color(0xFF1E1E1E),
+            color: widget.readOnly ? const Color(0xFF161616) : const Color(0xFF000000),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: widget.readOnly
