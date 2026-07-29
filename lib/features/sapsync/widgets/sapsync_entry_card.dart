@@ -44,14 +44,12 @@ class SapSyncEntryCard extends StatelessWidget {
         );
       },
       child: Container(
+        width: double.infinity,
+        height: isConnected ? null : 160,
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2C2C2C), Color(0xFF1A1A1A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: const Color(0xFF141110),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -166,43 +164,27 @@ class SapSyncEntryCard extends StatelessWidget {
                   ],
                 ],
               )
-            : Row(
+            : const Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'SAPSYNC',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tap to setup',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    'SAPSYNC',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontFamily: 'Salena',
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                      color: Color(0xFFFF9B7A),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blueAccent.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.sync_lock,
-                      color: Colors.blueAccent,
-                      size: 28,
+                  SizedBox(height: 4),
+                  Text(
+                    'Tap to connect your attendance',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],

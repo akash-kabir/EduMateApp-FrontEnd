@@ -429,8 +429,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             _userRole.toLowerCase() == 'guest' ? 'Welcome' : 'Welcome back,',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[400],
-                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFFFF9B7A),
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -475,7 +475,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
+                              color: const Color(0xFF141110),
                               shape: BoxShape.circle,
                             ),
                             child: AnimatedSwitcher(
@@ -507,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
+                            color: const Color(0xFF141110),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -540,13 +540,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
             // Quick Actions Grid
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.85,
+                  childAspectRatio: 1.1,
                 ),
                 delegate: SliverChildListDelegate([
 
@@ -583,6 +583,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           builder: (context) => const FriendsScheduleScreen(),
                         ),
                       );
+                    },
+                  ),
+                  DashboardActionCard(
+                    title: 'More',
+                    subtitle: 'Features',
+                    icon: CupertinoIcons.sparkles,
+                    gradientColors: const [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+                    onTap: () {
+                      // Placeholder for future feature
                     },
                   ),
                 ]),

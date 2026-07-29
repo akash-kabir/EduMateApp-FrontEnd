@@ -216,11 +216,7 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: const Color(0xFF141110),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(

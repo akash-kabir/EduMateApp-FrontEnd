@@ -34,7 +34,7 @@ class SleekAttendanceCard extends StatelessWidget {
         padding: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: const Color(0xFF1C1C1E),
+          color: const Color(0xFF141110),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: isSelected ? accentColor.withOpacity(0.6) : Colors.white.withOpacity(0.06),
@@ -190,16 +190,18 @@ class SleekAttendanceCard extends StatelessWidget {
                       margin: const EdgeInsets.fromLTRB(4, 0, 4, 4),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF141416),
+                        color: Colors.black,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.white.withOpacity(0.08)),
                       ),
                       child: Row(
                         children: [
-                          // Left Side: Attend Next vs Skip Next Simulations
+                          // Left Side: Simulation Scenarios
                           Expanded(
+                            flex: 3,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Row(
                                   children: [
@@ -212,17 +214,19 @@ class SleekAttendanceCard extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(
-                                      'Attend next: ${record.simulateAttendNext().toStringAsFixed(1)}%',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
+                                    Expanded(
+                                      child: Text(
+                                        'If you attend next: ${record.simulateAttendNext().toStringAsFixed(1)}%',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 8),
                                 Row(
                                   children: [
                                     Container(
@@ -234,12 +238,14 @@ class SleekAttendanceCard extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(
-                                      'Skip next: ${record.simulateSkipNext().toStringAsFixed(1)}%',
-                                      style: TextStyle(
-                                        color: Colors.grey[400],
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
+                                    Expanded(
+                                      child: Text(
+                                        'If you miss next: ${record.simulateSkipNext().toStringAsFixed(1)}%',
+                                        style: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -256,37 +262,45 @@ class SleekAttendanceCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 14),
 
-                          // Right Side: Target Calculator [X] Classes to Attend / Skip
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                isHigh ? 'Skip' : 'Attend',
-                                style: TextStyle(
-                                  color: isHigh ? const Color(0xFF4CD97B) : const Color(0xFFFF5252),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
+                          // Right Side: Target Calculator
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  isHigh ? 'CAN SAFELY MISS' : 'NEED TO ATTEND',
+                                  style: TextStyle(
+                                    color: isHigh ? const Color(0xFF4CD97B) : const Color(0xFFFF5252),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                              ),
-                              Text(
-                                '${isHigh ? record.classesAllowedToSkip(threshold) : record.classesNeededToReach(threshold)}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w900,
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${isHigh ? record.classesAllowedToSkip(threshold) : record.classesNeededToReach(threshold)}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                'Classes',
-                                style: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
+                                const SizedBox(height: 2),
+                                Text(
+                                  'MORE CLASSES',
+                                  style: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ],
                       ),

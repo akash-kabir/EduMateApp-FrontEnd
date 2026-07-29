@@ -88,13 +88,13 @@ class SapProvider with ChangeNotifier {
         await fetchAttendance();
         return true;
       } else {
-        _errorMessage = 'Invalid credentials or portal is unreachable.';
+        _errorMessage = 'Invalid credentials or portal down.';
         _isConnected = false;
         notifyListeners();
         return false;
       }
     } catch (e) {
-      _errorMessage = 'An error occurred during connection: $e';
+      _errorMessage = 'Connection failed.';
       _isConnected = false;
       notifyListeners();
       return false;
@@ -126,7 +126,7 @@ class SapProvider with ChangeNotifier {
       print('SAP_DEBUG [Provider]: Login result: $loginSuccess');
 
       if (!loginSuccess) {
-         _errorMessage = 'Failed to login via WebView. Showing cached data.';
+         _errorMessage = 'Login failed. Showing offline data.';
          await _loadFromCache();
          return;
       }
@@ -134,7 +134,7 @@ class SapProvider with ChangeNotifier {
       print('SAP_DEBUG [Provider]: Navigating to attendance...');
       final navSuccess = await _scraper.navigateToAttendance();
       if (!navSuccess) {
-         _errorMessage = 'Failed to load attendance portal. Showing cached data.';
+         _errorMessage = 'Portal offline. Showing offline data.';
          await _loadFromCache();
          return;
       }
@@ -173,13 +173,13 @@ class SapProvider with ChangeNotifier {
       } else {
         final err = result != null ? result['error'] : 'Unknown error';
         print('SAP_DEBUG [Provider]: Extraction failed: $err');
-        _errorMessage = 'Could not extract attendance data. Showing cached data.';
+        _errorMessage = 'Sync failed. Showing offline data.';
       }
       
       await _loadFromCache();
     } catch (e) {
       print('SAP_DEBUG [Provider]: EXCEPTION in fetchAttendance: $e');
-      _errorMessage = 'Failed to fetch attendance. Showing cached data.';
+      _errorMessage = 'Sync failed. Showing offline data.';
       await _loadFromCache();
     } finally {
       // Clean up the webview after sync

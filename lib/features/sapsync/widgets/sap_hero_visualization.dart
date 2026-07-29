@@ -36,11 +36,7 @@ class SapHeroVisualization extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E222B), Color(0xFF16181F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: const Color(0xFF141110),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [
@@ -92,7 +88,7 @@ class SapHeroVisualization extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2C2C2E),
+                    color: Colors.black,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -110,7 +106,7 @@ class SapHeroVisualization extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2C2C2E),
+                    color: Colors.black,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(

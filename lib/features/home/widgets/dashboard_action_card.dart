@@ -28,11 +28,7 @@ class DashboardActionCard extends StatelessWidget {
           height: 110,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: const [Color(0xFF303030), Color(0xFF1a1a1a)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: const Color(0xFF141110),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
