@@ -21,11 +21,11 @@ class BottomSheetSelector<T> extends StatelessWidget {
   });
 
   void _showBottomSheet(BuildContext context) {
-    int selectedIndex = items.indexOf(value as T);
+    if (items.isEmpty) return;
+
+    int selectedIndex = value != null ? items.indexOf(value as T) : 0;
     if (selectedIndex == -1) selectedIndex = 0;
     int tempIndex = selectedIndex;
-
-
     final doneColor = isAdmin ? const Color(0xFFFF1744) : const Color(0xFFFF7F50);
 
     showModalBottomSheet<void>(

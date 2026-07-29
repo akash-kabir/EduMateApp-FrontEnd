@@ -243,6 +243,11 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
 
     setState(() {
       calculatedCGPA = cgpa;
+      if (pastCGPA != null) {
+        overallCGPA = (pastCGPA! + cgpa) / 2;
+      } else {
+        overallCGPA = null;
+      }
     });
 
     // Scroll down smoothly to show the result
@@ -276,8 +281,10 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
     setState(() {
       calculatedCGPA = cgpa;
       // Also update overall CGPA if past CGPA was already applied
-      if (overallCGPA != null && pastCGPA != null) {
+      if (pastCGPA != null) {
         overallCGPA = (pastCGPA! + cgpa) / 2;
+      } else {
+        overallCGPA = null;
       }
     });
   }
@@ -353,93 +360,222 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
     }
     super.dispose();
   }
+  void _showSettingsModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF16181F),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24.0,
+                right: 24.0,
+                top: 24.0,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24.0,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[700],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Curriculum Settings',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Branch Selector
+                  BottomSheetSelector<String>(
+                    value: selectedBranch,
+                    items: branches,
+                    hint: 'Select Branch',
+                    labelBuilder: (String value) => value,
+                    onChanged: (value) async {
+                      setState(() => selectedBranch = value);
+                      setModalState(() => selectedBranch = value);
+                      await _fetchSemesters(value);
+                      setModalState(() {});
+                    },
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  Opacity(
+                    opacity: semesters.isEmpty ? 0.3 : 1.0,
+                    child: IgnorePointer(
+                      ignoring: semesters.isEmpty,
+                      child: BottomSheetSelector<String>(
+                        value: selectedSemesterNumber != null ? 'Semester $selectedSemesterNumber' : null,
+                        items: semesters.map((s) => 'Semester ${s['semesterNumber']}').toList(),
+                        hint: semesters.isEmpty 
+                            ? (selectedBranch == null ? 'Select Branch First' : 'Loading Semesters...') 
+                            : 'Select Semester',
+                        labelBuilder: (String value) => value,
+                        onChanged: (value) {
+                          final semNum = int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), ''));
+                          if (semNum != null) {
+                            setState(() => selectedSemesterNumber = semNum);
+                            setModalState(() => selectedSemesterNumber = semNum);
+                            _selectSemester(semNum);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  CupertinoButton(
+                    color: AuthPalette.coral,
+                    borderRadius: BorderRadius.circular(16),
+                    child: const Text('Done', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
 
-
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.black,
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('CGPA Calculator',
-                  style: TextStyle(
-                  fontFamily: 'Salena')),
-        backgroundColor: CupertinoColors.black.withOpacity(0.6),
-        border: Border(
-          bottom: BorderSide(color: CupertinoColors.separator, width: 0.5),
-        ),
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => Navigator.pop(context),
-          child: Icon(CupertinoIcons.back, color: AuthPalette.coral),
-        ),
-      ),
-      child: isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                color: AuthPalette.coral,
-                strokeWidth: 3,
-              ),
-            )
-          : Material(
-              color: CupertinoColors.black,
-              child: SafeArea(
-                child: Stack(
-                  children: [
-                    SingleChildScrollView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
-                      Text(
-                        'Calculate your CGPA for the selected semester',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // Branch Selector
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                final fadeIntensity = _scrollController.hasClients ? (_scrollController.offset / 40.0).clamp(0.0, 1.0) : 0.0;
+                return ShaderMask(
+                  shaderCallback: (Rect rect) {
+                    return LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black,
+                      ],
+                      stops: const [0.0, 0.08],
+                    ).createShader(rect);
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: child,
+                );
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                      child: Stack(
+                        alignment: Alignment.center,
                         children: [
-                          Expanded(
-                            child: BottomSheetSelector<String>(
-                              value: selectedBranch,
-                              items: branches,
-                              hint: 'Select Branch',
-                              labelBuilder: (String value) => value,
-                              onChanged: (value) {
-                                setState(() => selectedBranch = value);
-                                _fetchSemesters(value);
-                              },
-                            ),
-                          ),
-                          if (semesters.isNotEmpty) ...[
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: BottomSheetSelector<String>(
-                                value: selectedSemesterNumber != null ? 'Semester $selectedSemesterNumber' : null,
-                                items: semesters.map((s) => 'Semester ${s['semesterNumber']}').toList(),
-                                hint: 'Select Semester',
-                                labelBuilder: (String value) => value,
-                                onChanged: (value) {
-                                  final semNum = int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), ''));
-                                  if (semNum != null) {
-                                    setState(() => selectedSemesterNumber = semNum);
-                                    _selectSemester(semNum);
-                                  }
-                                },
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Hero(
+                              tag: 'back_button',
+                              child: CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => Navigator.pop(context),
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF141110),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(CupertinoIcons.back, color: Colors.white),
+                                ),
                               ),
                             ),
-                          ],
+                          ),
+                          const Text(
+                            'CGPA Calculator',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontFamily: 'Salena',
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                              color: Color(0xFFFF9B7A),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Hero(
+                              tag: 'settings_button',
+                              child: CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => _showSettingsModal(context),
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF141110),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(CupertinoIcons.settings, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-
-                      // Past CGPA Card
+                    ),
+                  ),
+                  if (isLoading)
+                    SliverFillRemaining(
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AuthPalette.coral,
+                          strokeWidth: 3,
+                        ),
+                      ),
+                    )
+                  else
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (selectedBranch == null && !isLoading)
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 100.0),
+                                  child: Column(
+                                    children: [
+                                      Icon(CupertinoIcons.doc_text_search, size: 64, color: Colors.grey[800]),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No curriculum loaded.\nTap the settings icon to select a branch.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              
+                            // Past CGPA Card
                       if (selectedSemesterNumber != null &&
                           selectedSemesterNumber! > 1)
                         ClipRRect(
@@ -449,7 +585,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF000000).withValues(alpha: 0.40),
+                                color: const Color(0xFF141110),
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -479,7 +615,18 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                         ),
                                     onChanged: (value) {
                                       setState(() {
-                                        pastCGPA = double.tryParse(value);
+                                        double? parsed = double.tryParse(value);
+                                        if (parsed != null && parsed > 10.0) {
+                                          parsed = 10.0;
+                                          pastCGPAController.value = const TextEditingValue(
+                                            text: '10.0',
+                                            selection: TextSelection.collapsed(offset: 4),
+                                          );
+                                        }
+                                        pastCGPA = parsed;
+                                        if (calculatedCGPA != null) {
+                                          _autoRecalculate();
+                                        }
                                       });
                                     },
                                     decoration: InputDecoration(
@@ -575,7 +722,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF000000).withValues(alpha: 0.40),
+                                        color: const Color(0xFF141110),
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
@@ -676,59 +823,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
-                            if (selectedSemesterNumber != null &&
-                                selectedSemesterNumber! > 1)
-                              GestureDetector(
-                                onTap: () {
-                                  if (pastCGPA != null &&
-                                      calculatedCGPA != null) {
-                                    setState(() {
-                                      overallCGPA =
-                                          (pastCGPA! + calculatedCGPA!) / 2;
-                                    });
 
-                                    // Scroll down smoothly to show the result
-                                    Future.delayed(
-                                      const Duration(milliseconds: 100),
-                                      () {
-                                        _scrollController.animateTo(
-                                          _scrollController
-                                              .position
-                                              .maxScrollExtent,
-                                          duration: const Duration(
-                                            milliseconds: 500,
-                                          ),
-                                          curve: Curves.easeInOut,
-                                        );
-                                      },
-                                    );
-                                  }
-                                },
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[800],
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Add CGPA to Calculation',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge
-                                          ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       const SizedBox(height: 12),
@@ -745,7 +840,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 width: MediaQuery.of(context).size.width - 32,
                                 padding: const EdgeInsets.all(20.0),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF000000).withValues(alpha: 0.40),
+                                  color: const Color(0xFF141110),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -826,7 +921,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 width: MediaQuery.of(context).size.width - 32,
                                 padding: const EdgeInsets.all(20.0),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF000000).withValues(alpha: 0.40),
+                                  color: const Color(0xFF141110),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -907,7 +1002,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 width: MediaQuery.of(context).size.width - 32,
                                 padding: const EdgeInsets.all(20.0),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF000000).withValues(alpha: 0.40),
+                                  color: const Color(0xFF141110),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -1012,12 +1107,16 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                     ],
                   ),
                 ),
-                    // Floating result pill
-                    if (calculatedCGPA != null)
-                      Positioned(
-                        bottom: 16,
-                        left: 24,
-                        right: 24,
+              ),
+            ],
+          ),
+        ),
+        // Floating result pill
+        if (calculatedCGPA != null)
+          Positioned(
+            bottom: 16,
+            left: 24,
+            right: 24,
                         child: AnimatedSlide(
                           offset: _showResultPill
                               ? Offset.zero
@@ -1048,11 +1147,15 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 20,
-                                        vertical: 14,
+                                        vertical: 18,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF000000)
-                                                .withValues(alpha: 0.55),
+                                        color: const Color(0xFF141110)
+                                                .withValues(alpha: 0.95),
+                                        border: Border.all(
+                                          color: AuthPalette.coral.withValues(alpha: 0.8),
+                                          width: 1.5,
+                                        ),
                                         borderRadius:
                                             BorderRadius.circular(20),
                                         boxShadow: [
@@ -1120,11 +1223,10 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                           ),
                         ),
                       ),
-                  ],
-                ),
-              ),
-            ),
-    );
+        ],
+      ),
+    ),
+  );
   }
 
   Widget _buildPillItem(

@@ -22,6 +22,13 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
   int _todayHolidayIndex = -1;
   
   final GlobalKey _targetKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -199,7 +206,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
             ),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF000000),
+              color: const Color(0xFF141110),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isToday 
@@ -354,74 +361,146 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text(
-          'Holidays',
-          style: TextStyle(
-            fontFamily: 'Salena',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: CupertinoColors.black.withOpacity(0.6),
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: SafeArea(
-          child: _isLoading
-              ? const Center(child: CupertinoActivityIndicator(radius: 16))
-            : _holidays.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          CupertinoIcons.calendar,
-                          size: 64,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No holidays found for $_currentYear.',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 16,
-                            color: Colors.grey[400],
-                          ),
-                        ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                final fadeIntensity = _scrollController.hasClients
+                    ? (_scrollController.offset / 40.0).clamp(0.0, 1.0)
+                    : 0.0;
+                return ShaderMask(
+                  shaderCallback: (Rect rect) {
+                    return LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black,
                       ],
-                    ),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      children: List.generate(_holidays.length + 1, (index) {
-                        if (index == _holidays.length) {
-                          if (_todayLineIndex == _holidays.length) {
-                            return Container(
-                              key: _targetKey,
-                              child: _buildTodayLine(),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        }
-
-                        final isTodayHoliday = (index == _todayHolidayIndex);
-                        final isTarget = isTodayHoliday || (index == _todayLineIndex);
-
-                        return Container(
-                          key: isTarget ? _targetKey : null,
-                          child: Column(
-                            children: [
-                              if (index == _todayLineIndex) _buildTodayLine(),
-                              _buildHolidayCard(_holidays[index], isTodayHoliday),
-                            ],
+                      stops: const [0.0, 0.08],
+                    ).createShader(rect);
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: child,
+                );
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics()),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 16.0),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Hero(
+                              tag: 'back_button',
+                              child: CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => Navigator.pop(context),
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF141110),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(CupertinoIcons.back,
+                                      color: Colors.white),
+                                ),
+                              ),
+                            ),
                           ),
-                        );
-                      }),
+                          const Text(
+                            'Holidays',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontFamily: 'Salena',
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                              color: Color(0xFFFF9B7A),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                  if (_isLoading)
+                    const SliverFillRemaining(
+                      child: Center(
+                          child: CupertinoActivityIndicator(radius: 16)),
+                    )
+                  else if (_holidays.isEmpty)
+                    SliverFillRemaining(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              CupertinoIcons.calendar,
+                              size: 64,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No holidays found for $_currentYear.',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.all(16),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index == _holidays.length) {
+                              if (_todayLineIndex == _holidays.length) {
+                                return Container(
+                                  key: _targetKey,
+                                  child: _buildTodayLine(),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            }
+                            final isTodayHoliday =
+                                (index == _todayHolidayIndex);
+                            final isTarget = isTodayHoliday ||
+                                (index == _todayLineIndex);
+                            return Container(
+                              key: isTarget ? _targetKey : null,
+                              child: Column(
+                                children: [
+                                  if (index == _todayLineIndex)
+                                    _buildTodayLine(),
+                                  _buildHolidayCard(
+                                      _holidays[index], isTodayHoliday),
+                                ],
+                              ),
+                            );
+                          },
+                          childCount: _holidays.length + 1,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
