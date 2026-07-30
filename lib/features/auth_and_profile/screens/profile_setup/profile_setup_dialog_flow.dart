@@ -218,8 +218,6 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
             color: Colors.grey[400],
           ),
         ),
-        const SizedBox(height: 20),
-        const CupertinoActivityIndicator(),
       ],
     );
   }

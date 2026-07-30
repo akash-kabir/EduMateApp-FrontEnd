@@ -204,7 +204,6 @@ class SapProvider with ChangeNotifier {
     _currentSemester = SemesterOption(id: '$termYear-$sessionKey', title: '$termYear Session $sessionKey');
     _availableSemesters = [_currentSemester!];
     notifyListeners();
-    await fetchAttendance();
   }
 
   Future<void> changeSemester(SemesterOption newSemester) async {

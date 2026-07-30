@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:app/features/sapsync/provider/sap_provider.dart';
 import 'package:app/features/sapsync/widgets/sleek_attendance_card.dart';
 import 'package:app/features/sapsync/widgets/sap_hero_visualization.dart';
+import 'package:app/features/sapsync/widgets/sap_skeleton_loader.dart';
 
 class SapAttendanceScreen extends StatefulWidget {
   const SapAttendanceScreen({super.key});
@@ -142,10 +143,11 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                   ),
 
                 // 3. Main Content
-                if (sapProvider.isLoading && records.isEmpty)
+                if (sapProvider.isLoading)
                   const SliverFillRemaining(
-                    child: Center(
-                      child: CircularProgressIndicator(color: Color(0xFF4CD97B)),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: SapSkeletonLoader(),
                     ),
                   )
                 else if (records.isEmpty)
@@ -246,13 +248,15 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
   void _showSettingsModal(BuildContext context, SapProvider sapProvider) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF16181F),
+      backgroundColor: const Color(0xFF141110),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return Padding(
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -338,6 +342,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                         ),
                         onValueChanged: (val) {
                           if (val != null) {
+                            setModalState(() {});
                             sapProvider.updateSession(
                               val,
                               sapProvider.sessionKey.isEmpty ? 'Autumn' : sapProvider.sessionKey,
@@ -381,6 +386,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                         },
                         onValueChanged: (val) {
                           if (val != null) {
+                            setModalState(() {});
                             final curYear = sapProvider.termYear.isEmpty
                                 ? _getTermOptions(sapProvider.sapUserId).first['year']!
                                 : sapProvider.termYear;
@@ -402,11 +408,9 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 ),
-                child: StatefulBuilder(
-                  builder: (context, setModalState) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -448,10 +452,9 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                           ],
                         ),
                       ],
-                    );
-                  },
+                    ),
+                  // Removed inner StatefulBuilder closing
                 ),
-              ),
               const SizedBox(height: 24),
 
               // Disconnect SapSync Button
@@ -498,6 +501,8 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
               const SizedBox(height: 12),
             ],
           ),
+        );
+          },
         );
       },
     );
