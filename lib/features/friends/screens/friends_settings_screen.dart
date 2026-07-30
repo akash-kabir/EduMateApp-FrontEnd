@@ -127,8 +127,8 @@ class _FriendsSettingsScreenState extends State<FriendsSettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Stack(
+                  alignment: Alignment.center,
                   children: [
                     const Text(
                       'Manage Friends',
@@ -139,15 +139,12 @@ class _FriendsSettingsScreenState extends State<FriendsSettingsScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: _showAddFriendDialog,
-                      child: Row(
-                        children: const [
-                          Icon(CupertinoIcons.add_circled, color: AuthPalette.teal),
-                          SizedBox(width: 4),
-                          Text('Add Friend', style: TextStyle(color: AuthPalette.teal, fontWeight: FontWeight.bold)),
-                        ],
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: _showAddFriendDialog,
+                        child: const Icon(CupertinoIcons.add_circled, color: AuthPalette.teal, size: 28),
                       ),
                     ),
                   ],
@@ -160,42 +157,73 @@ class _FriendsSettingsScreenState extends State<FriendsSettingsScreen> {
                       : _friends.isEmpty
                           ? Center(
                               child: Text(
-                                'No friends added.\nTap "Add Friend" to add by Roll Number.',
+                                'No friends added.\nTap "+" to add by Roll Number.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                               ),
                             )
-                          : ListView.builder(
-                              itemCount: _friends.length,
-                              itemBuilder: (context, index) {
-                                final friend = _friends[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12.0),
-                                  child: _buildGlassCard(
-                                    child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundColor: AuthPalette.teal,
-                                        child: Text(
-                                          friend.nameTag.substring(0, 1).toUpperCase(),
+                          : Theme(
+                              data: Theme.of(context).copyWith(
+                                canvasColor: Colors.transparent,
+                              ),
+                              child: ReorderableListView.builder(
+                                itemCount: _friends.length,
+                                proxyDecorator: (child, index, animation) {
+                                  return Material(
+                                    type: MaterialType.transparency,
+                                    child: child,
+                                  );
+                                },
+                                onReorder: (oldIndex, newIndex) async {
+                                  setState(() {
+                                    if (newIndex > oldIndex) {
+                                      newIndex -= 1;
+                                    }
+                                    final friend = _friends.removeAt(oldIndex);
+                                    _friends.insert(newIndex, friend);
+                                  });
+                                  await FriendsStorageService.saveFriends(_friends);
+                                },
+                                itemBuilder: (context, index) {
+                                  final friend = _friends[index];
+                                  return Padding(
+                                    key: ValueKey(friend.rollNo),
+                                    padding: const EdgeInsets.only(bottom: 12.0),
+                                    child: _buildGlassCard(
+                                      child: ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundColor: AuthPalette.teal,
+                                          child: Text(
+                                            friend.nameTag.substring(0, 1).toUpperCase(),
+                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        title: Text(
+                                          friend.nameTag,
                                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                         ),
-                                      ),
-                                      title: Text(
-                                        friend.nameTag,
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                      ),
-                                      subtitle: Text(
-                                        '${friend.rollNo} • ${friend.section} (${friend.semester})',
-                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
-                                      ),
-                                      trailing: IconButton(
-                                        icon: const Icon(CupertinoIcons.trash, color: Colors.redAccent, size: 20),
-                                        onPressed: () => _confirmDelete(friend),
+                                        subtitle: Text(
+                                          '${friend.rollNo} • ${friend.section} (${friend.semester})',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+                                        ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(CupertinoIcons.trash, color: Colors.redAccent, size: 20),
+                                              onPressed: () => _confirmDelete(friend),
+                                            ),
+                                            ReorderableDragStartListener(
+                                              index: index,
+                                              child: const Icon(Icons.drag_handle, color: Colors.grey),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
+                                  );
+                                },
+                              ),
                             ),
                 ),
               ],

@@ -313,7 +313,7 @@ class _FriendsScheduleScreenState extends State<FriendsScheduleScreen> {
                                     ),
                                     const SizedBox(height: 24),
                                     CupertinoButton(
-                                      color: AuthPalette.teal,
+                                      color: AuthPalette.coral,
                                       borderRadius: BorderRadius.circular(12),
                                       onPressed: () async {
                                         await showModalBottomSheet(
@@ -326,6 +326,7 @@ class _FriendsScheduleScreenState extends State<FriendsScheduleScreen> {
                                       },
                                       child: const Text('Add Friends',
                                           style: TextStyle(
+                                              color: Colors.black,
                                               fontWeight: FontWeight.bold)),
                                     ),
                                   ],

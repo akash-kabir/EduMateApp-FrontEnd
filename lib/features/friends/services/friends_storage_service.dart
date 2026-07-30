@@ -34,7 +34,7 @@ class FriendsStorageService {
     }
 
     friends.add(friend);
-    await _saveFriends(friends);
+    await saveFriends(friends);
     return true;
   }
 
@@ -42,11 +42,11 @@ class FriendsStorageService {
   static Future<void> removeFriend(String rollNo) async {
     final friends = await getFriends();
     friends.removeWhere((f) => f.rollNo.toUpperCase() == rollNo.toUpperCase());
-    await _saveFriends(friends);
+    await saveFriends(friends);
   }
 
-  /// Internal save method
-  static Future<void> _saveFriends(List<FriendModel> friends) async {
+  /// Save entire list (useful for reordering)
+  static Future<void> saveFriends(List<FriendModel> friends) async {
     final prefs = await SharedPreferences.getInstance();
     final String encoded = jsonEncode(friends.map((f) => f.toJson()).toList());
     await prefs.setString(_key, encoded);
