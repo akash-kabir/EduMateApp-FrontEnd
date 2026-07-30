@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:app/features/home/services/home_schedule_service.dart';
 import 'package:app/shared/widgets/skeletons/todays_schedule_skeleton.dart';
+import 'package:app/features/home/services/home_schedule_service.dart';
+import 'package:provider/provider.dart';
+import 'package:app/features/schedule/provider/schedule_provider.dart';
 
 class _OngoingTimeIndicator extends StatefulWidget {
   final String endTimeStr;
@@ -105,6 +107,77 @@ class _TodaysScheduleCardState extends State<TodaysScheduleCard> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+
+    // Try synchronous cache load to skip skeleton
+    final provider = Provider.of<ScheduleProvider>(context, listen: false);
+    if (provider.semester != null) {
+      final memoryCache = provider.getSchedule(provider.semester!.toString());
+      if (memoryCache != null) {
+        final classesList = memoryCache['classes'] as List<dynamic>?;
+        if (classesList != null && classesList.isNotEmpty && provider.section != null) {
+          final normalizedSaved = provider.section!.toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
+          var sectionData = classesList.firstWhere((s) {
+            final normName = s['name'].toString().toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
+            return normalizedSaved == normName;
+          }, orElse: () => null) ?? classesList.first;
+
+          if (sectionData['schedule'] is List) {
+            final todayWeekday = DateTime.now().weekday;
+            for (var dayData in sectionData['schedule']) {
+              final dayNum = dayData['day'] is int 
+                  ? dayData['day'] as int 
+                  : int.tryParse(dayData['day'].toString()) ?? -1;
+              
+              if (dayNum == todayWeekday && dayData['periods'] is List) {
+                // If it's the weekend, we don't have periods normally, but this checks properly.
+                // Note: We skip synchronous holiday checking here to keep it instant, 
+                // but _fetchSchedule() will correct it a moment later if today IS a holiday.
+                final todaysClasses = List<dynamic>.from(dayData['periods']);
+                
+                // Need to filter electives
+                final selectedElectives = provider.selectedElectives ?? {};
+                final filteredClasses = <dynamic>[];
+                
+                for (var c in todaysClasses) {
+                  final isElective = c['isElective'] == true;
+                  if (!isElective) {
+                    filteredClasses.add(c);
+                  } else {
+                    final electiveGroup = c['electiveGroup']?.toString() ?? '';
+                    final selectedSubject = selectedElectives[electiveGroup];
+                    if (selectedSubject != null && selectedSubject != 'Not Selected') {
+                      final options = c['options'] as List<dynamic>?;
+                      if (options != null) {
+                        for (var opt in options) {
+                          if (opt['subject'] == selectedSubject) {
+                            filteredClasses.add({
+                              ...c,
+                              'subject': opt['subject'],
+                              'room': opt['room'],
+                              'faculty': opt['faculty'],
+                            });
+                            break;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                
+                _scheduleData = HomeScheduleData(
+                  isHoliday: false,
+                  classes: filteredClasses,
+                  hasCachedTimetable: true,
+                );
+                _isLoading = false; // Bypass skeleton!
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
     _fetchSchedule();
     // Refresh card UI every second but only rebuild when minute changes
     int lastMinute = DateTime.now().minute;

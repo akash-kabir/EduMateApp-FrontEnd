@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:app/theme/theme.dart';
 import 'package:app/shared/provider/animation_provider.dart';
 import 'package:app/features/sapsync/provider/sap_provider.dart';
+import 'package:app/features/schedule/provider/schedule_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:app/features/splash/screens/splash_screen.dart';
 import 'package:app/features/pwa/screens/pwa_install_screen.dart';
@@ -54,6 +55,7 @@ class _EduMateAppState extends State<EduMateApp> with TickerProviderStateMixin {
       providers: [
         ChangeNotifierProvider.value(value: _animationProvider),
         ChangeNotifierProvider(create: (_) => SapProvider()),
+        ChangeNotifierProvider(create: (_) => ScheduleProvider()),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,

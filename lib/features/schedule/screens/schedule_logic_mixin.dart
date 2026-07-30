@@ -9,6 +9,8 @@ import 'package:app/features/auth_and_profile/services/token_refresh_service.dar
 import 'package:app/features/schedule/services/schedule_database_helper.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 import 'package:app/features/schedule/screens/schedule_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:app/features/schedule/provider/schedule_provider.dart';
 
 mixin ScheduleLogicMixin on State<ScheduleScreen> {
   late DateTime selectedDate;
@@ -96,20 +98,52 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
     weekStartDate = selectedDate.subtract(
       Duration(days: selectedDate.weekday % 7),
     );
+
+    // Instant synchronous cache load to eliminate skeleton loader entirely
+    final provider = Provider.of<ScheduleProvider>(context, listen: false);
+    if (provider.semester != null) {
+      selectedBranch = provider.branch ?? 'CSE';
+      selectedSemester = provider.semester!;
+      selectedSection = provider.section ?? 'CSE-1';
+      savePreference = provider.savePreference ?? false;
+      selectedElectives = provider.selectedElectives ?? {};
+      
+      scheduleData = provider.getSchedule(selectedSemester.toString());
+      availableElectives = provider.getElectives(selectedSemester.toString()) ?? {};
+      rawElectiveData = provider.getRawElectives(selectedSemester.toString()) ?? [];
+      isLoading = false; // We have data, no loader needed!
+    } else {
+      isLoading = true; // First time app open, show loader while SharedPreferences reads
+    }
+
     loadSavedPreferenceAndFetchSchedule();
     _fetchCurrentYearHolidays();
     startRefreshTimer();
   }
 
   Future<void> _fetchCurrentYearHolidays() async {
+    final provider = Provider.of<ScheduleProvider>(context, listen: false);
+    final year = DateTime.now().year;
+    final cached = provider.getHolidays(year);
+    if (cached != null) {
+      if (mounted) {
+        setState(() {
+          currentYearHolidays = cached;
+        });
+      }
+      return;
+    }
+
     try {
-      final response = await http.get(Uri.parse('${Config.holidayBaseEndpoint}/${DateTime.now().year}'));
+      final response = await http.get(Uri.parse('${Config.holidayBaseEndpoint}/$year'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
+          final holidaysList = data['data'] as List<dynamic>;
+          provider.setHolidays(year, holidaysList);
           if (mounted) {
             setState(() {
-              currentYearHolidays = data['data'] as List<dynamic>;
+              currentYearHolidays = holidaysList;
             });
           }
         }
@@ -192,13 +226,35 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       }
     }
     
-    setState(() {
-      selectedElectives = tempSelected;
-    });
+    final provider = Provider.of<ScheduleProvider>(context, listen: false);
+    provider.selectedElectives = tempSelected;
+    
+    if (mounted) {
+      setState(() {
+        selectedElectives = tempSelected;
+      });
+    }
   }
 
   Future<void> fetchAvailableElectives(int semester,
       {bool isPolling = false, bool skipLoadPreferences = false}) async {
+    final provider = Provider.of<ScheduleProvider>(context, listen: false);
+    final cachedGrouped = provider.getElectives(semester.toString());
+    final cachedRaw = provider.getRawElectives(semester.toString());
+
+    if (cachedGrouped != null && cachedRaw != null && !isPolling) {
+      if (mounted) {
+        setState(() {
+          availableElectives = cachedGrouped;
+          rawElectiveData = cachedRaw;
+        });
+        if (!skipLoadPreferences) {
+          await loadSavedElectivePreferences();
+        }
+      }
+      return;
+    }
+
     bool hasCache = false;
     String? localUpdatedAt;
 
@@ -232,6 +288,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
           });
           
           hasCache = true;
+          provider.setElectives(semester.toString(), grouped, raw);
           if (mounted && !isPolling) {
             setState(() {
               rawElectiveData = raw;
@@ -273,8 +330,9 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
         final resData = jsonDecode(response.body);
         if (resData['success'] == true && resData['data'] != null) {
           final electivesList = resData['data']['electives'] as List;
-          final serverUpdatedAtStr = resData['data']['updatedAt'] as String?;
+          final serverUpdatedAt = resData['data']['updatedAt'] as String?;
           final Map<String, List<String>> grouped = {};
+          
           for (var item in electivesList) {
             final group = item['electiveGroup'] as String;
             final name = item['name'] as String;
@@ -282,11 +340,13 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
           }
 
           final cacheData = {
-            'updatedAt': serverUpdatedAtStr,
+            'updatedAt': serverUpdatedAt,
             'raw': electivesList,
             'grouped': grouped,
           };
-          await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), cacheData, serverUpdatedAt: serverUpdatedAtStr);
+          
+          await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), cacheData, serverUpdatedAt: serverUpdatedAt);
+          provider.setElectives(semester.toString(), grouped, electivesList);
 
           if (mounted) {
             setState(() {
@@ -346,6 +406,13 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
             classesPerBranch[selectedBranch]!.add(selectedSection);
           }
         }
+        
+        final provider = Provider.of<ScheduleProvider>(context, listen: false);
+        provider.branch = selectedBranch;
+        provider.semester = selectedSemester;
+        provider.section = selectedSection;
+        provider.savePreference = savePreference;
+        provider.selectedElectives = selectedElectives;
       });
       await Future.wait([
         fetchAvailableElectives(selectedSemester),
@@ -376,6 +443,13 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
             classesPerBranch[selectedBranch]!.add(selectedSection);
           }
         }
+
+        final provider = Provider.of<ScheduleProvider>(context, listen: false);
+        provider.branch = selectedBranch;
+        provider.semester = selectedSemester;
+        provider.section = selectedSection;
+        provider.savePreference = savePreference;
+        provider.selectedElectives = selectedElectives;
       });
       await Future.wait([
         fetchAvailableElectives(selectedSemester),
@@ -401,10 +475,24 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
     final currentRequestId = ++lastRequestId;
     final requestedSemester = selectedSemester;
 
+    final provider = Provider.of<ScheduleProvider>(context, listen: false);
+    final memoryCache = provider.getSchedule(requestedSemester.toString());
+
+    if (memoryCache != null && !isPolling) {
+      if (mounted) {
+        setState(() {
+          scheduleData = memoryCache;
+          isLoading = false;
+        });
+      }
+      return;
+    }
+
     final cachedData = await getCachedScheduleData(requestedSemester.toString());
     final hasCache = cachedData != null;
     
     if (hasCache && !isPolling) {
+      provider.setSchedule(requestedSemester.toString(), cachedData);
       if (mounted) {
         setState(() {
           scheduleData = cachedData;
@@ -454,6 +542,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
         if (responseData is Map && responseData.containsKey('data')) {
           final classData = responseData['data'];
           await cacheScheduleData(requestedSemester.toString(), classData, updatedAt: serverUpdatedAt);
+          provider.setSchedule(requestedSemester.toString(), classData);
 
           if (mounted) {
             setState(() {
@@ -463,6 +552,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
           }
         } else {
           await cacheScheduleData(requestedSemester.toString(), responseData, updatedAt: serverUpdatedAt);
+          provider.setSchedule(requestedSemester.toString(), responseData);
           if (mounted) {
             setState(() {
               scheduleData = responseData;
