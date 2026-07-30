@@ -347,16 +347,45 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
           }
         }
       });
-      fetchAvailableElectives(selectedSemester);
-      fetchScheduleFromBackend();
+      await Future.wait([
+        fetchAvailableElectives(selectedSemester),
+        fetchScheduleFromBackend()
+      ]);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     } else {
+      // Fallback to user profile
+      final profileBranch = await SharedPreferencesService.getString('user_branch');
+      final profileSemester = await SharedPreferencesService.getString('user_semester');
+      final profileSection = await SharedPreferencesService.getString('user_section');
+
       setState(() {
-        selectedBranch = 'CSE';
-        selectedSemester = 1;
-        selectedSection = 'CSE-1';
+        selectedBranch = profileBranch ?? 'CSE';
+        selectedSemester = profileSemester != null 
+            ? (int.tryParse(profileSemester.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1) 
+            : 1;
+        selectedSection = profileSection ?? 'CSE-1';
+        savePreference = false;
+        
+        if (selectedBranch.isNotEmpty && selectedSection.isNotEmpty) {
+          classesPerBranch.putIfAbsent(selectedBranch, () => []);
+          if (!classesPerBranch[selectedBranch]!.contains(selectedSection)) {
+            classesPerBranch[selectedBranch]!.add(selectedSection);
+          }
+        }
       });
-      fetchAvailableElectives(selectedSemester);
-      fetchScheduleFromBackend();
+      await Future.wait([
+        fetchAvailableElectives(selectedSemester),
+        fetchScheduleFromBackend()
+      ]);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -379,7 +408,6 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       if (mounted) {
         setState(() {
           scheduleData = cachedData;
-          isLoading = false;
         });
       }
     }

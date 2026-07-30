@@ -97,17 +97,31 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
     }
     _setStep(DialogStep.sending);
     
-    // Simulate sending animation duration
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // Animate "Fetching Data..." for at least 1 second while doing the network request
+    final minAnimTime = Future.delayed(const Duration(milliseconds: 1000));
+    final profileFuture = _logic.fetchProfileData(rollNo);
     
-    final found = await _logic.autoSetupFromRollNo(rollNo);
+    await Future.wait([minAnimTime, profileFuture]);
+    final found = await profileFuture;
     
     if (!mounted) return;
 
     if (found) {
       _setStep(DialogStep.receiving);
-      await Future.delayed(const Duration(milliseconds: 1500));
-      if (mounted) _setStep(DialogStep.dataFound);
+      
+      // Animate "Downloading Data..." for at least 1 second while downloading schedules
+      final minDownloadAnimTime = Future.delayed(const Duration(milliseconds: 1000));
+      final downloadFuture = _logic.downloadScheduleAndSave();
+      
+      await Future.wait([minDownloadAnimTime, downloadFuture]);
+      final downloadSuccess = await downloadFuture;
+      
+      if (!mounted) return;
+      if (downloadSuccess) {
+        _setStep(DialogStep.dataFound);
+      } else {
+        _setStep(DialogStep.manualEntry);
+      }
     } else {
       _setStep(DialogStep.manualEntry);
     }
@@ -408,13 +422,21 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
         ],
         const SizedBox(height: 16),
         CupertinoButton(
-          onPressed: () {
-            // Save in the background but don't block
-            _logic.saveProfile();
-            widget.onComplete?.call();
-            Navigator.pop(context);
-          },
-          child: Text('Done', style: TextStyle(color: accent, fontWeight: FontWeight.w600, fontSize: 16)),
+          onPressed: _logic.isLoading 
+            ? null 
+            : () async {
+                // Wait for the background fetch to complete before proceeding
+                final result = await _logic.saveProfile();
+                if (result['success'] == true) {
+                  widget.onComplete?.call();
+                  if (mounted) Navigator.pop(context);
+                } else {
+                  setState(() => _errorMessage = result['message'] ?? 'Failed to save');
+                }
+              },
+          child: _logic.isLoading 
+            ? const CupertinoActivityIndicator()
+            : Text('Done', style: TextStyle(color: accent, fontWeight: FontWeight.w600, fontSize: 16)),
         ),
       ],
     );

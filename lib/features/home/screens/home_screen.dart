@@ -49,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   String? token;
   bool openAppToTimesheet = false;
   String _userRole = '';
+  Key _scheduleCardKey = UniqueKey();
   
   SyncState _syncState = SyncState.idle;
   late AnimationController _syncAnimationController;
@@ -156,6 +157,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       token = newToken;
       openAppToTimesheet = openTimesheetPref;
       _userRole = role ?? '';
+      _scheduleCardKey = UniqueKey(); // Force TodaysScheduleCard to re-fetch data
     });
   }
 
@@ -527,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: TodaysScheduleCard(),
+                child: TodaysScheduleCard(key: _scheduleCardKey),
               ),
             ),
 

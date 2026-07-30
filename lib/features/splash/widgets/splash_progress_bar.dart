@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:app/theme/theme.dart';
 import 'package:app/shared/services/api_service.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
+import 'package:app/features/schedule/services/schedule_sync_service.dart';
 
 class SplashProgressBar extends StatefulWidget {
   final Function(double) onProgressUpdate;
@@ -109,6 +110,14 @@ class _SplashProgressBarState extends State<SplashProgressBar>
                 userData['section'],
               );
               await SharedPreferencesService.setBool('savePreference', true);
+            }
+
+            // Fire off a background fetch for all schedule data if semester is known
+            final semesterStr = userData['semester']?.toString() ?? '';
+            final semesterMatch = RegExp(r'\d+').firstMatch(semesterStr);
+            if (semesterMatch != null) {
+              final semNum = int.parse(semesterMatch.group(0)!);
+              await ScheduleSyncService.prefetchAllScheduleData(semNum);
             }
           }
         }

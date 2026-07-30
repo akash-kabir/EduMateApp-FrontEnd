@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:app/features/auth_and_profile/screens/profile_setup/profile_setup_constants.dart';
 import 'package:http/http.dart' as http;
 import 'package:app/shared/config.dart';
-import 'package:app/features/auth_and_profile/services/token_refresh_service.dart';
-import 'package:app/features/schedule/services/schedule_database_helper.dart';
+import 'package:app/features/schedule/services/schedule_sync_service.dart';
 import 'package:app/shared/services/api_service.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/shared/services/student_data_service.dart';
@@ -73,9 +72,8 @@ class ProfileSetupLogic extends ChangeNotifier {
 
   /// Auto-setup from roll number: calls the lookup API and populates fields.
   /// Returns true if data was found and populated, false otherwise.
-  Future<bool> autoSetupFromRollNo(String rollNo) async {
+  Future<bool> fetchProfileData(String rollNo) async {
     isSearching = true;
-    autoSetupSuccess = false;
     autoSetupError = null;
     notifyListeners();
 
@@ -95,32 +93,31 @@ class ProfileSetupLogic extends ChangeNotifier {
           detectedElectives = List<String>.from(data['electives']);
         }
         
-        // Auto-save quietly in the background
-        final saveRes = await saveProfile();
-        
-        if (saveRes['success'] == true) {
-          autoSetupSuccess = true;
-          isSearching = false;
-          notifyListeners();
-          return true;
-        } else {
-          autoSetupError = saveRes['message'] ?? 'Data found but failed to save';
-          autoSetupSuccess = false;
-          isSearching = false;
-          notifyListeners();
-          return false;
-        }
-      } else {
-        autoSetupError = result['message'] ?? 'Roll number not found';
-        autoSetupSuccess = false;
         isSearching = false;
         notifyListeners();
-        return false;
+        return true;
+      } else {
+        autoSetupError = result['message'] ?? 'Student data not found';
       }
     } catch (e) {
-      autoSetupError = 'Error searching: $e';
+      autoSetupError = 'An error occurred while fetching data';
+    }
+
+    isSearching = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<bool> downloadScheduleAndSave() async {
+    final saveRes = await saveProfile();
+    
+    if (saveRes['success'] == true) {
+      autoSetupSuccess = true;
+      notifyListeners();
+      return true;
+    } else {
+      autoSetupError = saveRes['message'] ?? 'Data found but failed to save';
       autoSetupSuccess = false;
-      isSearching = false;
       notifyListeners();
       return false;
     }
@@ -209,9 +206,12 @@ class ProfileSetupLogic extends ChangeNotifier {
       if (result['success'] ?? false) {
         final responseData = result['data'];
         if (responseData != null && responseData['data'] != null) {
-          await SharedPreferencesService.saveFullUserProfile(
-            responseData['data'] as Map<String, dynamic>,
-          );
+          final backendProfile = Map<String, dynamic>.from(responseData['data'] as Map<String, dynamic>);
+          // Ensure detected electives are preserved in local storage even if the update endpoint response omits them
+          if (detectedElectives.isNotEmpty && (!backendProfile.containsKey('electives') || backendProfile['electives'] == null || (backendProfile['electives'] as List).isEmpty)) {
+            backendProfile['electives'] = detectedElectives;
+          }
+          await SharedPreferencesService.saveFullUserProfile(backendProfile);
         } else {
           final localProfile = Map<String, dynamic>.from(profileData);
           if (detectedElectives.isNotEmpty) {
@@ -227,9 +227,9 @@ class ProfileSetupLogic extends ChangeNotifier {
         await SharedPreferencesService.setString('timesheet_year', selectedYear!);
         await SharedPreferencesService.setBool('timesheet_save_preference', true);
 
-        // Pre-fetch electives so Home Screen can map them immediately
+        // Pre-fetch all schedule data (normal and electives) so Home Screen has it immediately
         final semNum = _getSemesterNumber(selectedSemester!);
-        _prefetchElectives(semNum);
+        await ScheduleSyncService.prefetchAllScheduleData(semNum);
       }
       return result;
     } catch (e) {
@@ -242,38 +242,7 @@ class ProfileSetupLogic extends ChangeNotifier {
     }
   }
 
-  Future<void> _prefetchElectives(int semester) async {
-    try {
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final url = '${Config.electiveBaseEndpoint}/$semester?t=$timestamp';
-      final response = await TokenRefreshService.authenticatedGet(url).timeout(const Duration(seconds: 10));
-      if (response.statusCode == 200) {
-        final resData = jsonDecode(response.body);
-        if (resData['success'] == true && resData['data'] != null) {
-          final electivesList = resData['data']['electives'] as List;
-          final serverUpdatedAtStr = resData['data']['updatedAt'] as String?;
-          final Map<String, List<String>> grouped = {};
-          for (var item in electivesList) {
-            final group = item['electiveGroup'] as String;
-            final name = item['name'] as String;
-            grouped.putIfAbsent(group, () => []).add(name);
-          }
-          final cacheData = {
-            'updatedAt': serverUpdatedAtStr,
-            'raw': electivesList,
-            'grouped': grouped,
-          };
-          await ScheduleDatabaseHelper.instance.cacheElectiveData(
-            semester.toString(), 
-            cacheData, 
-            serverUpdatedAt: serverUpdatedAtStr
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Error prefetching electives: $e');
-    }
-  }
+
 
   @override
   void notifyListeners() {
