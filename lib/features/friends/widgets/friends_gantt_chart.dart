@@ -30,8 +30,8 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
 
   static const double _pixelsPerMinute = 2.4;
   static const double _rowHeight = 78.0;
-  static const double _yAxisWidth = 72.0;
-  static const double _headerHeight = 48.0;
+  static const double _yAxisWidth = 86.0; // Increased slightly for pills
+  static const double _headerHeight = 36.0; // Reduced to shrink gap
 
   double _minMinutes = 480; // Default 8:00 AM
   double _maxMinutes = 1020; // Default 5:00 PM
@@ -271,12 +271,13 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
   @override
   Widget build(BuildContext context) {
     final totalMinutes = _maxMinutes - _minMinutes;
-    final timelineWidth = totalMinutes * _pixelsPerMinute;
+    // Add _yAxisWidth to timelineWidth so the timeline starts after the initial pill area
+    final timelineWidth = (totalMinutes * _pixelsPerMinute) + _yAxisWidth + 24; // Added extra padding at the end
 
     final now = DateTime.now();
     final currentMinutes = (now.hour * 60 + now.minute).toDouble();
     final hasCurrentTime = currentMinutes >= _minMinutes && currentMinutes <= _maxMinutes;
-    final currentTimeX = (currentMinutes - _minMinutes) * _pixelsPerMinute;
+    final currentTimeX = ((currentMinutes - _minMinutes) * _pixelsPerMinute) + _yAxisWidth;
 
     bool intersectsClass = false;
     for (var p in widget.userSchedule) {
@@ -307,54 +308,19 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
           // Seamless Top Bar (Time Scale Header)
           SizedBox(
             height: _headerHeight,
-            child: Row(
+            child: Stack(
               children: [
-                // Top-Left corner Y-Axis Title
-                Container(
-                  width: _yAxisWidth,
-                  height: _headerHeight,
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'TIME',
-                    style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.0),
-                  ),
-                ),
-                // Top-Right Scrollable Time Scale Header
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _horizontalScrollController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const ClampingScrollPhysics(),
-                    child: SizedBox(
-                      width: timelineWidth,
-                      height: _headerHeight,
-                      child: Stack(
-                        children: [
-                          ..._buildTimeTicks(timelineWidth),
-                          if (hasCurrentTime)
-                            Positioned(
-                              left: currentTimeX - 22,
-                              top: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: pointerColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: pointerColor.withValues(alpha: 0.5),
-                                      blurRadius: 8,
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
+                SingleChildScrollView(
+                  controller: _horizontalScrollController,
+                  scrollDirection: Axis.horizontal,
+                  physics: const ClampingScrollPhysics(),
+                  child: SizedBox(
+                    width: timelineWidth,
+                    height: _headerHeight,
+                    child: Stack(
+                      children: [
+                        ..._buildTimeTicks(timelineWidth),
+                      ],
                     ),
                   ),
                 ),
@@ -367,60 +333,61 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
             child: SingleChildScrollView(
               controller: _verticalScrollController,
               physics: const BouncingScrollPhysics(),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Stack(
                 children: [
-                  // Y-Axis Floating Avatar & Label List
-                  SizedBox(
-                    width: _yAxisWidth,
-                    child: Column(
-                      children: [
-                        _buildYAxisCell('You', isUser: true),
-                        ...widget.friends.map((f) => _buildYAxisCell(f.nameTag)),
-                      ],
-                    ),
-                  ),
-
-                  // Horizontal Timeline Canvas (Synchronized with Header)
-                  Expanded(
-                    child: SingleChildScrollView(
-                      controller: _gridHorizontalScrollController,
-                      scrollDirection: Axis.horizontal,
-                      physics: const ClampingScrollPhysics(),
-                      child: SizedBox(
-                        width: timelineWidth,
-                        child: Stack(
-                          children: [
-                            ..._buildGridLines(timelineWidth),
-                            Column(
-                              children: [
-                                _buildTimelineRow(widget.userSchedule, isUser: true, nowMinutes: currentMinutes),
-                                ...widget.friends.map(
-                                  (f) => _buildTimelineRow(_getFriendTodayPeriods(f.rollNo), nowMinutes: currentMinutes),
-                                ),
-                              ],
-                            ),
-                            if (hasCurrentTime)
-                              Positioned(
-                                left: currentTimeX,
-                                top: 0,
-                                bottom: 0,
-                                child: Container(
-                                  width: 2,
-                                  decoration: BoxDecoration(
-                                    color: pointerColor,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: pointerColor.withValues(alpha: 0.6),
-                                        blurRadius: 6,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
-                                  ),
+                  // Full-width Horizontal Timeline Canvas
+                  SingleChildScrollView(
+                    controller: _gridHorizontalScrollController,
+                    scrollDirection: Axis.horizontal,
+                    physics: const ClampingScrollPhysics(),
+                    child: SizedBox(
+                      width: timelineWidth,
+                      child: Stack(
+                        children: [
+                          ..._buildGridLines(timelineWidth),
+                          Column(
+                            children: [
+                              _buildTimelineRow(widget.userSchedule, isUser: true, nowMinutes: currentMinutes),
+                              ...widget.friends.map(
+                                (f) => _buildTimelineRow(_getFriendTodayPeriods(f.rollNo), nowMinutes: currentMinutes),
+                              ),
+                            ],
+                          ),
+                          if (hasCurrentTime)
+                            Positioned(
+                              left: currentTimeX,
+                              top: 0,
+                              bottom: 0,
+                              child: Container(
+                                width: 2,
+                                decoration: BoxDecoration(
+                                  color: pointerColor,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: pointerColor.withValues(alpha: 0.6),
+                                      blurRadius: 6,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
                                 ),
                               ),
-                          ],
-                        ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // Y-Axis Floating Avatar & Label List (Pills)
+                  Positioned(
+                    left: 8,
+                    top: 0,
+                    bottom: 0,
+                    child: IgnorePointer( // Let touches pass through the floating pills to the grid
+                      child: Column(
+                        children: [
+                          _buildYAxisCell('You', isUser: true),
+                          ...widget.friends.map((f) => _buildYAxisCell(f.nameTag)),
+                        ],
                       ),
                     ),
                   ),
@@ -434,19 +401,41 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
   }
 
   Widget _buildYAxisCell(String label, {bool isUser = false}) {
-    return Container(
-      width: _yAxisWidth,
+    return SizedBox(
+      width: _yAxisWidth - 16,
       height: _rowHeight,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: isUser ? AuthPalette.teal : Colors.white.withValues(alpha: 0.8),
-          fontWeight: isUser ? FontWeight.w800 : FontWeight.w600,
-          fontSize: 13,
+      child: Center(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isUser ? AuthPalette.teal : AuthPalette.coral,
+                    fontWeight: isUser ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+          ),
         ),
       ),
     );
@@ -464,7 +453,7 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
           final end = pMap['end'] as double;
 
           final duration = (end > start) ? (end - start) : 50.0;
-          final left = (start - _minMinutes) * _pixelsPerMinute;
+          final left = ((start - _minMinutes) * _pixelsPerMinute) + _yAxisWidth;
           final width = duration * _pixelsPerMinute;
 
           final subject = _extractSubjectName(p);
@@ -583,7 +572,7 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
     for (int h = startHour; h <= endHour; h++) {
       final minutes = h * 60.0;
       if (minutes >= _minMinutes && minutes <= _maxMinutes) {
-        final x = (minutes - _minMinutes) * _pixelsPerMinute;
+        final x = ((minutes - _minMinutes) * _pixelsPerMinute) + _yAxisWidth;
         final displayHour = h % 12 == 0 ? 12 : h % 12;
         final amPm = h >= 12 ? 'PM' : 'AM';
 
@@ -623,7 +612,7 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
     for (int h = startHour; h <= endHour; h++) {
       final minutes = h * 60.0;
       if (minutes >= _minMinutes && minutes <= _maxMinutes) {
-        final x = (minutes - _minMinutes) * _pixelsPerMinute;
+        final x = ((minutes - _minMinutes) * _pixelsPerMinute) + _yAxisWidth;
         lines.add(
           Positioned(
             left: x,

@@ -78,6 +78,107 @@ class _FriendsSettingsScreenState extends State<FriendsSettingsScreen> {
     );
   }
 
+  Future<void> _editFriendName(FriendModel friend) async {
+    final TextEditingController controller = TextEditingController(text: friend.nameTag);
+    bool isSaving = false;
+
+    final newName = await showGlassmorphicDialog<String>(
+      context: context,
+      child: StatefulBuilder(
+        builder: (context, setDialogState) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Edit Friend Name',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              const SizedBox(height: 12),
+              CupertinoTextField(
+                controller: controller,
+                placeholder: 'Name Tag (e.g., John)',
+                placeholderStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                style: const TextStyle(color: Colors.white),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: const Center(
+                          child: Text('Cancel', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: () {
+                        if (controller.text.trim().isEmpty) return;
+                        setDialogState(() => isSaving = true);
+                        Navigator.pop(context, controller.text.trim());
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AuthPalette.coral,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: isSaving
+                              ? const CupertinoActivityIndicator(color: Colors.white)
+                              : const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (newName != null && newName.isNotEmpty && newName != friend.nameTag) {
+      final index = _friends.indexOf(friend);
+      if (index != -1) {
+        setState(() {
+          _friends[index] = FriendModel(
+            rollNo: friend.rollNo,
+            nameTag: newName,
+            semester: friend.semester,
+            section: friend.section,
+            electives: friend.electives,
+          );
+        });
+        await FriendsStorageService.saveFriends(_friends);
+      }
+    }
+  }
+
   Widget _buildGlassCard({required Widget child}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -209,6 +310,10 @@ class _FriendsSettingsScreenState extends State<FriendsSettingsScreen> {
                                         trailing: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
+                                            IconButton(
+                                              icon: const Icon(CupertinoIcons.pencil, color: Color(0xFF10B981), size: 20),
+                                              onPressed: () => _editFriendName(friend),
+                                            ),
                                             IconButton(
                                               icon: const Icon(CupertinoIcons.trash, color: Colors.redAccent, size: 20),
                                               onPressed: () => _confirmDelete(friend),
