@@ -5,6 +5,7 @@ import 'package:app/features/sapsync/provider/sap_provider.dart';
 import 'package:app/features/sapsync/widgets/sleek_attendance_card.dart';
 import 'package:app/features/sapsync/widgets/sap_hero_visualization.dart';
 import 'package:app/features/sapsync/widgets/sap_skeleton_loader.dart';
+import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
 
 class SapAttendanceScreen extends StatefulWidget {
   const SapAttendanceScreen({super.key});
@@ -460,23 +461,63 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
               // Disconnect SapSync Button
               ElevatedButton.icon(
                 onPressed: () async {
-                  final confirm = await showDialog<bool>(
+                  final confirm = await showGlassmorphicDialog<bool>(
                     context: context,
-                    builder: (ctx) => AlertDialog(
-                      backgroundColor: const Color(0xFF1C1C1E),
-                      title: const Text('Disconnect SapSync?', style: TextStyle(color: Colors.white)),
-                      content: const Text(
-                        'This will remove your stored SAP credentials and clear all local attendance data for SapSync. Your main EduMate account will not be affected.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Disconnect SapSync?',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Poppins',
+                          ),
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Disconnect', style: TextStyle(color: Colors.redAccent)),
+                        const SizedBox(height: 12),
+                        Text(
+                          'This will remove your stored SAP credentials and clear all local attendance data for SapSync. Your main EduMate account will not be affected.',
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.white24),
+                                  ),
+                                  child: const Center(
+                                    child: Text('Cancel', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => Navigator.pop(context, true),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.redAccent,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Center(
+                                    child: Text('Disconnect', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
