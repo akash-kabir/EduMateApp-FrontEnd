@@ -1,12 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:app/shared/config.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/features/schedule/services/schedule_database_helper.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'package:app/shared/services/holiday_service.dart';
 
 const String syncScheduleTask = "sync_schedule_task";
@@ -74,40 +72,10 @@ Future<void> _performBackgroundScheduleSync() async {
             classData, 
             serverUpdatedAt: serverUpdatedAt,
           );
-
-          final schedulePref = await SharedPreferencesService.getString('pref_schedule_updates');
-          if (schedulePref != 'false') {
-            await _showLocalNotification('Timetable Updated', 'Your semester $semester schedule was updated by the admin.');
-          }
         }
       }
     }
   }
-}
-
-Future<void> _showLocalNotification(String title, String body) async {
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-
-  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
-  const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
-  await flutterLocalNotificationsPlugin.initialize(settings: initializationSettings);
-
-  const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-    'schedule_updates', 
-    'Schedule Updates',
-    channelDescription: 'Notifications for when your class timetable is updated',
-    importance: Importance.max,
-    priority: Priority.high,
-  );
-  
-  const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
-  
-  await flutterLocalNotificationsPlugin.show(
-    id: 0,
-    title: title,
-    body: body,
-    notificationDetails: platformChannelSpecifics,
-  );
 }
 
 Future<void> _performHolidaySync() async {
@@ -119,59 +87,7 @@ Future<void> _performHolidaySync() async {
     
     // Save to SharedPreferences so app can load instantly
     await SharedPreferencesService.setString('cached_holidays_$year', jsonEncode(holidays));
-    
-    // Schedule notifications for each holiday
-    for (var i = 0; i < holidays.length; i++) {
-      final holiday = holidays[i];
-      if (holiday['date'] != null) {
-        try {
-          final dateStr = holiday['date'];
-          final holidayDate = DateTime.parse(dateStr);
-          
-          // Only schedule if holiday is in the future
-          if (holidayDate.isAfter(DateTime.now())) {
-            // Notification 3 hours before midnight (9 PM the previous day)
-            final notifyTime = holidayDate.subtract(const Duration(hours: 3));
-            
-            // Only schedule if the notify time is also in the future
-            if (notifyTime.isAfter(DateTime.now())) {
-              final holidayPref = await SharedPreferencesService.getString('pref_holiday_reminders');
-              if (holidayPref != 'false') {
-                await _scheduleHolidayNotification(
-                  i + 1000, // Use unique IDs offset from normal updates
-                  holiday['title'] ?? 'Holiday Tomorrow',
-                  notifyTime,
-                );
-              }
-            }
-          }
-        } catch (e) {
-          debugPrint("Failed to parse holiday date: $e");
-        }
-      }
-    }
   }
-}
-
-Future<void> _scheduleHolidayNotification(int id, String title, DateTime scheduledDate) async {
-  final FlutterLocalNotificationsPlugin plugin = FlutterLocalNotificationsPlugin();
-  
-  await plugin.zonedSchedule(
-    id: id,
-    title: 'Holiday Tomorrow!',
-    body: '$title is tomorrow. Enjoy your day off!',
-    scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
-    notificationDetails: const NotificationDetails(
-      android: AndroidNotificationDetails(
-        'holiday_updates',
-        'Holiday Reminders',
-        channelDescription: 'Reminders for upcoming holidays',
-        importance: Importance.max,
-        priority: Priority.high,
-      ),
-    ),
-    androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-  );
 }
 
 Future<void> _performEventSync() async {
@@ -191,26 +107,6 @@ Future<void> _performEventSync() async {
       final List<dynamic> newPosts = data['posts'] ?? [];
       
       if (newPosts.isEmpty) return;
-      
-      final cachedPostsJson = await SharedPreferencesService.getString('cached_events_list');
-      if (cachedPostsJson != null) {
-        final List<dynamic> cachedPosts = jsonDecode(cachedPostsJson);
-        
-        // If there are more posts or the latest post ID doesn't match
-        if (cachedPosts.isEmpty || newPosts.first['_id'] != cachedPosts.first['_id']) {
-          final announcePref = await SharedPreferencesService.getString('pref_announcements');
-          if (announcePref != 'false') {
-            await _showLocalNotification('New Announcement!', newPosts.first['title'] ?? 'A new post was added to the feed.');
-          }
-        }
-      } else {
-        // First time caching
-        final announcePref = await SharedPreferencesService.getString('pref_announcements');
-        if (announcePref != 'false') {
-          await _showLocalNotification('New Announcement!', newPosts.first['title'] ?? 'A new post was added to the feed.');
-        }
-      }
-      
       await SharedPreferencesService.setString('cached_events_list', jsonEncode(newPosts));
     }
   } catch (e) {
@@ -220,12 +116,6 @@ Future<void> _performEventSync() async {
 
 class BackgroundSyncService {
   static Future<void> initialize() async {
-    final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-    
-    // Request notification permissions for Android 13+
-    await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
-
     await Workmanager().initialize(
       callbackDispatcher,
     );

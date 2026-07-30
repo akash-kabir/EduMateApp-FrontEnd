@@ -18,9 +18,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final SapAuthService _sapAuthService = SapAuthService();
   late ScrollController _scrollController;
 
-  bool _scheduleUpdatesEnabled = true;
-  bool _holidayRemindersEnabled = true;
-  bool _announcementsEnabled = true;
   bool _startUpToTimeSheetEnabled = false;
 
   @override
@@ -37,25 +34,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadPreferences() async {
-    // Load existing preferences, defaulting to true if not set
-    final scheduleStr = await SharedPreferencesService.getString('pref_schedule_updates');
-    final holidayStr = await SharedPreferencesService.getString('pref_holiday_reminders');
-    final announceStr = await SharedPreferencesService.getString('pref_announcements');
     final startUpBool = await SharedPreferencesService.getBool('openToTimesheet');
     
     if (mounted) {
       setState(() {
-        _scheduleUpdatesEnabled = scheduleStr != 'false';
-        _holidayRemindersEnabled = holidayStr != 'false';
-        _announcementsEnabled = announceStr != 'false';
         _startUpToTimeSheetEnabled = startUpBool;
       });
     }
   }
 
-  Future<void> _togglePreference(String key, bool value) async {
-    await SharedPreferencesService.setString(key, value.toString());
-  }
 
   Future<void> _handleDisconnectSap() async {
     final bool? confirm = await showDialog<bool>(
@@ -315,62 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 10),
 
-                          // Notifications Section
-                          const Padding(
-                            padding: EdgeInsets.only(left: 8, bottom: 8),
-                            child: Text(
-                              'Notifications',
-                              style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                          ),
-                          _buildGlassCard(
-                            child: Column(
-                              children: [
-                                _buildListTile(
-                                  title: 'Schedule Updates',
-                                  subtitle: 'Alerts when your timetable changes',
-                                  trailing: CupertinoSwitch(
-                                    activeColor: AuthPalette.coral,
-                                    value: _scheduleUpdatesEnabled,
-                                    onChanged: (val) {
-                                      setState(() => _scheduleUpdatesEnabled = val);
-                                      _togglePreference('pref_schedule_updates', val);
-                                    },
-                                  ),
-                                ),
-                                Divider(color: Colors.white.withOpacity(0.1), height: 1, indent: 20),
-                                _buildListTile(
-                                  title: 'Holiday Reminders',
-                                  subtitle: 'Get notified at 9 PM the day before',
-                                  trailing: CupertinoSwitch(
-                                    activeColor: AuthPalette.coral,
-                                    value: _holidayRemindersEnabled,
-                                    onChanged: (val) {
-                                      setState(() => _holidayRemindersEnabled = val);
-                                      _togglePreference('pref_holiday_reminders', val);
-                                    },
-                                  ),
-                                ),
-                                Divider(color: Colors.white.withOpacity(0.1), height: 1, indent: 20),
-                                _buildListTile(
-                                  title: 'Announcements',
-                                  subtitle: 'New events and feed posts',
-                                  trailing: CupertinoSwitch(
-                                    activeColor: AuthPalette.coral,
-                                    value: _announcementsEnabled,
-                                    onChanged: (val) {
-                                      setState(() => _announcementsEnabled = val);
-                                      _togglePreference('pref_announcements', val);
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 10),
 
                           // Accessibility Section
                           const Padding(
