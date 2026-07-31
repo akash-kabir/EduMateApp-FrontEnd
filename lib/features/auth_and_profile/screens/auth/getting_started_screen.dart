@@ -11,6 +11,7 @@ import 'package:app/shared/services/api_service.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 import 'package:app/features/splash/screens/splash_screen_loading.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class GettingStartedScreen extends StatefulWidget {
   const GettingStartedScreen({super.key});
@@ -273,6 +274,33 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                                 onPressed: _loadingGuest ? () {} : () {
                                   _showExitConfirmationDialog(context);
                                 },
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => launchUrl(Uri.parse('https://edumateapp.com/terms-of-service.html'), mode: LaunchMode.externalApplication),
+                                    child: const Text(
+                                      'Terms of Service',
+                                      style: TextStyle(
+                                        color: AuthPalette.coral,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  GestureDetector(
+                                    onTap: () => launchUrl(Uri.parse('https://edumateapp.com/privacy-policy.html'), mode: LaunchMode.externalApplication),
+                                    child: const Text(
+                                      'Privacy Policy',
+                                      style: TextStyle(
+                                        color: AuthPalette.coral,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
