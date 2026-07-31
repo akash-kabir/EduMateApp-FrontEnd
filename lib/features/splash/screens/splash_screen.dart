@@ -22,9 +22,9 @@ class _SplashScreenState extends State<SplashScreen> {
     // Wait a moment for smooth transition
     await Future.delayed(const Duration(seconds: 1));
 
-    if (mounted) {
-      final token = await SharedPreferencesService.getToken();
+    final token = await SharedPreferencesService.getToken();
 
+    if (mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(

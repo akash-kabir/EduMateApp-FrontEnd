@@ -226,14 +226,14 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       }
     }
     
+    if (!mounted) return;
+    
     final provider = Provider.of<ScheduleProvider>(context, listen: false);
     provider.selectedElectives = tempSelected;
     
-    if (mounted) {
-      setState(() {
-        selectedElectives = tempSelected;
-      });
-    }
+    setState(() {
+      selectedElectives = tempSelected;
+    });
   }
 
   Future<void> fetchAvailableElectives(int semester,

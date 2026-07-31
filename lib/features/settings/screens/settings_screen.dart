@@ -6,10 +6,9 @@ import 'package:app/features/schedule/services/schedule_database_helper.dart';
 import 'package:app/features/splash/screens/splash_screen.dart';
 import 'package:app/theme/theme.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
-import 'package:http/http.dart' as http;
 import 'package:app/shared/config.dart';
 import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
-
+import 'package:app/features/auth_and_profile/services/token_refresh_service.dart';
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -264,10 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       try {
         final token = await SharedPreferencesService.getToken();
         if (token != null) {
-          final response = await http.delete(
-            Uri.parse(Config.profileEndpoint),
-            headers: {'Authorization': 'Bearer $token'},
-          );
+          final response = await TokenRefreshService.authenticatedDelete(Config.profileEndpoint);
           
           if (response.statusCode != 200) {
             if (mounted) {

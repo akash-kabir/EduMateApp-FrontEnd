@@ -99,6 +99,8 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     // Clear SAP provider data
     await Provider.of<SapProvider>(context, listen: false).logout();
     
+    if (!mounted) return;
+
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const GettingStartedScreen()),
