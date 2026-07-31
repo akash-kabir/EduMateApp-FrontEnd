@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:app/features/sapsync/provider/sap_provider.dart';
 import 'package:app/features/sapsync/screens/sap_attendance_screen.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SapSetupScreen extends StatefulWidget {
   const SapSetupScreen({super.key});
@@ -271,8 +272,15 @@ class SapSetupScreenState extends State<SapSetupScreen> {
               // Learn More Button
               CupertinoButton(
                 padding: EdgeInsets.zero,
-                onPressed: () {
-                  // Action for learn more
+                onPressed: () async {
+                  final url = Uri.parse('https://edumateapp.com/sapsync-info.html');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  } else {
+                    if (mounted) {
+                      EduMateToast.showCompact(context, message: 'Could not open link', isSuccess: false);
+                    }
+                  }
                 },
                 child: const Text(
                   'Learn more about SapSync',
