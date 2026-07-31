@@ -123,6 +123,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
   }
 
   Widget _buildTodayLine() {
+    final todayStr = DateFormat('dd.MM.yyyy').format(DateTime.now());
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Stack(
@@ -145,15 +146,31 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                 ),
               ],
             ),
-            child: const Text(
-              'TODAY',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 1.0,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'TODAY',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  todayStr,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white70,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -465,9 +482,9 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                   else
                     SliverPadding(
                       padding: const EdgeInsets.all(16),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
+                      sliver: SliverToBoxAdapter(
+                        child: Column(
+                          children: List.generate(_holidays.length + 1, (index) {
                             if (index == _holidays.length) {
                               if (_todayLineIndex == _holidays.length) {
                                 return Container(
@@ -492,8 +509,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                                 ],
                               ),
                             );
-                          },
-                          childCount: _holidays.length + 1,
+                          }),
                         ),
                       ),
                     ),

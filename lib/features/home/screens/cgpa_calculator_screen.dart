@@ -140,7 +140,11 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error: $e';
+        if (e.toString().contains('SocketException')) {
+          errorMessage = 'No internet connection. Please try again.';
+        } else {
+          errorMessage = 'Error: $e';
+        }
         isLoading = false;
       });
     }
@@ -184,7 +188,11 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error: $e';
+        if (e.toString().contains('SocketException')) {
+          errorMessage = 'No internet connection. Please try again.';
+        } else {
+          errorMessage = 'Error: $e';
+        }
         isLoading = false;
       });
     }
@@ -363,7 +371,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
   void _showSettingsModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF16181F),
+      backgroundColor: const Color(0xFF141110),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -550,6 +558,31 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                         ),
                       ),
                     )
+                  else if (selectedBranch == null)
+                    SliverFillRemaining(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              errorMessage == 'No internet connection. Please try again.' 
+                                  ? CupertinoIcons.wifi_slash 
+                                  : CupertinoIcons.doc_text_search, 
+                              size: 64, 
+                              color: Colors.grey[800],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              errorMessage == 'No internet connection. Please try again.'
+                                  ? 'No internet connection.\nPlease check your connection and try again.'
+                                  : 'No curriculum loaded.\nTap the settings icon to select a branch.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
                   else
                     SliverToBoxAdapter(
                       child: Padding(
@@ -557,24 +590,6 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (selectedBranch == null && !isLoading)
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 100.0),
-                                  child: Column(
-                                    children: [
-                                      Icon(CupertinoIcons.doc_text_search, size: 64, color: Colors.grey[800]),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No curriculum loaded.\nTap the settings icon to select a branch.',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              
                             // Past CGPA Card
                       if (selectedSemesterNumber != null &&
                           selectedSemesterNumber! > 1)
@@ -1072,7 +1087,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                       const SizedBox(height: 10),
 
                       // Error Message
-                      if (errorMessage != null)
+                      if (errorMessage != null && errorMessage != 'No internet connection. Please try again.')
                         Padding(
                           padding: const EdgeInsets.only(top: 16.0),
                           child: Container(

@@ -77,7 +77,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -87,17 +87,51 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
         });
         _animController.forward();
       } else {
+        throw Exception('Failed to load profile data');
+      }
+    } catch (e) {
+      if (e.toString().contains('SocketException') || e.toString().contains('TimeoutException')) {
+        final cachedData = await _buildProfileFromCache();
+        if (cachedData != null) {
+          if (mounted) {
+            setState(() {
+              profileData = cachedData;
+              isLoading = false;
+            });
+            _animController.forward();
+          }
+          return;
+        }
+      }
+
+      if (mounted) {
         setState(() {
-          error = 'Failed to load profile data';
+          error = e.toString().contains('SocketException')
+              ? 'No internet connection. Please try again.'
+              : 'Error: $e';
           isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        error = 'Error: $e';
-        isLoading = false;
-      });
     }
+  }
+
+  Future<Map<String, dynamic>?> _buildProfileFromCache() async {
+    final firstName = await SharedPreferencesService.getFirstName();
+    if (firstName == null) return null; // No valid cache exists
+    
+    return {
+      'firstName': firstName,
+      'lastName': await SharedPreferencesService.getLastName(),
+      'username': await SharedPreferencesService.getUserName(),
+      'email': await SharedPreferencesService.getUserEmail(),
+      'role': await SharedPreferencesService.getUserRole(),
+      'rollNo': await SharedPreferencesService.getRollNo(),
+      'branch': await SharedPreferencesService.getBranch(),
+      'section': await SharedPreferencesService.getSection(),
+      'year': await SharedPreferencesService.getYear(),
+      'semester': await SharedPreferencesService.getSemester(),
+      'isProfileCompleted': await SharedPreferencesService.getIsProfileCompleted(),
+    };
   }
 
   @override
