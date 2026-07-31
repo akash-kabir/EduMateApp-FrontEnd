@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:app/shared/services/holiday_service.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
+import 'package:app/shared/widgets/skeletons/skeleton_loading_card.dart';
 
 class HolidayListScreen extends StatefulWidget {
   const HolidayListScreen({super.key});
@@ -451,9 +452,11 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                     ),
                   ),
                   if (_isLoading)
-                    const SliverFillRemaining(
-                      child: Center(
-                          child: CupertinoActivityIndicator(radius: 16)),
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: SkeletonLoadingList(),
+                      ),
                     )
                   else if (_holidays.isEmpty)
                     SliverFillRemaining(

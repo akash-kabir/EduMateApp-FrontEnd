@@ -1,5 +1,9 @@
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:app/main.dart';
+import 'package:app/shared/widgets/dialogs/role_change_dialog.dart';
+import 'package:app/features/auth_and_profile/services/token_refresh_service.dart';
 
 /// A master service class for managing all SharedPreferences operations.
 /// This file acts as a centralized location for all shared preference data access.
@@ -417,7 +421,17 @@ class SharedPreferencesService {
       await setUserEmail(user['email']);
     }
     if (user['role'] != null) {
-      await setUserRole(user['role'].toString().toLowerCase());
+      final newRole = user['role'].toString().toLowerCase();
+      final oldRole = await getUserRole();
+      if (oldRole != null && oldRole.isNotEmpty && newRole != oldRole.toLowerCase()) {
+        await setUserRole(newRole);
+        await TokenRefreshService.refreshToken();
+        if (navigatorKey.currentContext != null) {
+          showGlobalRoleChangeDialog(navigatorKey.currentContext!, oldRole, newRole);
+        }
+      } else {
+        await setUserRole(newRole);
+      }
     }
     if (user['rollNo'] != null) {
       await setString(_rollNoKey, user['rollNo']);

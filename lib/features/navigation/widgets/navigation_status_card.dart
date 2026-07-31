@@ -17,12 +17,9 @@ class NavigationStatusCard extends StatelessWidget {
     required this.onStopNavigation,
   });
 
-  String _formatDistance(double meters) {
-    if (meters < 1000) {
-      return '${meters.toStringAsFixed(0)} m';
-    } else {
-      return '${(meters / 1000).toStringAsFixed(1)} km';
-    }
+  int _calculateWalkMins(double meters) {
+    // Average walking speed ~ 80 meters per minute
+    return (meters / 80).ceil();
   }
 
   @override
@@ -83,13 +80,23 @@ class NavigationStatusCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      _formatDistance(distanceInMeters),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AuthPalette.coral,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          '${_calculateWalkMins(distanceInMeters)} min',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AuthPalette.coral,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.directions_walk_rounded,
+                          color: AuthPalette.coral,
+                          size: 16,
+                        ),
+                      ],
                     ),
                   ],
                 ),

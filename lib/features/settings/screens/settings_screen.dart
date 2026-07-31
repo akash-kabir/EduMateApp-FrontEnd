@@ -6,6 +6,8 @@ import 'package:app/features/schedule/services/schedule_database_helper.dart';
 import 'package:app/features/splash/screens/splash_screen.dart';
 import 'package:app/theme/theme.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
+import 'package:http/http.dart' as http;
+import 'package:app/shared/config.dart';
 import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -259,6 +261,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (confirm == true) {
+      try {
+        final token = await SharedPreferencesService.getToken();
+        if (token != null) {
+          final response = await http.delete(
+            Uri.parse(Config.profileEndpoint),
+            headers: {'Authorization': 'Bearer $token'},
+          );
+          
+          if (response.statusCode != 200) {
+            if (mounted) {
+              EduMateToast.showCompact(
+                context,
+                message: 'Failed to delete account on server.',
+                isSuccess: false,
+              );
+            }
+            return;
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          EduMateToast.showCompact(
+            context,
+            message: 'Network error. Could not delete account.',
+            isSuccess: false,
+          );
+        }
+        return;
+      }
+
       await SharedPreferencesService.clearAll();
       await ScheduleDatabaseHelper.instance.clearCache();
       
@@ -302,7 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
       ),
       trailing: trailing,
       onTap: onTap,
@@ -328,7 +360,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                         Colors.black,
                       ],
                       stops: const [0.0, 0.08],
@@ -411,7 +443,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.white54, size: 20),
                                   onTap: _handleDisconnectSap,
                                 ),
-                                Divider(color: Colors.white.withOpacity(0.1), height: 1, indent: 20),
+                                Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 20),
                                 _buildListTile(
                                   title: 'Clear Preferences',
                                   subtitle: 'Wipe local cache and configs',
@@ -437,7 +469,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               title: 'Starts up to TimeSheet',
                               subtitle: 'Open timetable automatically on launch',
                               trailing: CupertinoSwitch(
-                                activeColor: AuthPalette.coral,
+                                activeTrackColor: AuthPalette.coral,
                                 value: _startUpToTimeSheetEnabled,
                                 onChanged: (val) {
                                   setState(() => _startUpToTimeSheetEnabled = val);

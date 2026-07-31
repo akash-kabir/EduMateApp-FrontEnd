@@ -18,6 +18,7 @@ import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 
 import 'package:app/features/auth_and_profile/screens/profile_setup/profile_setup_dialog_flow.dart';
 import 'package:app/features/home/screens/holiday_list_screen.dart';
+import 'package:app/features/home/screens/post_management_screen.dart';
 import 'package:app/features/home/widgets/todays_schedule_card.dart';
 import 'package:app/features/sapsync/widgets/sapsync_entry_card.dart';
 import 'package:app/features/auth_and_profile/screens/profile/profile_details_screen.dart';
@@ -688,6 +689,11 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
     final bool isAdminOrContributor = _userRole.toLowerCase() == 'admin' || _userRole.toLowerCase() == 'contributor';
+    final bool canManagePosts = _userRole.toLowerCase() == 'admin' || 
+                                _userRole.toLowerCase() == 'contributor' || 
+                                _userRole.toLowerCase() == 'contributer' || 
+                                _userRole.toLowerCase() == 'society' || 
+                                _userRole.toLowerCase() == 'societ';
     
     return Scaffold(
       backgroundColor: Colors.transparent, // Let underlying app show through
@@ -824,6 +830,27 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                     }
                                   }
                                 ),
+                                if (canManagePosts)
+                                  _buildDrawerItem(
+                                    icon: CupertinoIcons.doc_person,
+                                    title: 'Manage Posts',
+                                    color: AuthPalette.coral,
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      Navigator.of(context).push(
+                                        PageRouteBuilder(
+                                          pageBuilder: (context, animation, secondaryAnimation) => const PostManagementScreen(),
+                                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                            return SlideTransition(
+                                              position: Tween<Offset>(begin: const Offset(-1.0, 0.0), end: Offset.zero)
+                                                  .animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+                                              child: child,
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    }
+                                  ),
                                 if (isAdminOrContributor)
                                   _buildDrawerItem(
                                     icon: CupertinoIcons.shield, 

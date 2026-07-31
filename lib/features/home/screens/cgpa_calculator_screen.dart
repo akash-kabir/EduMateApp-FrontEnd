@@ -9,6 +9,7 @@ import 'package:app/shared/config.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 import 'package:app/shared/widgets/dialogs/bottom_sheet_selector.dart';
+import 'package:app/shared/widgets/skeletons/skeleton_loading_card.dart';
 
 class CGPACalculatorScreen extends StatefulWidget {
   const CGPACalculatorScreen({super.key});
@@ -550,12 +551,10 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                     ),
                   ),
                   if (isLoading)
-                    SliverFillRemaining(
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AuthPalette.coral,
-                          strokeWidth: 3,
-                        ),
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: SkeletonLoadingList(),
                       ),
                     )
                   else if (selectedBranch == null)
