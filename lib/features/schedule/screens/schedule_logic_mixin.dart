@@ -496,6 +496,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       if (mounted) {
         setState(() {
           scheduleData = cachedData;
+          isLoading = false; // Immediately dismiss skeleton loader if cache exists
         });
       }
     }

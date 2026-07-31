@@ -22,28 +22,39 @@ class HomeScheduleService {
   static Future<HomeScheduleData> getTodaysSchedule() async {
     final now = DateTime.now();
     
-    // 1. Check for Holidays
+    // 1. Check for Holidays (Cache first for instant load)
     try {
-      final holidayRes = await HolidayService.fetchHolidays(now.year);
-      if (holidayRes['success'] == true) {
-        final List<dynamic> holidays = holidayRes['data'] ?? [];
-        for (var holiday in holidays) {
-          if (holiday['startDate'] != null && holiday['endDate'] != null) {
-            final start = DateTime.parse(holiday['startDate']);
-            final end = DateTime.parse(holiday['endDate']);
-            final startDate = DateTime(start.year, start.month, start.day);
-            final endDate = DateTime(end.year, end.month, end.day);
-            final today = DateTime(now.year, now.month, now.day);
-            
-            if (today.isAtSameMomentAs(startDate) || 
-                today.isAtSameMomentAs(endDate) || 
-                (today.isAfter(startDate) && today.isBefore(endDate))) {
-              return HomeScheduleData(
-                isHoliday: true,
-                holidayName: holiday['name'] ?? 'Holiday',
-                classes: [],
-              );
-            }
+      final cacheKey = 'holidays_cache_${now.year}';
+      final cachedStr = await SharedPreferencesService.getString(cacheKey);
+      List<dynamic> holidays = [];
+      
+      if (cachedStr != null) {
+        try {
+          holidays = json.decode(cachedStr);
+        } catch (_) {}
+      } else {
+        final holidayRes = await HolidayService.fetchHolidays(now.year);
+        if (holidayRes['success'] == true) {
+          holidays = holidayRes['data'] ?? [];
+        }
+      }
+
+      for (var holiday in holidays) {
+        if (holiday['startDate'] != null && holiday['endDate'] != null) {
+          final start = DateTime.parse(holiday['startDate']);
+          final end = DateTime.parse(holiday['endDate']);
+          final startDate = DateTime(start.year, start.month, start.day);
+          final endDate = DateTime(end.year, end.month, end.day);
+          final today = DateTime(now.year, now.month, now.day);
+          
+          if (today.isAtSameMomentAs(startDate) || 
+              today.isAtSameMomentAs(endDate) || 
+              (today.isAfter(startDate) && today.isBefore(endDate))) {
+            return HomeScheduleData(
+              isHoliday: true,
+              holidayName: holiday['name'] ?? 'Holiday',
+              classes: [],
+            );
           }
         }
       }
