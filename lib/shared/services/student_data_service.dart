@@ -26,6 +26,16 @@ class StudentDataService {
         'message': 'Roll number not found in student database',
       };
     } catch (e) {
+      final errorStr = e.toString();
+      if (errorStr.contains('SocketException') || 
+          errorStr.contains('ClientException') || 
+          errorStr.contains('TimeoutException')) {
+        return {
+          'success': false,
+          'message': 'No internet connection. Please try again.',
+        };
+      }
+      
       return {
         'success': false,
         'message': 'Error looking up roll number: $e',
