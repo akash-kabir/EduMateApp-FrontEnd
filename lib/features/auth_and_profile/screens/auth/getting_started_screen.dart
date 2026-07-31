@@ -120,8 +120,12 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
             children: [
               // Animated background circles using provider's controller
               AnimatedCircleGradient(
-                primaryColor: AuthPalette.blush,
-                secondaryColor: AuthPalette.deepTeal,
+                primaryColor: AuthPalette.coral,
+                secondaryColor: AuthPalette.coral.withValues(alpha: 0.4),
+                primaryOpacityStart: 0.15,
+                primaryOpacityEnd: 0.35,
+                secondaryOpacityStart: 0.1,
+                secondaryOpacityEnd: 0.25,
                 externalController:
                     animationProvider.backgroundCircleController,
               ),
@@ -284,7 +288,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                                     child: const Text(
                                       'Terms of Service',
                                       style: TextStyle(
-                                        color: AuthPalette.coral,
+                                        color: Colors.white70,
                                         fontSize: 11,
                                       ),
                                     ),
@@ -295,7 +299,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                                     child: const Text(
                                       'Privacy Policy',
                                       style: TextStyle(
-                                        color: AuthPalette.coral,
+                                        color: Colors.white70,
                                         fontSize: 11,
                                       ),
                                     ),
@@ -347,38 +351,25 @@ class _GlassButtonState extends State<GlassButton> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: double.infinity,
               height: 48,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                gradient: widget.isGradient
-                    ? LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AuthPalette.blush.withOpacity(
-                            _isHovered ? 0.95 : 0.8,
-                          ),
-                          AuthPalette.deepTeal.withOpacity(
-                            _isHovered ? 0.95 : 0.8,
-                          ),
-                        ],
-                      )
-                    : null,
                 color: widget.isGradient
-                    ? null
-                    : Colors.white.withOpacity(_isHovered ? 0.15 : 0.1),
+                    ? AuthPalette.coral.withValues(alpha: _isHovered ? 0.35 : 0.22)
+                    : Colors.white.withValues(alpha: _isHovered ? 0.12 : 0.06),
+                border: null,
               ),
               child: Center(
                 child: Text(
                   widget.text,
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: widget.isGradient ? Colors.white : Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: widget.isGradient ? AuthPalette.coral : Colors.white,
                     letterSpacing: 0.5,
                   ),
                 ),

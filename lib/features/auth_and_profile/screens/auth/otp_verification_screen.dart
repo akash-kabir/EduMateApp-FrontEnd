@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show ImageFilter;
 import 'package:app/features/auth_and_profile/widgets/auth_background_wrapper.dart';
 import 'package:app/theme/theme.dart';
 import 'package:app/shared/services/api_service.dart';
@@ -95,6 +96,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 const SizedBox(height: 32),
                 TextField(
                   controller: _otpController,
+                  cursorColor: AuthPalette.coral,
                   style: const TextStyle(color: Colors.white, letterSpacing: 8, fontSize: 24),
                   keyboardType: TextInputType.number,
                   maxLength: 6,
@@ -104,25 +106,45 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                     hintText: '000000',
                     hintStyle: const TextStyle(color: Colors.white24, letterSpacing: 8, fontSize: 24),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _isError ? Colors.red : AuthPalette.coral.withOpacity(0.55)),
+                      borderSide: BorderSide(color: _isError ? Colors.red : AuthPalette.coral.withValues(alpha: 0.3)),
                     ),
                     focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _isError ? Colors.red : AuthPalette.blush),
+                      borderSide: BorderSide(color: _isError ? Colors.red : AuthPalette.coral, width: 2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
                 Center(
                   child: _loading
-                      ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AuthPalette.deepTeal))
-                      : ElevatedButton(
-                          onPressed: _verifyOTP,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
-                            backgroundColor: AuthPalette.deepTeal,
-                            foregroundColor: Colors.white,
+                      ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AuthPalette.coral))
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: InkWell(
+                              onTap: _verifyOTP,
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                width: double.infinity,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: AuthPalette.coral.withValues(alpha: 0.22),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'Verify',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: AuthPalette.coral,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                          child: const Text('Verify'),
                         ),
                 ),
               ],

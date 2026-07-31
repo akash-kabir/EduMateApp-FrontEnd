@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show ImageFilter;
 import 'package:app/features/auth_and_profile/screens/auth/signup_screen1.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/cupertino.dart';
@@ -176,26 +177,28 @@ class _LoginScreenState extends State<LoginScreen>
                           builder: (context, child) {
                             return TextField(
                               controller: _loginController,
+                              cursorColor: AuthPalette.coral,
                               style: const TextStyle(color: Colors.white),
                               decoration: InputDecoration(
                                 labelText: 'Username or Email',
                                 labelStyle: TextStyle(
                                   color: _isLoginError
                                       ? CupertinoColors.systemRed
-                                      : AuthPalette.blush,
+                                      : AuthPalette.coral,
                                 ),
                                 enabledBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isLoginError
                                         ? CupertinoColors.systemRed
-                                        : AuthPalette.coral.withOpacity(0.55),
+                                        : AuthPalette.coral.withValues(alpha: 0.3),
                                   ),
                                 ),
                                 focusedBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isLoginError
                                         ? CupertinoColors.systemRed
-                                        : AuthPalette.blush,
+                                        : AuthPalette.coral,
+                                    width: 2,
                                   ),
                                 ),
                               ),
@@ -209,13 +212,14 @@ class _LoginScreenState extends State<LoginScreen>
                             return TextField(
                               controller: _passwordController,
                               obscureText: !_showPassword,
+                              cursorColor: AuthPalette.coral,
                               style: const TextStyle(color: Colors.white),
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 labelStyle: TextStyle(
                                   color: _isPasswordError
                                       ? CupertinoColors.systemRed
-                                      : AuthPalette.blush,
+                                      : AuthPalette.coral,
                                 ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
@@ -236,14 +240,15 @@ class _LoginScreenState extends State<LoginScreen>
                                   borderSide: BorderSide(
                                     color: _isPasswordError
                                         ? CupertinoColors.systemRed
-                                        : AuthPalette.coral.withOpacity(0.55),
+                                        : AuthPalette.coral.withValues(alpha: 0.3),
                                   ),
                                 ),
                                 focusedBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isPasswordError
                                         ? CupertinoColors.systemRed
-                                        : AuthPalette.blush,
+                                        : AuthPalette.coral,
+                                    width: 2,
                                   ),
                                 ),
                               ),
@@ -262,7 +267,7 @@ class _LoginScreenState extends State<LoginScreen>
                             child: const Text(
                               'Forgot Password?',
                               style: TextStyle(
-                                color: AuthPalette.blush,
+                                color: AuthPalette.coral,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -272,34 +277,51 @@ class _LoginScreenState extends State<LoginScreen>
                         _loading
                             ? const CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  AuthPalette.deepTeal,
+                                  AuthPalette.coral,
                                 ),
                               )
-                            : ElevatedButton(
-                                onPressed: _loginUser,
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 48,
-                                    vertical: 12,
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                  child: InkWell(
+                                    onTap: _loginUser,
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Container(
+                                      width: double.infinity,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(16),
+                                        color: AuthPalette.coral.withValues(alpha: 0.22),
+                                      ),
+                                      child: const Center(
+                                        child: Text(
+                                          'Login',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: AuthPalette.coral,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                  backgroundColor: AuthPalette.deepTeal,
-                                  foregroundColor: Colors.white,
                                 ),
-                                child: const Text('Login'),
                               ),
                         const SizedBox(height: 16),
                         RichText(
                           text: TextSpan(
                             text: "Don't have an account? ",
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
+                              color: Colors.white70,
+                              fontSize: 14,
                             ),
                             children: [
                               TextSpan(
                                 text: 'Sign Up',
                                 style: const TextStyle(
-                                  color: AuthPalette.blush,
+                                  color: AuthPalette.coral,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 recognizer: TapGestureRecognizer()

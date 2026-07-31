@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show ImageFilter;
 import 'dart:ui';
 import 'package:app/features/auth_and_profile/screens/auth/login_screen.dart';
 import 'package:flutter/gestures.dart';
@@ -565,12 +566,13 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       });
                                     }
                                   },
+                                  cursorColor: AuthPalette.coral,
                                   decoration: InputDecoration(
                                     labelText: 'Username',
                                     labelStyle: TextStyle(
                                       color: _isUsernameError
                                           ? CupertinoColors.systemRed
-                                          : AuthPalette.blush,
+                                          : AuthPalette.coral,
                                     ),
                                     suffixIcon: _checkingUsername
                                         ? SizedBox(
@@ -583,7 +585,7 @@ class _SignupScreen2State extends State<SignupScreen2>
                                                 valueColor:
                                                     AlwaysStoppedAnimation<
                                                       Color
-                                                    >(AuthPalette.deepTeal),
+                                                    >(AuthPalette.coral),
                                               ),
                                             ),
                                           )
@@ -601,8 +603,8 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       borderSide: BorderSide(
                                         color: _isUsernameError
                                             ? CupertinoColors.systemRed
-                                            : AuthPalette.coral.withOpacity(
-                                                0.55,
+                                            : AuthPalette.coral.withValues(
+                                                alpha: 0.3,
                                               ),
                                       ),
                                     ),
@@ -610,7 +612,8 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       borderSide: BorderSide(
                                         color: _isUsernameError
                                             ? CupertinoColors.systemRed
-                                            : AuthPalette.blush,
+                                            : AuthPalette.coral,
+                                        width: 2,
                                       ),
                                     ),
                                   ),
@@ -651,12 +654,13 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       });
                                     }
                                   },
+                                  cursorColor: AuthPalette.coral,
                                   decoration: InputDecoration(
                                     labelText: 'Email',
                                     labelStyle: TextStyle(
                                       color: _isEmailError
                                           ? CupertinoColors.systemRed
-                                          : AuthPalette.blush,
+                                          : AuthPalette.coral,
                                     ),
                                     suffixIcon: _checkingEmail
                                         ? SizedBox(
@@ -669,7 +673,7 @@ class _SignupScreen2State extends State<SignupScreen2>
                                                 valueColor:
                                                     AlwaysStoppedAnimation<
                                                       Color
-                                                    >(AuthPalette.deepTeal),
+                                                    >(AuthPalette.coral),
                                               ),
                                             ),
                                           )
@@ -687,8 +691,8 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       borderSide: BorderSide(
                                         color: _isEmailError
                                             ? CupertinoColors.systemRed
-                                            : AuthPalette.coral.withOpacity(
-                                                0.55,
+                                            : AuthPalette.coral.withValues(
+                                                alpha: 0.3,
                                               ),
                                       ),
                                     ),
@@ -696,7 +700,8 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       borderSide: BorderSide(
                                         color: _isEmailError
                                             ? CupertinoColors.systemRed
-                                            : AuthPalette.blush,
+                                            : AuthPalette.coral,
+                                        width: 2,
                                       ),
                                     ),
                                   ),
@@ -726,6 +731,7 @@ class _SignupScreen2State extends State<SignupScreen2>
                                 TextField(
                                   controller: _passwordController,
                                   obscureText: !_showPassword,
+                                  cursorColor: AuthPalette.coral,
                                   style: const TextStyle(color: Colors.white),
                                   onChanged: (value) {
                                     setState(() {});
@@ -735,7 +741,7 @@ class _SignupScreen2State extends State<SignupScreen2>
                                     labelStyle: TextStyle(
                                       color: _isPasswordError
                                           ? CupertinoColors.systemRed
-                                          : AuthPalette.blush,
+                                          : AuthPalette.coral,
                                     ),
                                     suffixIcon: IconButton(
                                       icon: Icon(
@@ -756,8 +762,8 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       borderSide: BorderSide(
                                         color: _isPasswordError
                                             ? CupertinoColors.systemRed
-                                            : AuthPalette.coral.withOpacity(
-                                                0.55,
+                                            : AuthPalette.coral.withValues(
+                                                alpha: 0.3,
                                               ),
                                       ),
                                     ),
@@ -765,7 +771,8 @@ class _SignupScreen2State extends State<SignupScreen2>
                                       borderSide: BorderSide(
                                         color: _isPasswordError
                                             ? CupertinoColors.systemRed
-                                            : AuthPalette.blush,
+                                            : AuthPalette.coral,
+                                        width: 2,
                                       ),
                                     ),
                                   ),
@@ -871,34 +878,51 @@ class _SignupScreen2State extends State<SignupScreen2>
                         _loading
                             ? const CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  AuthPalette.deepTeal,
+                                  AuthPalette.coral,
                                 ),
                               )
-                            : ElevatedButton(
-                                onPressed: _signupUser,
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 48,
-                                    vertical: 12,
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                  child: InkWell(
+                                    onTap: _signupUser,
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Container(
+                                      width: double.infinity,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(16),
+                                        color: AuthPalette.coral.withValues(alpha: 0.22),
+                                      ),
+                                      child: const Center(
+                                        child: Text(
+                                          'Sign Up',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: AuthPalette.coral,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                  backgroundColor: AuthPalette.deepTeal,
-                                  foregroundColor: Colors.white,
                                 ),
-                                child: const Text('Sign Up'),
                               ),
                         const SizedBox(height: 16),
                         RichText(
                           text: TextSpan(
                             text: 'Already have an account? ',
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
+                              color: Colors.white70,
+                              fontSize: 14,
                             ),
                             children: [
                               TextSpan(
                                 text: 'Login',
                                 style: const TextStyle(
-                                  color: AuthPalette.blush,
+                                  color: AuthPalette.coral,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 recognizer: TapGestureRecognizer()

@@ -1,3 +1,4 @@
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:app/features/auth_and_profile/screens/auth/signup_screen2.dart';
 import 'package:app/features/auth_and_profile/screens/auth/login_screen.dart';
@@ -146,26 +147,28 @@ class _SignupScreen1State extends State<SignupScreen1>
                           builder: (context, child) {
                             return TextField(
                               controller: _firstNameController,
+                              cursorColor: AuthPalette.coral,
                               style: const TextStyle(color: Colors.white),
                               decoration: InputDecoration(
                                 labelText: 'First Name',
                                 labelStyle: TextStyle(
                                   color: _isFirstNameError
                                       ? CupertinoColors.systemRed
-                                      : AuthPalette.blush,
+                                      : AuthPalette.coral,
                                 ),
                                 enabledBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isFirstNameError
                                         ? CupertinoColors.systemRed
-                                        : AuthPalette.coral.withOpacity(0.55),
+                                        : AuthPalette.coral.withValues(alpha: 0.3),
                                   ),
                                 ),
                                 focusedBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isFirstNameError
                                         ? CupertinoColors.systemRed
-                                        : AuthPalette.blush,
+                                        : AuthPalette.coral,
+                                    width: 2,
                                   ),
                                 ),
                               ),
@@ -178,26 +181,28 @@ class _SignupScreen1State extends State<SignupScreen1>
                           builder: (context, child) {
                             return TextField(
                               controller: _lastNameController,
+                              cursorColor: AuthPalette.coral,
                               style: const TextStyle(color: Colors.white),
                               decoration: InputDecoration(
                                 labelText: 'Last Name',
                                 labelStyle: TextStyle(
                                   color: _isLastNameError
                                       ? CupertinoColors.systemRed
-                                      : AuthPalette.blush,
+                                      : AuthPalette.coral,
                                 ),
                                 enabledBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isLastNameError
                                         ? CupertinoColors.systemRed
-                                        : AuthPalette.coral.withOpacity(0.55),
+                                        : AuthPalette.coral.withValues(alpha: 0.3),
                                   ),
                                 ),
                                 focusedBorder: UnderlineInputBorder(
                                   borderSide: BorderSide(
                                     color: _isLastNameError
                                         ? CupertinoColors.systemRed
-                                        : AuthPalette.blush,
+                                        : AuthPalette.coral,
+                                    width: 2,
                                   ),
                                 ),
                               ),
@@ -205,31 +210,48 @@ class _SignupScreen1State extends State<SignupScreen1>
                           },
                         ),
                         const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: _goToNext,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 48,
-                              vertical: 12,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: InkWell(
+                              onTap: _goToNext,
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                width: double.infinity,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: AuthPalette.coral.withValues(alpha: 0.22),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'Next',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: AuthPalette.coral,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
-                            backgroundColor: AuthPalette.deepTeal,
-                            foregroundColor: Colors.white,
                           ),
-                          child: const Text('Next'),
                         ),
                         const SizedBox(height: 16),
                         RichText(
                           text: TextSpan(
                             text: 'Already have an account? ',
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
+                              color: Colors.white70,
+                              fontSize: 14,
                             ),
                             children: [
                               TextSpan(
                                 text: 'Login',
                                 style: const TextStyle(
-                                  color: AuthPalette.blush,
+                                  color: AuthPalette.coral,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 recognizer: TapGestureRecognizer()

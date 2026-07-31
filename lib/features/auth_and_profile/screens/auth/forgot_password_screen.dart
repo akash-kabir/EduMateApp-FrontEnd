@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show ImageFilter;
 import 'package:app/features/auth_and_profile/widgets/auth_background_wrapper.dart';
 import 'package:app/theme/theme.dart';
 import 'package:app/shared/services/api_service.dart';
@@ -93,31 +94,52 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const SizedBox(height: 32),
                 TextField(
                   controller: _emailController,
+                  cursorColor: AuthPalette.coral,
                   style: const TextStyle(color: Colors.white),
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: 'Email Address',
-                    labelStyle: TextStyle(color: _isError ? Colors.red : AuthPalette.blush),
+                    labelStyle: TextStyle(color: _isError ? Colors.red : AuthPalette.coral),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _isError ? Colors.red : AuthPalette.coral.withOpacity(0.55)),
+                      borderSide: BorderSide(color: _isError ? Colors.red : AuthPalette.coral.withValues(alpha: 0.3)),
                     ),
                     focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _isError ? Colors.red : AuthPalette.blush),
+                      borderSide: BorderSide(color: _isError ? Colors.red : AuthPalette.coral, width: 2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
                 Center(
                   child: _loading
-                      ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AuthPalette.deepTeal))
-                      : ElevatedButton(
-                          onPressed: _sendOTP,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
-                            backgroundColor: AuthPalette.deepTeal,
-                            foregroundColor: Colors.white,
+                      ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AuthPalette.coral))
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: InkWell(
+                              onTap: _sendOTP,
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                width: double.infinity,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: AuthPalette.coral.withValues(alpha: 0.22),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'Send OTP',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: AuthPalette.coral,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                          child: const Text('Send OTP'),
                         ),
                 ),
               ],

@@ -17,10 +17,16 @@ class AuthBackgroundWrapper extends StatelessWidget {
 
     return Stack(
       children: [
+        // Solid Pitch Black Background
+        Container(color: Colors.black),
         // Animated background circles using provider's controller
         AnimatedCircleGradient(
-          primaryColor: AuthPalette.blush,
-          secondaryColor: AuthPalette.deepTeal,
+          primaryColor: AuthPalette.coral,
+          secondaryColor: AuthPalette.coral.withValues(alpha: 0.4),
+          primaryOpacityStart: 0.15,
+          primaryOpacityEnd: 0.35,
+          secondaryOpacityStart: 0.1,
+          secondaryOpacityEnd: 0.25,
           externalController: animationProvider.backgroundCircleController,
         ),
         // Content
