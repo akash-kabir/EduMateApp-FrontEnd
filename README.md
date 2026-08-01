@@ -100,8 +100,8 @@ flutter run
 ```
 
 ## Security & Architecture Details
-To understand the detailed inner workings of the code architecture and how each modular feature is designed, see [features.md](file:///c:/Users/KABIR/Documents/Visual%20Studio%20Code/Projects/EduMateApp/EduMateApp-FrontEnd/edumate/features.md).
+To understand the detailed inner workings of the code architecture and how each modular feature is designed, see [features.md](features.md).
 
 ## License
 Copyright © 2026 Mirza Akash Kabir. All rights reserved. 
-This codebase is private and proprietary. Commercial use, modification, distribution, or reproduction without written permission is strictly prohibited. Refer to [LICENSE](file:///c:/Users/KABIR/Documents/Visual%20Studio%20Code/Projects/EduMateApp/EduMateApp-FrontEnd/edumate/LICENSE) for full legal terms.
+This codebase is private and proprietary. Commercial use, modification, distribution, or reproduction without written permission is strictly prohibited. Refer to [LICENSE](LICENSE) for full legal terms.
