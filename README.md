@@ -1,4 +1,4 @@
-# EduMate - Premium Student Companion App
+# EduMate - Student Companion App
 
 <p align="center">
   <img src="docs/edumate_feature_graphic.jpg" alt="EduMate Banner" width="100%">
