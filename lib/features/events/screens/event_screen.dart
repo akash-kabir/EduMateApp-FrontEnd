@@ -158,10 +158,8 @@ class _EventScreenState extends State<EventScreen> {
     final canPost =
         userRole != null &&
         [
-          'societ',
           'society',
-          'society_head',
-          'contributer',
+          'contributor',
           'contributor',
           'admin',
         ].contains(userRole!.toLowerCase());

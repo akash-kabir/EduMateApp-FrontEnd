@@ -19,7 +19,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   Map<String, dynamic> _stats = {
     'totalUsers': 0,
     'students': 0,
-    'societyHeads': 0,
+    'societies': 0,
     'admins': 0,
     'contributors': 0,
     'configuredSemesters': 0,
@@ -132,7 +132,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                                   _DemographicsCard(
                                     totalUsers: _stats['totalUsers'] ?? 0,
                                     students: _stats['students'] ?? 0,
-                                    societyHeads: _stats['societyHeads'] ?? 0,
+                                    societyHeads: _stats['societies'] ?? 0,
                                     admins: _stats['admins'] ?? 0,
                                     contributors: _stats['contributors'] ?? 0,
                                   ),

@@ -64,7 +64,7 @@ class _CurriculumManagementScreenState
 
   bool get _canManageCurriculum {
     final role = (_currentUserRole ?? '').toLowerCase();
-    return role == 'admin' || role == 'contributor' || role == 'contributer';
+    return role == 'admin' || role == 'contributor' || role == 'contributor';
   }
 
   Future<void> _bootstrap() async {

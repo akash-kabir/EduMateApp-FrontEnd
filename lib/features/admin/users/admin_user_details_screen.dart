@@ -43,8 +43,8 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
   String _normalizeRole(String? role) {
     final r = (role ?? 'student').toLowerCase().trim();
     if (r == 'admin') return 'admin';
-    if (r == 'contributor' || r == 'contributer') return 'contributer';
-    if (r == 'society' || r == 'societ' || r == 'society_head') return 'societ';
+    if (r == 'contributor' || r == 'contributor') return 'contributor';
+    if (r == 'society' || r == 'societ' || r == 'society_head') return 'society';
     if (r == 'guest') return 'guest';
     return 'student';
   }
@@ -53,10 +53,10 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
     switch (normalizedRole) {
       case 'admin':
         return 'Admin';
-      case 'contributer':
-        return 'Contributer';
-      case 'societ':
-        return 'Society Head';
+      case 'contributor':
+        return 'contributor';
+      case 'society':
+        return 'Society';
       case 'guest':
         return 'Guest';
       default:
@@ -68,9 +68,9 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
     switch (normalizedRole) {
       case 'admin':
         return Colors.red;
-      case 'contributer':
+      case 'contributor':
         return Colors.purple;
-      case 'societ':
+      case 'society':
         return Colors.orange;
       case 'guest':
         return Colors.teal;
@@ -188,10 +188,10 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                     },
                   ),
                 if (currentRole != 'student') const SizedBox(height: 12),
-                if (currentRole != 'societ')
+                if (currentRole != 'society')
                   _buildRoleOption(
                     context: context,
-                    title: 'Society Head',
+                    title: 'Society',
                     description: 'Can manage society posts and events.',
                     icon: CupertinoIcons.group,
                     color: CupertinoColors.activeBlue,
@@ -200,8 +200,8 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                       _updateUserRole('Society');
                     },
                   ),
-                if (currentRole != 'societ') const SizedBox(height: 12),
-                if (currentRole != 'contributer')
+                if (currentRole != 'society') const SizedBox(height: 12),
+                if (currentRole != 'contributor')
                   _buildRoleOption(
                     context: context,
                     title: 'Contributor',
@@ -210,7 +210,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
                     color: CupertinoColors.systemRed.withOpacity(0.8),
                     onTap: () {
                       Navigator.pop(context);
-                      _updateUserRole('Contributer');
+                      _updateUserRole('contributor');
                     },
                   ),
                 const SizedBox(height: 16),

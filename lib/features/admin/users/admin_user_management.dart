@@ -27,8 +27,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   String _normalizeRole(String? role) {
     final r = (role ?? 'student').toLowerCase().trim();
     if (r == 'admin') return 'admin';
-    if (r == 'contributor' || r == 'contributer') return 'contributer';
-    if (r == 'society' || r == 'societ' || r == 'society_head') return 'societ';
+    if (r == 'contributor' || r == 'contributor') return 'contributor';
+    if (r == 'society' || r == 'societ' || r == 'society_head') return 'society';
     if (r == 'guest') return 'guest';
     return 'student';
   }
@@ -37,10 +37,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     switch (normalizedRole) {
       case 'admin':
         return 'Admin';
-      case 'contributer':
-        return 'Contributer';
-      case 'societ':
-        return 'Society Head';
+      case 'contributor':
+        return 'contributor';
+      case 'society':
+        return 'Society';
       case 'guest':
         return 'Guest';
       default:
@@ -52,9 +52,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     switch (normalizedRole) {
       case 'admin':
         return 4;
-      case 'contributer':
+      case 'contributor':
         return 3;
-      case 'societ':
+      case 'society':
         return 2;
       case 'student':
         return 1;
@@ -347,8 +347,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                 itemBuilder: (context) => [
                                   const PopupMenuItem(value: 'All', child: Text('All Roles')),
                                   const PopupMenuItem(value: 'Admin', child: Text('Admin')),
-                                  const PopupMenuItem(value: 'Contributer', child: Text('Contributer')),
-                                  const PopupMenuItem(value: 'Societ', child: Text('Society')),
+                                  const PopupMenuItem(value: 'contributor', child: Text('contributor')),
+                                  const PopupMenuItem(value: 'Society', child: Text('Society')),
                                   const PopupMenuItem(value: 'Student', child: Text('Student')),
                                   const PopupMenuItem(value: 'guest', child: Text('Guest')),
                                 ],
@@ -386,10 +386,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                             case 'admin':
                               roleColor = Colors.red;
                               break;
-                            case 'contributer':
+                            case 'contributor':
                               roleColor = Colors.purple;
                               break;
-                            case 'societ':
+                            case 'society':
                               roleColor = Colors.orange;
                               break;
                             case 'guest':

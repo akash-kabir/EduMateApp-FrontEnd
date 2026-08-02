@@ -691,9 +691,8 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
     final bool isAdminOrContributor = _userRole.toLowerCase() == 'admin' || _userRole.toLowerCase() == 'contributor';
     final bool canManagePosts = _userRole.toLowerCase() == 'admin' || 
                                 _userRole.toLowerCase() == 'contributor' || 
-                                _userRole.toLowerCase() == 'contributer' || 
-                                _userRole.toLowerCase() == 'society' || 
-                                _userRole.toLowerCase() == 'societ';
+                                _userRole.toLowerCase() == 'contributor' || 
+                                _userRole.toLowerCase() == 'society';
     
     return Scaffold(
       backgroundColor: Colors.transparent, // Let underlying app show through
