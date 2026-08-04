@@ -592,12 +592,8 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                             // Past CGPA Card
                       if (selectedSemesterNumber != null &&
                           selectedSemesterNumber! > 1)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: BackdropFilter(
-                            filter: ui.ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF141110),
                                 borderRadius: BorderRadius.circular(16),
@@ -689,8 +685,6 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 ],
                               ),
                             ),
-                          ),
-                        ),
                       if (selectedSemesterNumber != null &&
                           selectedSemesterNumber! > 1)
                         const SizedBox(height: 24),
@@ -726,15 +720,8 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                   () => TextEditingController(),
                                 );
 
-                                return ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: BackdropFilter(
-                                    filter: ui.ImageFilter.blur(
-                                      sigmaX: 10.0,
-                                      sigmaY: 10.0,
-                                    ),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
+                                return Container(
+                                  padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFF141110),
                                         borderRadius: BorderRadius.circular(16),
@@ -776,8 +763,6 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
 
                                       ),
                                     ],
-                                  ),
-                                    ),
                                   ),
                                 );
                               },

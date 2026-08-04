@@ -28,6 +28,9 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen>
     with WidgetsBindingObserver, ScheduleLogicMixin {
   
+  Map<String, dynamic>? _cachedSectionData;
+  String? _cachedSectionQuery;
+  int? _cachedScheduleHash;
   @override
   void initState() {
     super.initState();
@@ -388,12 +391,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       if (scheduleData != null) {
         List<dynamic>? classes = scheduleData!['classes'] as List<dynamic>?;
         if (classes != null && classes.isNotEmpty) {
-          var section = classes.firstWhere(
-            (s) => s['name'] == selectedSection,
-            orElse: () => null,
-          );
-          
-          if (section == null) {
+          if (_cachedSectionData == null || _cachedSectionQuery != selectedSection || _cachedScheduleHash != scheduleData.hashCode) {
+            _cachedSectionQuery = selectedSection;
+            _cachedScheduleHash = scheduleData.hashCode;
+            
+            var section = classes.firstWhere(
+              (s) => s['name'] == selectedSection,
+              orElse: () => null,
+            );
+            
+            if (section == null) {
             final normalizedSaved = selectedSection.toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
             section = classes.firstWhere((s) {
               final normName = s['name'].toString().toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
@@ -451,7 +458,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 }
               });
             }
+            _cachedSectionData = section;
           }
+
+          var section = _cachedSectionData;
 
           if (section != null && section['schedule'] is List) {
             var schedule = section['schedule'] as List;
@@ -830,10 +840,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                         0.4,
                         1.0,
                       ),
-                      child: AnimatedContainer(
-                        duration: dragOffset == 0.0
-                            ? const Duration(milliseconds: 200)
-                            : Duration.zero,
+                      child: RepaintBoundary(
+                        child: AnimatedContainer(
+                          duration: dragOffset == 0.0
+                              ? const Duration(milliseconds: 200)
+                              : Duration.zero,
                         curve: Curves.easeOut,
                         transform: Matrix4.translationValues(
                           dragOffset.clamp(-200.0, 200.0),
@@ -887,6 +898,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                   ? 'No classes scheduled for this day.\nEnjoy your day!'
                                   : 'No classes scheduled for this day',
                             ),
+                          ),
                           ),
                         ),
                       ),

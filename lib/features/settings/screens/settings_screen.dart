@@ -417,8 +417,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                    child: RepaintBoundary(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -497,7 +498,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
-                ],
+                ),
+              ],
               ),
             ),
           ],
