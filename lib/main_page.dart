@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:app/features/sapsync/provider/sap_provider.dart';
 import 'package:app/shared/widgets/dialogs/role_change_dialog.dart';
 import 'package:app/main.dart';
+import 'package:in_app_update/in_app_update.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -30,6 +31,19 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     // Start polling every 5 minutes while active
     _pollingTimer = Timer.periodic(const Duration(minutes: 5), (_) => _checkSession());
+    _checkForUpdates();
+  }
+
+  Future<void> _checkForUpdates() async {
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+        await InAppUpdate.startFlexibleUpdate();
+        await InAppUpdate.completeFlexibleUpdate();
+      }
+    } catch (e) {
+      // Ignore update errors (e.g. running locally or Play Store not found)
+    }
   }
 
   @override
