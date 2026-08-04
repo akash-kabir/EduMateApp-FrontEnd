@@ -27,7 +27,6 @@ class ScheduleScreen extends StatefulWidget {
 
 class _ScheduleScreenState extends State<ScheduleScreen>
     with WidgetsBindingObserver, ScheduleLogicMixin {
-  
   Map<String, dynamic>? _cachedSectionData;
   String? _cachedSectionQuery;
   int? _cachedScheduleHash;
@@ -65,8 +64,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   ) async {
     if (shouldSave) {
       await SharedPreferencesService.setString('timesheet_branch', branch);
-      await SharedPreferencesService.setString('timesheet_semester', classValue);
-      await SharedPreferencesService.setString('timesheet_section', sectionValue);
+      await SharedPreferencesService.setString(
+        'timesheet_semester',
+        classValue,
+      );
+      await SharedPreferencesService.setString(
+        'timesheet_section',
+        sectionValue,
+      );
       await SharedPreferencesService.setString('timesheet_year', yearValue);
       await SharedPreferencesService.setBool('timesheet_save_preference', true);
     } else {
@@ -74,11 +79,20 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       await SharedPreferencesService.remove('timesheet_semester');
       await SharedPreferencesService.remove('timesheet_section');
       await SharedPreferencesService.remove('timesheet_year');
-      await SharedPreferencesService.setBool('timesheet_save_preference', false);
+      await SharedPreferencesService.setBool(
+        'timesheet_save_preference',
+        false,
+      );
     }
   }
 
-  void _onSettingsSaved(String branch, int semester, String section, Map<String, String> electives, bool savePref) async {
+  void _onSettingsSaved(
+    String branch,
+    int semester,
+    String section,
+    Map<String, String> electives,
+    bool savePref,
+  ) async {
     setState(() {
       selectedBranch = branch;
       selectedSemester = semester;
@@ -90,10 +104,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       scheduleData = null;
       isLoading = true;
     });
-    
+
     if (savePref) {
-      await _savePreference(branch, semester.toString(), '1st Year', section, true);
-      
+      await _savePreference(
+        branch,
+        semester.toString(),
+        '1st Year',
+        section,
+        true,
+      );
+
       final List<String> electivesList = [];
       for (final entry in electives.entries) {
         final group = entry.key;
@@ -114,7 +134,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       final token = await SharedPreferencesService.getToken();
       final rollNo = await SharedPreferencesService.getRollNo();
       final year = await SharedPreferencesService.getYear();
-      
+
       if (token != null && rollNo != null && year != null) {
         try {
           final profileData = {
@@ -125,7 +145,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             'section': section,
             'electives': electivesList,
           };
-          
+
           final result = await ApiService.updateUserProfileWithFields(
             token: token,
             profileData: profileData,
@@ -146,7 +166,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
     fetchAvailableElectives(semester, skipLoadPreferences: !savePref);
     fetchScheduleFromBackend();
-    
+
     if (mounted) {
       Navigator.pop(context);
       if (savePref) {
@@ -177,11 +197,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
-  Future<Map<String, List<String>>> _getElectivesForSettings(int semester) async {
+  Future<Map<String, List<String>>> _getElectivesForSettings(
+    int semester,
+  ) async {
     try {
       Map<String, dynamic>? decoded;
       try {
-        decoded = await ScheduleDatabaseHelper.instance.getCachedElectiveData(semester.toString());
+        decoded = await ScheduleDatabaseHelper.instance.getCachedElectiveData(
+          semester.toString(),
+        );
       } catch (e) {
         debugPrint('SQLite error in screen: $e');
       }
@@ -190,11 +214,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         final cacheKey = 'cached_electives_v2_$semester';
         String? cachedStr = await SharedPreferencesService.getString(cacheKey);
         if (cachedStr == null) {
-          cachedStr = await SharedPreferencesService.getString('cached_electives_$semester');
+          cachedStr = await SharedPreferencesService.getString(
+            'cached_electives_$semester',
+          );
         }
         if (cachedStr != null) {
           decoded = jsonDecode(cachedStr);
-          await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), decoded);
+          await ScheduleDatabaseHelper.instance.cacheElectiveData(
+            semester.toString(),
+            decoded,
+          );
         }
       }
 
@@ -215,7 +244,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     return _fetchAndCacheElectives(semester);
   }
 
-  Future<Map<String, List<String>>> _fetchAndCacheElectives(int semester) async {
+  Future<Map<String, List<String>>> _fetchAndCacheElectives(
+    int semester,
+  ) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
@@ -237,7 +268,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             'raw': electivesList,
             'grouped': grouped,
           };
-          await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), cacheData, serverUpdatedAt: serverUpdatedAt);
+          await ScheduleDatabaseHelper.instance.cacheElectiveData(
+            semester.toString(),
+            cacheData,
+            serverUpdatedAt: serverUpdatedAt,
+          );
           return grouped;
         }
       }
@@ -249,34 +284,42 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   void _fetchAndCacheElectivesInBackground(int semester) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    http.get(Uri.parse('${Config.electiveBaseEndpoint}/$semester?t=$timestamp')).then((response) {
-      if (response.statusCode == 200) {
-        final resData = jsonDecode(response.body);
-        if (resData['success'] == true && resData['data'] != null) {
-          final electivesList = resData['data']['electives'] as List;
-          final serverUpdatedAt = resData['data']['updatedAt'] as String?;
-          final Map<String, List<String>> grouped = {};
-          for (var item in electivesList) {
-            final group = item['electiveGroup'] as String;
-            final name = item['name'] as String;
-            grouped.putIfAbsent(group, () => []).add(name);
+    http
+        .get(Uri.parse('${Config.electiveBaseEndpoint}/$semester?t=$timestamp'))
+        .then((response) {
+          if (response.statusCode == 200) {
+            final resData = jsonDecode(response.body);
+            if (resData['success'] == true && resData['data'] != null) {
+              final electivesList = resData['data']['electives'] as List;
+              final serverUpdatedAt = resData['data']['updatedAt'] as String?;
+              final Map<String, List<String>> grouped = {};
+              for (var item in electivesList) {
+                final group = item['electiveGroup'] as String;
+                final name = item['name'] as String;
+                grouped.putIfAbsent(group, () => []).add(name);
+              }
+              final cacheData = {
+                'updatedAt': serverUpdatedAt,
+                'raw': electivesList,
+                'grouped': grouped,
+              };
+              ScheduleDatabaseHelper.instance.cacheElectiveData(
+                semester.toString(),
+                cacheData,
+                serverUpdatedAt: serverUpdatedAt,
+              );
+            }
           }
-          final cacheData = {
-            'updatedAt': serverUpdatedAt,
-            'raw': electivesList,
-            'grouped': grouped,
-          };
-          ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), cacheData, serverUpdatedAt: serverUpdatedAt);
-        }
-      }
-    }).catchError((e) {
-      debugPrint('Background fetch error for electives: $e');
-    });
+        })
+        .catchError((e) {
+          debugPrint('Background fetch error for electives: $e');
+        });
   }
 
   Future<List<String>> _fetchSectionsList(int semester) async {
     try {
-      final sqliteData = await ScheduleDatabaseHelper.instance.getCachedScheduleData(semester.toString());
+      final sqliteData = await ScheduleDatabaseHelper.instance
+          .getCachedScheduleData(semester.toString());
       if (sqliteData != null && sqliteData.containsKey('classes')) {
         final classesList = sqliteData['classes'] as List;
         return classesList.map((c) => c['name'] as String).toList()..sort();
@@ -315,10 +358,19 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   // --- UI Helpers ---
 
   String? _matchElectiveGroup(String className) {
-    final cleanName = className.toUpperCase().replaceAll(RegExp(r'[\s\-_]+'), '');
-    final allGroups = {...availableElectives, ...{for (var k in selectedElectives.keys) k: <String>[]}};
+    final cleanName = className.toUpperCase().replaceAll(
+      RegExp(r'[\s\-_]+'),
+      '',
+    );
+    final allGroups = {
+      ...availableElectives,
+      ...{for (var k in selectedElectives.keys) k: <String>[]},
+    };
     for (var group in allGroups.keys) {
-      final cleanGroup = group.toUpperCase().replaceAll(RegExp(r'[\s\-_]+'), '');
+      final cleanGroup = group.toUpperCase().replaceAll(
+        RegExp(r'[\s\-_]+'),
+        '',
+      );
       if (cleanName == cleanGroup) return group;
       final aliasMap = <String, List<String>>{
         cleanGroup: _generateAliases(cleanGroup),
@@ -363,7 +415,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   List<dynamic> _processPeriods(List<dynamic> originalPeriods, int dayOfWeek) {
-    final periods = originalPeriods.map((p) => Map<String, dynamic>.from(p)).toList();
+    final periods = originalPeriods
+        .map((p) => Map<String, dynamic>.from(p))
+        .toList();
     for (var period in periods) {
       final className = period['className']?.toString() ?? '';
       final matchedGroup = _matchElectiveGroup(className);
@@ -371,9 +425,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         final chosenElective = selectedElectives[matchedGroup];
         if (chosenElective != null) {
           period['className'] = chosenElective;
-          period['_replacedByElective'] = true; 
+          period['_replacedByElective'] = true;
           period['isElective'] = true;
-          final room = _getElectiveRoom(chosenElective, dayOfWeek, period['startTime']?.toString() ?? '');
+          final room = _getElectiveRoom(
+            chosenElective,
+            dayOfWeek,
+            period['startTime']?.toString() ?? '',
+          );
           if (room.isNotEmpty) {
             period['room'] = room;
           }
@@ -391,72 +449,91 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       if (scheduleData != null) {
         List<dynamic>? classes = scheduleData!['classes'] as List<dynamic>?;
         if (classes != null && classes.isNotEmpty) {
-          if (_cachedSectionData == null || _cachedSectionQuery != selectedSection || _cachedScheduleHash != scheduleData.hashCode) {
+          if (_cachedSectionData == null ||
+              _cachedSectionQuery != selectedSection ||
+              _cachedScheduleHash != scheduleData.hashCode) {
             _cachedSectionQuery = selectedSection;
             _cachedScheduleHash = scheduleData.hashCode;
-            
+
             var section = classes.firstWhere(
               (s) => s['name'] == selectedSection,
               orElse: () => null,
             );
-            
+
             if (section == null) {
-            final normalizedSaved = selectedSection.toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
-            section = classes.firstWhere((s) {
-              final normName = s['name'].toString().toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
-              return normalizedSaved == normName;
-            }, orElse: () => null);
-
-            if (section == null && normalizedSaved.startsWith('CSE')) {
-              final correctedSearch = 'CS${normalizedSaved.substring(3)}';
+              final normalizedSaved = selectedSection.toUpperCase().replaceAll(
+                RegExp(r'\s+|-'),
+                '',
+              );
               section = classes.firstWhere((s) {
-                final normName = s['name'].toString().toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
-                return correctedSearch == normName;
+                final normName = s['name'].toString().toUpperCase().replaceAll(
+                  RegExp(r'\s+|-'),
+                  '',
+                );
+                return normalizedSaved == normName;
               }, orElse: () => null);
-            }
 
-            if (section == null && RegExp(r'^\d+$').hasMatch(normalizedSaved)) {
-              final correctedSearch = '${selectedBranch.toUpperCase()}$normalizedSaved';
-              section = classes.firstWhere((s) {
-                final normName = s['name'].toString().toUpperCase().replaceAll(RegExp(r'\s+|-'), '');
-                return correctedSearch == normName;
-              }, orElse: () => null);
-            }
-
-            section ??= classes.first;
-
-            if (section != null) {
-              final dbName = section['name'] as String;
-              String uiFormattedName = dbName.trim();
-              if (dbName.startsWith('CS') && !dbName.startsWith('CSCE') && !dbName.startsWith('CSSE')) {
-                final numberPart = dbName.substring(2).trim();
-                if (int.tryParse(numberPart) != null) {
-                  uiFormattedName = 'CSE-$numberPart';
-                }
-              } else if (dbName.startsWith('CSCE')) {
-                final numberPart = dbName.substring(4).trim();
-                if (int.tryParse(numberPart) != null) {
-                  uiFormattedName = 'CSCE-$numberPart';
-                }
-              } else if (dbName.startsWith('CSSE')) {
-                final numberPart = dbName.substring(4).trim();
-                if (int.tryParse(numberPart) != null) {
-                  uiFormattedName = 'CSSE-$numberPart';
-                }
-              } else if (dbName.startsWith('IT')) {
-                final numberPart = dbName.substring(2).trim();
-                if (int.tryParse(numberPart) != null) {
-                  uiFormattedName = 'IT-$numberPart';
-                }
+              if (section == null && normalizedSaved.startsWith('CSE')) {
+                final correctedSearch = 'CS${normalizedSaved.substring(3)}';
+                section = classes.firstWhere((s) {
+                  final normName = s['name']
+                      .toString()
+                      .toUpperCase()
+                      .replaceAll(RegExp(r'\s+|-'), '');
+                  return correctedSearch == normName;
+                }, orElse: () => null);
               }
 
-              Future.microtask(() {
-                if (mounted && selectedSection != uiFormattedName) {
-                  setState(() {
-                    selectedSection = uiFormattedName;
-                  });
+              if (section == null &&
+                  RegExp(r'^\d+$').hasMatch(normalizedSaved)) {
+                final correctedSearch =
+                    '${selectedBranch.toUpperCase()}$normalizedSaved';
+                section = classes.firstWhere((s) {
+                  final normName = s['name']
+                      .toString()
+                      .toUpperCase()
+                      .replaceAll(RegExp(r'\s+|-'), '');
+                  return correctedSearch == normName;
+                }, orElse: () => null);
+              }
+
+              section ??= classes.first;
+
+              if (section != null) {
+                final dbName = section['name'] as String;
+                String uiFormattedName = dbName.trim();
+                if (dbName.startsWith('CS') &&
+                    !dbName.startsWith('CSCE') &&
+                    !dbName.startsWith('CSSE')) {
+                  final numberPart = dbName.substring(2).trim();
+                  if (int.tryParse(numberPart) != null) {
+                    uiFormattedName = 'CSE-$numberPart';
+                  }
+                } else if (dbName.startsWith('CSCE')) {
+                  final numberPart = dbName.substring(4).trim();
+                  if (int.tryParse(numberPart) != null) {
+                    uiFormattedName = 'CSCE-$numberPart';
+                  }
+                } else if (dbName.startsWith('CSSE')) {
+                  final numberPart = dbName.substring(4).trim();
+                  if (int.tryParse(numberPart) != null) {
+                    uiFormattedName = 'CSSE-$numberPart';
+                  }
+                } else if (dbName.startsWith('IT')) {
+                  final numberPart = dbName.substring(2).trim();
+                  if (int.tryParse(numberPart) != null) {
+                    uiFormattedName = 'IT-$numberPart';
+                  }
                 }
-              });
+
+                Future.microtask(() {
+                  if (mounted && selectedSection != uiFormattedName) {
+                    setState(() {
+                      selectedSection = uiFormattedName;
+                    });
+                  }
+                });
+              }
             }
             _cachedSectionData = section;
           }
@@ -483,7 +560,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     }
 
     if (dayClasses.isEmpty) {
-      final schedule = ScheduleLogicMixin.classSchedules[selectedSemester.toString()] ?? {};
+      final schedule =
+          ScheduleLogicMixin.classSchedules[selectedSemester.toString()] ?? {};
       final result = schedule[dayOfWeek] ?? [];
       dayClasses = _processPeriods(result, dayOfWeek);
     }
@@ -504,7 +582,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       if (electiveItem != null && electiveItem['periods'] is List) {
         final periods = electiveItem['periods'] as List;
         for (var p in periods) {
-          final pDay = p['day'] is int ? p['day'] as int : int.tryParse(p['day'].toString()) ?? -1;
+          final pDay = p['day'] is int
+              ? p['day'] as int
+              : int.tryParse(p['day'].toString()) ?? -1;
           if (pDay == dayOfWeek) {
             final slotKey = '${p['startTime']}-${p['endTime']}';
             if (!occupiedSlots.contains(slotKey)) {
@@ -515,7 +595,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 'room': p['room'] ?? '',
                 'isElective': true,
               });
-              occupiedSlots.add(slotKey); 
+              occupiedSlots.add(slotKey);
             }
           }
         }
@@ -562,7 +642,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               date.day == selectedDate.day,
         );
         bool didSwipe = false;
-        
+
         if (dragOffset < -swipeThreshold || velocity < -velocityThreshold) {
           if (currentIndex < 6) {
             final nextIndex = currentIndex + 1 <= 6
@@ -575,8 +655,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             });
             didSwipe = true;
           }
-        }
-        else if (dragOffset > swipeThreshold ||
+        } else if (dragOffset > swipeThreshold ||
             velocity > velocityThreshold) {
           if (currentIndex > 1) {
             final prevIndex = currentIndex - 1 >= 1
@@ -601,10 +680,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           automaticallyImplyLeading: false,
           middle: const Text(
             'Timesheet',
-            style: TextStyle(
-              fontFamily: 'Salena',
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontFamily: 'Salena', fontWeight: FontWeight.bold),
           ),
           backgroundColor: CupertinoColors.black.withValues(alpha: 0.6),
           trailing: CupertinoButton(
@@ -662,10 +738,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                 ),
                                 children: [
                                   TextSpan(
-                                    text: 'Showing for Semester $selectedSemester ',
+                                    text:
+                                        'Showing for Semester $selectedSemester ',
                                   ),
                                   TextSpan(
-                                    text: '(${selectedSection.isNotEmpty ? selectedSection : selectedBranch})',
+                                    text:
+                                        '(${selectedSection.isNotEmpty ? selectedSection : selectedBranch})',
                                     style: const TextStyle(
                                       color: Color(0xFF10B981),
                                       fontWeight: FontWeight.w700,
@@ -699,7 +777,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 24,
+                      horizontal: 24,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [
@@ -709,10 +790,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16), // Softer, more standard border radius
+                      borderRadius: BorderRadius.circular(
+                        16,
+                      ), // Softer, more standard border radius
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFF3366).withValues(alpha: 0.25), // Subtle, elegant shadow
+                          color: const Color(
+                            0xFFFF3366,
+                          ).withValues(alpha: 0.25), // Subtle, elegant shadow
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -732,7 +817,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          getHolidayForSelectedDate()!['event'] ?? 'No Classes Today',
+                          getHolidayForSelectedDate()!['event'] ??
+                              'No Classes Today',
                           style: const TextStyle(
                             fontFamily: 'Salena',
                             color: Colors.white,
@@ -767,10 +853,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       const SizedBox(height: 16),
                       Text(
                         'No schedule data available for $selectedSemester.toString()',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -778,14 +861,18 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 ),
               )
             else ...[
-              if (availableElectives.isNotEmpty && selectedElectives.length < availableElectives.length)
+              if (availableElectives.isNotEmpty &&
+                  selectedElectives.length < availableElectives.length)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: GestureDetector(
                       onTap: _showSettingsBottomSheet,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(30),
@@ -799,7 +886,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                         ),
                         child: Row(
                           children: [
-                            const Icon(CupertinoIcons.exclamationmark_circle_fill, color: Colors.red, size: 24),
+                            const Icon(
+                              CupertinoIcons.exclamationmark_circle_fill,
+                              color: Colors.red,
+                              size: 24,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -821,7 +912,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(CupertinoIcons.chevron_right, color: Colors.red, size: 14),
+                            const Icon(
+                              CupertinoIcons.chevron_right,
+                              color: Colors.red,
+                              size: 14,
+                            ),
                           ],
                         ),
                       ),
@@ -845,60 +940,70 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           duration: dragOffset == 0.0
                               ? const Duration(milliseconds: 200)
                               : Duration.zero,
-                        curve: Curves.easeOut,
-                        transform: Matrix4.translationValues(
-                          dragOffset.clamp(-200.0, 200.0),
-                          0,
-                          0,
-                        ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          switchInCurve: Curves.easeOut,
-                          switchOutCurve: Curves.easeIn,
-                          layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
-                            return Stack(
-                              alignment: Alignment.topCenter,
-                              children: <Widget>[
-                                ...previousChildren,
-                                ?currentChild,
-                              ],
-                            );
-                          },
-                          transitionBuilder: (child, animation) {
-                            final isIncoming = child.key == ValueKey(selectedDate);
-                            final Offset offsetBegin;
-                            if (isIncoming) {
-                              offsetBegin = slideFromRight
-                                  ? const Offset(1.0, 0.0)
-                                  : const Offset(-1.0, 0.0);
-                            } else {
-                              offsetBegin = slideFromRight
-                                  ? const Offset(-1.0, 0.0)
-                                  : const Offset(1.0, 0.0);
-                            }
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: offsetBegin,
-                                  end: Offset.zero,
-                                ).animate(animation),
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: KeyedSubtree(
-                            key: ValueKey(selectedDate),
-                            child: ScheduleTimeline(
-                              mergedClasses: mergedClasses,
-                              isOngoing: (c) => isClassOngoing(c['startTime'] as String, c['endTime'] as String),
-                              isPassed: isClassPassed,
-                              isHoliday: getHolidayForSelectedDate() != null,
-                              emptyMessage: (selectedDate.weekday == 6 || selectedDate.weekday == 7)
-                                  ? 'No classes scheduled for this day.\nEnjoy your day!'
-                                  : 'No classes scheduled for this day',
-                            ),
+                          curve: Curves.easeOut,
+                          transform: Matrix4.translationValues(
+                            dragOffset.clamp(-200.0, 200.0),
+                            0,
+                            0,
                           ),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            switchInCurve: Curves.easeOut,
+                            switchOutCurve: Curves.easeIn,
+                            layoutBuilder:
+                                (
+                                  Widget? currentChild,
+                                  List<Widget> previousChildren,
+                                ) {
+                                  return Stack(
+                                    alignment: Alignment.topCenter,
+                                    children: <Widget>[
+                                      ...previousChildren,
+                                      ?currentChild,
+                                    ],
+                                  );
+                                },
+                            transitionBuilder: (child, animation) {
+                              final isIncoming =
+                                  child.key == ValueKey(selectedDate);
+                              final Offset offsetBegin;
+                              if (isIncoming) {
+                                offsetBegin = slideFromRight
+                                    ? const Offset(1.0, 0.0)
+                                    : const Offset(-1.0, 0.0);
+                              } else {
+                                offsetBegin = slideFromRight
+                                    ? const Offset(-1.0, 0.0)
+                                    : const Offset(1.0, 0.0);
+                              }
+                              return FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: offsetBegin,
+                                    end: Offset.zero,
+                                  ).animate(animation),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: KeyedSubtree(
+                              key: ValueKey(selectedDate),
+                              child: ScheduleTimeline(
+                                mergedClasses: mergedClasses,
+                                isOngoing: (c) => isClassOngoing(
+                                  c['startTime'] as String,
+                                  c['endTime'] as String,
+                                ),
+                                isPassed: isClassPassed,
+                                isHoliday: getHolidayForSelectedDate() != null,
+                                emptyMessage:
+                                    (selectedDate.weekday == 6 ||
+                                        selectedDate.weekday == 7)
+                                    ? 'No classes scheduled for this day.\nEnjoy your day!'
+                                    : 'No classes scheduled for this day',
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -906,8 +1011,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   ),
                 ),
               ),
+            ],
           ],
-        ]),
+        ),
       ),
     );
   }
@@ -918,7 +1024,11 @@ class _DaySelectorHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double height;
   final double topPadding;
 
-  _DaySelectorHeaderDelegate({required this.child, required this.height, this.topPadding = 0.0});
+  _DaySelectorHeaderDelegate({
+    required this.child,
+    required this.height,
+    this.topPadding = 0.0,
+  });
 
   @override
   double get minExtent => height + topPadding;
