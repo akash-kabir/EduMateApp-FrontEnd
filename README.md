@@ -106,6 +106,9 @@ flutter pub get
 flutter run
 ```
 
+### Android Rendering Engine Note
+As of Flutter 3.24+, Impeller is the default rendering engine for Android. However, due to its current poor performance with heavy animated `BackdropFilter` and `SaveLayer` operations, this app explicitly opts-out of Impeller and forces **Skia** in `AndroidManifest.xml` to maintain 120fps smooth performance on glassmorphic UI elements.
+
 ## Security & Architecture Details
 To understand the detailed inner workings of the code architecture and how each modular feature is designed, see [features.md](features.md).
 
