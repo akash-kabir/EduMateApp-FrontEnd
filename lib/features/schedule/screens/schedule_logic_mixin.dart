@@ -31,6 +31,8 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
   int lastRequestId = 0;
   bool slideFromRight = true;
   double dragOffset = 0.0;
+  bool _hasNotifiedScheduleUpdate = false;
+  bool _hasNotifiedElectiveUpdate = false;
 
   final List<String> branches = ['CSCE', 'CSE', 'IT', 'CSSE'];
   final Map<String, List<String>> classesPerBranch = {
@@ -237,12 +239,15 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
   }
 
   Future<void> fetchAvailableElectives(int semester,
-      {bool isPolling = false, bool skipLoadPreferences = false}) async {
+      {bool isPolling = false, bool skipLoadPreferences = false, bool forceRefresh = false}) async {
+    if (!isPolling) {
+      _hasNotifiedElectiveUpdate = false;
+    }
     final provider = Provider.of<ScheduleProvider>(context, listen: false);
     final cachedGrouped = provider.getElectives(semester.toString());
     final cachedRaw = provider.getRawElectives(semester.toString());
 
-    if (cachedGrouped != null && cachedRaw != null && !isPolling) {
+    if (cachedGrouped != null && cachedRaw != null && !isPolling && !forceRefresh) {
       if (mounted) {
         setState(() {
           availableElectives = cachedGrouped;
@@ -317,7 +322,10 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
           if (localUpdatedAt == serverUpdatedAt) {
             return;
           } else if (isPolling && mounted) {
-            showElectiveUpdateNotification(semester);
+            if (!_hasNotifiedElectiveUpdate) {
+              _hasNotifiedElectiveUpdate = true;
+              showElectiveUpdateNotification(semester);
+            }
             return;
           }
         }
@@ -381,7 +389,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       isSuccess: true,
       actionLabel: 'Refresh',
       onActionTap: () {
-        fetchAvailableElectives(semester, isPolling: false);
+        fetchAvailableElectives(semester, isPolling: false, forceRefresh: true);
       },
       duration: const Duration(seconds: 10),
     );
@@ -471,14 +479,18 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
     return await ScheduleDatabaseHelper.instance.getCachedScheduleData(semester);
   }
 
-  Future<void> fetchScheduleFromBackend({bool isPolling = false}) async {
+  Future<void> fetchScheduleFromBackend({bool isPolling = false, bool forceRefresh = false}) async {
+    if (!isPolling) {
+      _hasNotifiedScheduleUpdate = false;
+    }
+    
     final currentRequestId = ++lastRequestId;
     final requestedSemester = selectedSemester;
 
     final provider = Provider.of<ScheduleProvider>(context, listen: false);
     final memoryCache = provider.getSchedule(requestedSemester.toString());
 
-    if (memoryCache != null && !isPolling) {
+    if (memoryCache != null && !isPolling && !forceRefresh) {
       if (mounted) {
         setState(() {
           scheduleData = memoryCache;
@@ -491,7 +503,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
     final cachedData = await getCachedScheduleData(requestedSemester.toString());
     final hasCache = cachedData != null;
     
-    if (hasCache && !isPolling) {
+    if (hasCache && !isPolling && !forceRefresh) {
       provider.setSchedule(requestedSemester.toString(), cachedData);
       if (mounted) {
         setState(() {
@@ -499,6 +511,10 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
           isLoading = false; // Immediately dismiss skeleton loader if cache exists
         });
       }
+    }
+
+    if (!isPolling) {
+      _hasNotifiedScheduleUpdate = false;
     }
 
     if (!hasCache && !isPolling && mounted) {
@@ -526,7 +542,10 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
             }
             return; 
           } else if (isPolling && mounted) {
-            showUpdateNotification();
+            if (!_hasNotifiedScheduleUpdate) {
+              _hasNotifiedScheduleUpdate = true;
+              showUpdateNotification();
+            }
             return;
           }
         }
@@ -592,7 +611,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       isSuccess: true,
       actionLabel: 'Refresh',
       onActionTap: () {
-        fetchScheduleFromBackend(isPolling: false);
+        fetchScheduleFromBackend(isPolling: false, forceRefresh: true);
       },
       duration: const Duration(seconds: 10),
     );
