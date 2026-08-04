@@ -20,7 +20,9 @@ EduMate is a dark-mode-first mobile application designed to help university stud
 - **Local Databases:** SQLite (`sqflite`), SharedPreferences, FlutterSecureStorage (for secure local credential storage)
 - **Map & Navigation:** Mapbox SDK
 - **API Communication:** HTTP & Dio (with automatic JWT token refresh mechanism)
+- **Background Sync:** `Workmanager` for periodic offline-first background task execution
 - **Media Handling:** Image Picker, Image Cropper, and direct Cloudinary upload integration
+- **Performance:** Optimized 120Hz rendering using `AnimatedBuilder`, `ShaderMask`, and `RepaintBoundary`
 
 ## Key Features
 
@@ -32,6 +34,7 @@ EduMate is a dark-mode-first mobile application designed to help university stud
 
 ### 2) Automated Timetable & Attendance (SAPSync)
 - **Zero-Backend Credential Sync:** Connects directly to the student portal on-device. Portal credentials are never sent to or stored on the EduMate backend; they remain encrypted locally.
+- **Background Sync:** Periodic headless syncing (every 12 hours) ensures your attendance and schedule are always up-to-date even before you open the app.
 - Client-side headless webview scraping of attendance and personalized timetables.
 - Visual status cards showing attendance metrics, warning alerts for sub-75% subjects, and calculated skips left.
 
@@ -52,6 +55,10 @@ EduMate is a dark-mode-first mobile application designed to help university stud
 ### 6) Events Feed & Media Upload
 - Role-gated post creation feed (restricted to authenticated societies/contributors/admins).
 - Direct client-side signed media upload to Cloudinary.
+
+### 7) In-App Updates & Maintenance
+- **Play Store Integration:** Seamless flexible in-app updates utilizing `in_app_update` to notify users of new versions upon app launch without interrupting their workflow.
+- **Bug Reporting:** In-app feedback system for users to report bugs directly to developers.
 
 ## Project Directory Structure
 
