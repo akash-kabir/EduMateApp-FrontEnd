@@ -246,45 +246,41 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                   ),
               ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isToday 
-                              ? Colors.redAccent.withOpacity(0.1) 
-                              : const Color(0xFF2E8B57).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isToday 
+                          ? Colors.redAccent.withOpacity(0.1) 
+                          : const Color(0xFF2E8B57).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          startDate.day.toString().padLeft(2, '0'),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: isToday ? Colors.redAccent : const Color(0xFF2E8B57),
+                          ),
                         ),
-                        child: Column(
-                          children: [
-                            Text(
-                              startDate.day.toString().padLeft(2, '0'),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: isToday ? Colors.redAccent : const Color(0xFF2E8B57),
-                              ),
-                            ),
-                            Text(
-                              DateFormat('MMM').format(startDate).toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: isToday ? Colors.redAccent : const Color(0xFF2E8B57),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          DateFormat('MMM').format(startDate).toUpperCase(),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isToday ? Colors.redAccent : const Color(0xFF2E8B57),
+                          ),
                         ),
-                      ),
+                      ],
+                    ),
+                  ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -369,8 +365,6 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                     ],
                   ),
                 ),
-              ),
-            ),
           ),
         ],
       ),

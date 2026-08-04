@@ -17,16 +17,10 @@ class SapAttendanceScreen extends StatefulWidget {
 class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
   int? _selectedIndex;
   final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(() {
-      setState(() {
-        _scrollOffset = _scrollController.offset;
-      });
-    });
   }
 
   @override
@@ -48,22 +42,29 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
           color: const Color(0xFF4CD97B),
           backgroundColor: const Color(0xFF141110),
           onRefresh: () => sapProvider.fetchAttendance(),
-          child: ShaderMask(
-            shaderCallback: (Rect rect) {
-              final fadeIntensity = (_scrollOffset / 40.0).clamp(0.0, 1.0);
-              return LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(1.0 - fadeIntensity),
-                  Colors.black,
-                ],
-                stops: const [0.0, 0.08], // Fades top 8% of the scroll view
-              ).createShader(rect);
+          child: AnimatedBuilder(
+            animation: _scrollController,
+            builder: (context, child) {
+              final fadeIntensity = _scrollController.hasClients ? (_scrollController.offset / 40.0).clamp(0.0, 1.0) : 0.0;
+              return ShaderMask(
+                shaderCallback: (Rect rect) {
+                  return LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(1.0 - fadeIntensity),
+                      Colors.black,
+                    ],
+                    stops: const [0.0, 0.08], // Fades top 8% of the scroll view
+                  ).createShader(rect);
+                },
+                blendMode: BlendMode.dstIn,
+                child: child,
+              );
             },
-            blendMode: BlendMode.dstIn,
-            child: CustomScrollView(
-              controller: _scrollController,
+            child: RepaintBoundary(
+              child: CustomScrollView(
+                controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 // 1. The Header (Scrolls away)
@@ -223,12 +224,11 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
               ],
             ),
           ),
+          ),
         ),
       ),
     );
   }
-
-
   List<Map<String, String>> _getTermOptions(String userId) {
     int studentStartYear = 2024;
     if (userId.length >= 2) {

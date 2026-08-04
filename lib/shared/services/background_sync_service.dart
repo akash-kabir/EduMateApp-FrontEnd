@@ -6,6 +6,8 @@ import 'package:app/shared/config.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/features/schedule/services/schedule_database_helper.dart';
 import 'package:app/shared/services/holiday_service.dart';
+import 'package:app/features/sapsync/provider/sap_provider.dart';
+import 'package:app/features/sapsync/services/sap_auth_service.dart';
 
 const String syncScheduleTask = "sync_schedule_task";
 const String syncHolidayTask = "sync_holiday_task";
@@ -22,6 +24,8 @@ void callbackDispatcher() {
         await _performHolidaySync();
       } else if (task == syncEventsTask) {
         await _performEventSync();
+      } else if (task == syncSapTask) {
+        await _performSapSync();
       }
     } catch (err) {
       debugPrint("Background task failed: $err");
@@ -114,6 +118,27 @@ Future<void> _performEventSync() async {
   }
 }
 
+Future<void> _performSapSync() async {
+  try {
+    // Import SapProvider conditionally or use the existing SapProvider
+    // Wait for the constructor to load auth tokens
+    final provider = SapProvider();
+    await Future.delayed(const Duration(seconds: 2));
+    if (provider.isConnected || provider.sapUserId.isNotEmpty) {
+      await provider.fetchAttendance();
+    } else {
+      // Manual auth load just in case
+      final authService = SapAuthService();
+      final creds = await authService.getCredentials();
+      if (creds != null) {
+        await provider.fetchAttendance();
+      }
+    }
+  } catch (e) {
+    debugPrint("Background SAP sync failed: $e");
+  }
+}
+
 class BackgroundSyncService {
   static Future<void> initialize() async {
     await Workmanager().initialize(
@@ -140,6 +165,13 @@ class BackgroundSyncService {
       "3",
       syncEventsTask,
       frequency: const Duration(hours: 3), // Every 3 hours for events
+      constraints: Constraints(networkType: NetworkType.connected),
+    );
+
+    await Workmanager().registerPeriodicTask(
+      "4",
+      syncSapTask,
+      frequency: const Duration(hours: 12), // Every 12 hours for attendance
       constraints: Constraints(networkType: NetworkType.connected),
     );
   }

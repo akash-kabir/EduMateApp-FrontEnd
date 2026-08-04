@@ -27,6 +27,8 @@ class ScheduleScreen extends StatefulWidget {
 
 class _ScheduleScreenState extends State<ScheduleScreen>
     with WidgetsBindingObserver, ScheduleLogicMixin {
+  
+  final ValueNotifier<double> dragOffsetNotifier = ValueNotifier(0.0);
   Map<String, dynamic>? _cachedSectionData;
   String? _cachedSectionQuery;
   int? _cachedScheduleHash;
@@ -620,14 +622,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
     return GestureDetector(
       onHorizontalDragStart: (_) {
-        setState(() {
-          dragOffset = 0.0;
-        });
+        dragOffsetNotifier.value = 0.0;
       },
       onHorizontalDragUpdate: (details) {
-        setState(() {
-          dragOffset += details.delta.dx;
-        });
+        dragOffsetNotifier.value += details.delta.dx;
       },
       onHorizontalDragEnd: (details) {
         final screenWidth = MediaQuery.of(context).size.width;
@@ -643,19 +641,21 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         );
         bool didSwipe = false;
 
-        if (dragOffset < -swipeThreshold || velocity < -velocityThreshold) {
+        final currentOffset = dragOffsetNotifier.value;
+
+        if (currentOffset < -swipeThreshold || velocity < -velocityThreshold) {
           if (currentIndex < 6) {
             final nextIndex = currentIndex + 1 <= 6
                 ? currentIndex + 1
                 : currentIndex;
             setState(() {
               slideFromRight = true;
-              dragOffset = 0.0;
+              dragOffsetNotifier.value = 0.0;
               selectedDate = weekDatesLocal[nextIndex];
             });
             didSwipe = true;
           }
-        } else if (dragOffset > swipeThreshold ||
+        } else if (currentOffset > swipeThreshold ||
             velocity > velocityThreshold) {
           if (currentIndex > 1) {
             final prevIndex = currentIndex - 1 >= 1
@@ -663,16 +663,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 : currentIndex;
             setState(() {
               slideFromRight = false;
-              dragOffset = 0.0;
+              dragOffsetNotifier.value = 0.0;
               selectedDate = weekDatesLocal[prevIndex];
             });
             didSwipe = true;
           }
         }
         if (!didSwipe) {
-          setState(() {
-            dragOffset = 0.0;
-          });
+          dragOffsetNotifier.value = 0.0;
         }
       },
       child: CupertinoPageScaffold(
@@ -930,23 +928,31 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   fillOverscroll: true,
                   child: Align(
                     alignment: Alignment.topCenter,
-                    child: Opacity(
-                      opacity: (1.0 - (dragOffset.abs() / 400.0)).clamp(
-                        0.4,
-                        1.0,
-                      ),
-                      child: RepaintBoundary(
-                        child: AnimatedContainer(
-                          duration: dragOffset == 0.0
-                              ? const Duration(milliseconds: 200)
-                              : Duration.zero,
-                          curve: Curves.easeOut,
-                          transform: Matrix4.translationValues(
-                            dragOffset.clamp(-200.0, 200.0),
-                            0,
-                            0,
+                    child: ValueListenableBuilder<double>(
+                      valueListenable: dragOffsetNotifier,
+                      builder: (context, currentDragOffset, child) {
+                        return Opacity(
+                          opacity: (1.0 - (currentDragOffset.abs() / 400.0)).clamp(
+                            0.4,
+                            1.0,
                           ),
-                          child: AnimatedSwitcher(
+                          child: RepaintBoundary(
+                            child: AnimatedContainer(
+                              duration: currentDragOffset == 0.0
+                                  ? const Duration(milliseconds: 200)
+                                  : Duration.zero,
+                              curve: Curves.easeOut,
+                              transform: Matrix4.translationValues(
+                                currentDragOffset.clamp(-200.0, 200.0),
+                                0,
+                                0,
+                              ),
+                              child: child,
+                            ),
+                          ),
+                        );
+                      },
+                      child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
                             switchInCurve: Curves.easeOut,
                             switchOutCurve: Curves.easeIn,
@@ -1007,15 +1013,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           ),
                         ),
                       ),
-                    ),
                   ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+        )],
+              ]),
+            ),
+          );
   }
 }
 
