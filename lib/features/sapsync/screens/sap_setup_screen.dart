@@ -16,6 +16,7 @@ class SapSetupScreen extends StatefulWidget {
 class SapSetupScreenState extends State<SapSetupScreen> {
   final _userIdController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   List<String> _calculatedTerms = [];
   String? _selectedTerm;
@@ -188,7 +189,7 @@ class SapSetupScreenState extends State<SapSetupScreen> {
               // Password Field
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 style: const TextStyle(color: Colors.white, fontSize: 16),
                 decoration: InputDecoration(
                   labelText: 'Password',
@@ -200,6 +201,18 @@ class SapSetupScreenState extends State<SapSetupScreen> {
                     borderSide: BorderSide.none,
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? CupertinoIcons.eye : CupertinoIcons.eye_slash,
+                      color: Colors.grey[500],
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
               ),
               

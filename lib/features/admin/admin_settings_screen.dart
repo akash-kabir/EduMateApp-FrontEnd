@@ -5,9 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:app/features/admin/users/admin_user_management.dart';
 import 'package:app/features/admin/general/admin_post_management.dart';
 import 'package:app/shared/config.dart';
-import 'package:app/shared/services/shared_preferences_service.dart';
-import 'package:app/features/auth_and_profile/screens/auth/login_screen.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
+import 'package:app/shared/services/shared_preferences_service.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -138,7 +137,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                         Colors.black,
                       ],
                       stops: const [0.0, 0.08],
@@ -234,33 +233,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               );
                             },
                           ),
-                          const SizedBox(height: 40),
-                          Center(
-                            child: CupertinoButton(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 12,
-                              ),
-                              color: const Color(0xFFFF1744),
-                              onPressed: () async {
-                                await SharedPreferencesService.clearUserData();
-                                if (context.mounted) {
-                                  Navigator.pushAndRemoveUntil(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const LoginScreen(),
-                                    ),
-                                    (route) => false,
-                                  );
-                                }
-                              },
-                              child: const Text(
-                                'Log Out',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 100),
+
                         ],
                       ),
                     ),
@@ -306,7 +279,7 @@ class _MapKillSwitchCard extends StatelessWidget {
         color: const Color(0xFF141110),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: statusColor.withOpacity(0.3),
+          color: statusColor.withValues(alpha: 0.3),
           width: 1.5,
         ),
       ),
@@ -318,7 +291,7 @@ class _MapKillSwitchCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.15),
+                  color: statusColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -357,7 +330,7 @@ class _MapKillSwitchCard extends StatelessWidget {
               else
                 CupertinoSwitch(
                   value: isNavigationActive,
-                  activeColor: Colors.green,
+                  activeTrackColor: Colors.green,
                   onChanged: onToggle,
                 ),
             ],
@@ -372,7 +345,7 @@ class _MapKillSwitchCard extends StatelessWidget {
                 'Monthly Directions Usage:',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
               Text(
@@ -419,7 +392,7 @@ class _SettingsCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(

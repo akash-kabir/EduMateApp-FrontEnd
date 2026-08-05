@@ -180,9 +180,6 @@ Future<T?> showGlassmorphicDialog<T>({
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F0F11).withValues(alpha: darkBackgroundAlpha ?? 0.75),
                   borderRadius: BorderRadius.circular(24.0),
-                  border: Border.all(
-                    color: Colors.white12,
-                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.2),

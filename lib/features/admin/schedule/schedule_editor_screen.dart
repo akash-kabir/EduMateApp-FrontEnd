@@ -512,7 +512,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
               children: [
                 Positioned.fill(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.only(top: 180, bottom: 120),
+                    padding: const EdgeInsets.only(top: 110, bottom: 120),
                     child: Column(
                       children: [
                         Padding(
@@ -559,7 +559,7 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                           );
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF000000),
+                                          backgroundColor: const Color(0xFF1A1A1A),
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(vertical: 14),
                                           shape: RoundedRectangleBorder(

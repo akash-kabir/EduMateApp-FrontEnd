@@ -60,6 +60,10 @@ EduMate is a dark-mode-first mobile application designed to help university stud
 - **Play Store Integration:** Seamless flexible in-app updates utilizing `in_app_update` to notify users of new versions upon app launch without interrupting their workflow.
 - **Bug Reporting:** In-app feedback system for users to report bugs directly to developers.
 
+### 8) Guest Accounts
+- **Restricted Access:** Prospective students and parents can use the app as guests with limited 3-day access.
+- **Automated Cascade Cleanup:** Backend automatically purges all guest data and associated local caching upon expiry.
+
 ## Project Directory Structure
 
 ```text

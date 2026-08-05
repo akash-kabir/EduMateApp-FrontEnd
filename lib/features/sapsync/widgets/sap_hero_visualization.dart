@@ -75,6 +75,22 @@ class SapHeroVisualization extends StatelessWidget {
                     letterSpacing: 0.5,
                   ),
                 ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Target: ${threshold.toInt()}%',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -112,10 +128,10 @@ class SapHeroVisualization extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Target', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                      Text('Updated', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
                       Text(
-                        '${threshold.toInt()}%',
-                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                        _formatTime(records.isNotEmpty ? records.first.lastSyncedAt : null),
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -149,5 +165,18 @@ class SapHeroVisualization extends StatelessWidget {
         ],
       ),
     );
+  }
+  
+  String _formatTime(DateTime? time) {
+    if (time == null) return 'Never';
+    final now = DateTime.now();
+    final isToday = now.year == time.year && now.month == time.month && now.day == time.day;
+    final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+    final min = time.minute.toString().padLeft(2, '0');
+    final ampm = time.hour >= 12 ? 'PM' : 'AM';
+    final timeStr = '$hour:$min $ampm';
+    if (isToday) return 'Today, $timeStr';
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${time.day} ${months[time.month - 1]}, $timeStr';
   }
 }

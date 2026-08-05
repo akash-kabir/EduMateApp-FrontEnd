@@ -152,8 +152,21 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           opacity: _fadeController,
           child: SingleChildScrollView(
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close, color: Colors.white54, size: 18),
+                    ),
+                  ),
+                ),
                 _buildCurrentStep(accent),
               ],
             ),
@@ -234,15 +247,6 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
             fontWeight: FontWeight.bold,
             color: Colors.white,
             fontFamily: 'Poppins',
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'We couldn\'t auto-detect your roll number.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey[400],
           ),
         ),
         const SizedBox(height: 20),

@@ -17,12 +17,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 
 import 'package:app/features/auth_and_profile/screens/profile_setup/profile_setup_dialog_flow.dart';
+
 import 'package:app/features/home/screens/holiday_list_screen.dart';
-import 'package:app/features/home/screens/post_management_screen.dart';
 import 'package:app/features/home/widgets/todays_schedule_card.dart';
 import 'package:app/features/sapsync/widgets/sapsync_entry_card.dart';
 import 'package:app/features/auth_and_profile/screens/profile/profile_details_screen.dart';
-import 'package:app/features/admin/admin_main_app.dart';
 import 'package:app/features/splash/screens/splash_screen.dart';
 import 'package:app/features/home/screens/cgpa_calculator_screen.dart';
 import 'package:provider/provider.dart';
@@ -51,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool openAppToTimesheet = false;
   String _userRole = '';
   Key _scheduleCardKey = UniqueKey();
+  bool _hideSapSync = false;
   
   SyncState _syncState = SyncState.idle;
   late AnimationController _syncAnimationController;
@@ -75,6 +75,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     await _loadUserData();
     _checkAndShowProfileSetupDialog();
     _performProfileSync();
+    _triggerSapSync();
+  }
+
+  void _triggerSapSync() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final sapProvider = Provider.of<SapProvider>(context, listen: false);
+      if (sapProvider.isConnected && !_hideSapSync) {
+        sapProvider.fetchAttendance().then((_) {
+          if (mounted) {
+            EduMateToast.showSuccessCard(
+              context,
+              title: 'Attendance Synced',
+              description: 'Your SAP attendance has been updated successfully.',
+            );
+          }
+        });
+      }
+    });
   }
 
   Future<void> _performProfileSync() async {
@@ -150,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final newToken = await SharedPreferencesService.getToken();
     final openTimesheetPref = await SharedPreferencesService.getBool('openToTimesheet');
     final role = await SharedPreferencesService.getUserRole();
+    final hideSap = await SharedPreferencesService.getBool('hideSapSync');
 
     if (!mounted) return;
     setState(() {
@@ -158,6 +178,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       token = newToken;
       openAppToTimesheet = openTimesheetPref;
       _userRole = role ?? '';
+      _hideSapSync = hideSap;
       _scheduleCardKey = UniqueKey(); // Force TodaysScheduleCard to re-fetch data
     });
   }
@@ -284,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 },
                                 style: TextButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 14),
-                                  backgroundColor: Colors.red.withOpacity(0.15),
+                                  backgroundColor: Colors.red.withValues(alpha: 0.15),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -350,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
               const SizedBox(height: 12),
               Text(
-                'You are logged in as a Guest. You have access to the Home and Schedule screens for 7 days. Map and Events are restricted.',
+                'You are logged in as a Guest. You have access to the Home and Schedule screens for 3 days. Map and Events are restricted.',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 14.0,
@@ -535,12 +556,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
 
             // SapSync Entry Card
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: SapSyncEntryCard(),
+            if (!_hideSapSync)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: SapSyncEntryCard(),
+                ),
               ),
-            ),
 
             // Quick Actions Grid
             SliverPadding(
@@ -590,8 +612,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     },
                   ),
                   DashboardActionCard(
-                    title: 'More',
-                    subtitle: 'Features',
+                    title: 'More features',
+                    subtitle: 'Coming soon',
                     icon: CupertinoIcons.sparkles,
                     gradientColors: const [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
                     onTap: () {
@@ -688,11 +710,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    final bool isAdminOrContributor = _userRole.toLowerCase() == 'admin' || _userRole.toLowerCase() == 'contributor';
-    final bool canManagePosts = _userRole.toLowerCase() == 'admin' || 
-                                _userRole.toLowerCase() == 'contributor' || 
-                                _userRole.toLowerCase() == 'contributor' || 
-                                _userRole.toLowerCase() == 'society';
+    
     
     return Scaffold(
       backgroundColor: Colors.transparent, // Let underlying app show through
@@ -829,37 +847,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                     }
                                   }
                                 ),
-                                if (canManagePosts)
-                                  _buildDrawerItem(
-                                    icon: CupertinoIcons.doc_person,
-                                    title: 'Manage Posts',
-                                    color: AuthPalette.coral,
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      Navigator.of(context).push(
-                                        PageRouteBuilder(
-                                          pageBuilder: (context, animation, secondaryAnimation) => const PostManagementScreen(),
-                                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                            return SlideTransition(
-                                              position: Tween<Offset>(begin: const Offset(-1.0, 0.0), end: Offset.zero)
-                                                  .animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-                                              child: child,
-                                            );
-                                          },
-                                        ),
-                                      );
-                                    }
-                                  ),
-                                if (isAdminOrContributor)
-                                  _buildDrawerItem(
-                                    icon: CupertinoIcons.shield, 
-                                    title: 'Admin Dashboard', 
-                                    color: AuthPalette.teal,
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      Navigator.of(context).push(CupertinoPageRoute(builder: (_) => const AdminMainApp(fromStudentView: true)));
-                                    }
-                                  ),
+
                                 _buildDrawerItem(
                                   icon: CupertinoIcons.square_arrow_right, 
                                   title: 'Logout', 
@@ -878,6 +866,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                     await SharedPreferencesService.clearUserData();
                                     if (context.mounted) {
                                       await Provider.of<SapProvider>(context, listen: false).logout();
+                                      if (!context.mounted) return;
                                       Navigator.pushAndRemoveUntil(
                                         context,
                                         CupertinoPageRoute(builder: (_) => const SplashScreen()),
