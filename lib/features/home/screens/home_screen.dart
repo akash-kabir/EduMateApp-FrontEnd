@@ -83,15 +83,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       if (!mounted) return;
       final sapProvider = Provider.of<SapProvider>(context, listen: false);
       if (sapProvider.isConnected && !_hideSapSync) {
-        sapProvider.fetchAttendance().then((_) {
-          if (mounted) {
-            EduMateToast.showSuccessCard(
-              context,
-              title: 'Attendance Synced',
-              description: 'Your SAP attendance has been updated successfully.',
-            );
-          }
-        });
+        sapProvider.fetchAttendance(); // Silent background sync
       }
     });
   }
@@ -661,6 +653,7 @@ class FullScreenDrawer extends StatefulWidget {
 
   const FullScreenDrawer({
     super.key,
+    
     required this.animation,
     required this.userFullName,
   });
