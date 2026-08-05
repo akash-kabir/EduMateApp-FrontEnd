@@ -234,33 +234,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               );
                             },
                           ),
-                          const SizedBox(height: 40),
-                          Center(
-                            child: CupertinoButton(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 12,
-                              ),
-                              color: const Color(0xFFFF1744),
-                              onPressed: () async {
-                                await SharedPreferencesService.clearUserData();
-                                if (context.mounted) {
-                                  Navigator.pushAndRemoveUntil(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const LoginScreen(),
-                                    ),
-                                    (route) => false,
-                                  );
-                                }
-                              },
-                              child: const Text(
-                                'Log Out',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 100),
+
                         ],
                       ),
                     ),

@@ -208,7 +208,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                     const SizedBox(height: 10),
                     _DataManagementCard(
                       title: 'Student Data',
-                      subtitle: 'Roll number to section & elective mappings',
+
                       iconColor: const Color(0xFF06B6D4),
                       icon: CupertinoIcons.person_2_fill,
                       onTap: () {
