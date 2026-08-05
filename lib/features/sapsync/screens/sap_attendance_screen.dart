@@ -120,7 +120,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                   children: [
                     CustomScrollView(
                       controller: _scrollController,
-                      physics: const ClampingScrollPhysics(),
+                      physics: const ClampingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                       slivers: [
                 // 1. The Header (Scrolls away)
                 SliverToBoxAdapter(
@@ -278,12 +278,12 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                   ),
               ],
             ),
-            if (_dragOffset > 0 || _isRefreshing || _isFlashing)
+            if (_dragOffset > 0 || _isRefreshing || _isFlashing || sapProvider.isLoading)
               Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                child: _isRefreshing || _isFlashing
+                child: (_isRefreshing || _isFlashing || sapProvider.isLoading)
                     ? const LinearProgressIndicator(
                         backgroundColor: Colors.transparent,
                         valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD97B)),
@@ -364,7 +364,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
-                  sapProvider.fetchAttendance();
+                  _handleRefresh(sapProvider);
                 },
                 icon: const Icon(Icons.refresh, color: Colors.black),
                 label: const Text(
