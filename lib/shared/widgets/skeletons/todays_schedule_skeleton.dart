@@ -70,8 +70,8 @@ class _TodaysScheduleSkeletonState extends State<TodaysScheduleSkeleton> with Si
                     scrollDirection: Axis.horizontal,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: 3,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (_, __) => Container(
+                    separatorBuilder: (_, _) => const SizedBox(width: 12),
+                    itemBuilder: (_, _) => Container(
                       width: 220,
                       decoration: BoxDecoration(
                         color: baseColor,

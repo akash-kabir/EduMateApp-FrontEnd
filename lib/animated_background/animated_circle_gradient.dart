@@ -106,8 +106,8 @@ class _AnimatedCircleGradientState extends State<AnimatedCircleGradient>
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [
-                      widget.secondaryColor.withOpacity(
-                        _pulseAnimation.value * 0.7,
+                      widget.secondaryColor.withValues(
+                        alpha: _pulseAnimation.value * 0.7,
                       ),
                       Colors.transparent,
                     ],

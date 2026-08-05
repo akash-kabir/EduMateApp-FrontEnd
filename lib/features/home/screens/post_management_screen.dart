@@ -129,7 +129,7 @@ class _PostManagementScreenState extends State<PostManagementScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                         Colors.black,
                       ],
                       stops: const [0.0, 0.08],
@@ -291,7 +291,7 @@ class _PostManagementScreenState extends State<PostManagementScreen> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.2),
+                color: Colors.red.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(CupertinoIcons.delete, color: Colors.red, size: 20),

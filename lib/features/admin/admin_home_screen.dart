@@ -84,7 +84,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.black.withOpacity(1.0 - fadeIntensity),
+                                Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                                 Colors.black,
                               ],
                               stops: const [0.0, 0.08],
@@ -223,7 +223,7 @@ class _StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 20),
@@ -534,7 +534,7 @@ class _AdminDashboardSkeletonState extends State<AdminDashboardSkeleton> with Si
 
   @override
   Widget build(BuildContext context) {
-    final titleColor = Colors.white.withOpacity(0.2);
+    final titleColor = Colors.white.withValues(alpha: 0.2);
     
     return AnimatedBuilder(
       animation: _animation,

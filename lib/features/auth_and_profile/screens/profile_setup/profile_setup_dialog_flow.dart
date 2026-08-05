@@ -502,7 +502,7 @@ class _ProfileSetupDialogFlowState extends State<ProfileSetupDialogFlow>
           height: 60,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: const Color(0xFF10B981).withOpacity(0.2),
+            color: const Color(0xFF10B981).withValues(alpha: 0.2),
           ),
           child: const Icon(CupertinoIcons.checkmark_alt, color: Color(0xFF10B981), size: 40),
         ),

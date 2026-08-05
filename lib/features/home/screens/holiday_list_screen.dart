@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:app/shared/services/holiday_service.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
@@ -132,7 +131,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
         children: [
           Container(
             height: 2,
-            color: Colors.redAccent.withOpacity(0.8),
+            color: Colors.redAccent.withValues(alpha: 0.8),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -141,7 +140,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.redAccent.withOpacity(0.3),
+                  color: Colors.redAccent.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -205,7 +204,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.redAccent.withOpacity(0.3),
+                    color: Colors.redAccent.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -229,18 +228,18 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
               border: Border.all(
                 color: isToday 
                     ? Colors.redAccent 
-                    : Colors.white.withOpacity(0.05),
+                    : Colors.white.withValues(alpha: 0.05),
                 width: isToday ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
                 if (isToday)
                   BoxShadow(
-                    color: Colors.redAccent.withOpacity(0.15),
+                    color: Colors.redAccent.withValues(alpha: 0.15),
                     blurRadius: 15,
                     spreadRadius: 2,
                   ),
@@ -254,8 +253,8 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: isToday 
-                          ? Colors.redAccent.withOpacity(0.1) 
-                          : const Color(0xFF2E8B57).withOpacity(0.1),
+                          ? Colors.redAccent.withValues(alpha: 0.1) 
+                          : const Color(0xFF2E8B57).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -390,7 +389,7 @@ class _HolidayListScreenState extends State<HolidayListScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                         Colors.black,
                       ],
                       stops: const [0.0, 0.08],

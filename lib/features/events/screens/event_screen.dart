@@ -43,7 +43,7 @@ class _EventScreenState extends State<EventScreen> {
     if (mounted) setState(() => isLoading = true);
 
     try {
-      String url = '${Config.postsEndpoint}';
+      String url = Config.postsEndpoint;
       if (selectedFilter != 'all') {
         url += '?postType=$selectedFilter';
       }
@@ -174,7 +174,7 @@ class _EventScreenState extends State<EventScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: CupertinoColors.black.withOpacity(0.6),
+        backgroundColor: CupertinoColors.black.withValues(alpha: 0.6),
         leading: canPost
             ? CupertinoButton(
                 padding: EdgeInsets.zero,

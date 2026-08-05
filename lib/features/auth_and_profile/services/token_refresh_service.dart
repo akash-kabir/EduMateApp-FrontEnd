@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:app/shared/config.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';

@@ -137,8 +137,8 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
         : const Color(0xFFEF4444); // Modern Red
 
     final glowColor = widget.isSuccess
-        ? const Color(0xFF10B981).withOpacity(0.15)
-        : const Color(0xFFEF4444).withOpacity(0.15);
+        ? const Color(0xFF10B981).withValues(alpha: 0.15)
+        : const Color(0xFFEF4444).withValues(alpha: 0.15);
 
     final iconData = widget.isSuccess 
         ? Icons.check_circle_rounded 
@@ -163,7 +163,7 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
                   borderRadius: BorderRadius.circular(26.0),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.35),
+                      color: Colors.black.withValues(alpha: 0.35),
                       blurRadius: 20.0,
                       offset: const Offset(0, 8),
                     ),
@@ -177,7 +177,7 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
                       type: MaterialType.transparency,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF18181B).withOpacity(0.40), // Premium high translucency (40% opacity)
+                          color: const Color(0xFF18181B).withValues(alpha: 0.40), // Premium high translucency (40% opacity)
                           borderRadius: BorderRadius.circular(26.0),
                         ),
                         child: Row(

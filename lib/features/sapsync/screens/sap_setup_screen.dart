@@ -157,7 +157,7 @@ class SapSetupScreenState extends State<SapSetupScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF141110), // Sleek coal
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFF9B7A).withOpacity(0.5), width: 1),
+                  border: Border.all(color: const Color(0xFFFF9B7A).withValues(alpha: 0.5), width: 1),
                 ),
                 child: Text(
                   'Your SAP credentials are encrypted locally on this device. We never store or share your password with any external servers.',
@@ -316,10 +316,10 @@ class SlideToLoginButton extends StatefulWidget {
   final bool isLoading;
 
   const SlideToLoginButton({
-    Key? key,
+    super.key,
     required this.onSlideComplete,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   @override
   SlideToLoginButtonState createState() => SlideToLoginButtonState();
@@ -355,7 +355,7 @@ class SlideToLoginButtonState extends State<SlideToLoginButton> with SingleTicke
           decoration: BoxDecoration(
             color: const Color(0xFF141110), // Sleek coal background
             borderRadius: BorderRadius.circular(_buttonHeight / 2),
-            border: Border.all(color: const Color(0xFFFF9B7A).withOpacity(0.3), width: 1),
+            border: Border.all(color: const Color(0xFFFF9B7A).withValues(alpha: 0.3), width: 1),
           ),
           child: Stack(
             children: [
@@ -429,7 +429,7 @@ class SlideToLoginButtonState extends State<SlideToLoginButton> with SingleTicke
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFF9B7A).withOpacity(0.4),
+                            color: const Color(0xFFFF9B7A).withValues(alpha: 0.4),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),

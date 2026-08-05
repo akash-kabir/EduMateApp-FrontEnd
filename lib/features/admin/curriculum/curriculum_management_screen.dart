@@ -757,7 +757,7 @@ class _CurriculumManagementScreenState
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 12),
                       itemCount: 8,
-                      separatorBuilder: (_, __) => Divider(
+                      separatorBuilder: (_, _) => Divider(
                         height: 1,
                         color: Colors.white.withValues(alpha: 0.05),
                       ),

@@ -615,7 +615,7 @@ class _SemesterElectiveDetailScreenState
         backgroundColor: const Color(0xFF0F0F11),
         navigationBar: CupertinoNavigationBar(
           middle: Text('Semester ${widget.semester} Electives', style: const TextStyle(color: Colors.white)),
-          backgroundColor: const Color(0xFF0F0F11).withOpacity(0.8),
+          backgroundColor: const Color(0xFF0F0F11).withValues(alpha: 0.8),
           leading: CupertinoNavigationBarBackButton(
             color: Colors.white,
             previousPageTitle: null,
@@ -637,11 +637,11 @@ class _SemesterElectiveDetailScreenState
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(CupertinoIcons.doc_text_search, size: 64, color: Colors.grey.withOpacity(0.5)),
+                          Icon(CupertinoIcons.doc_text_search, size: 64, color: Colors.grey.withValues(alpha: 0.5)),
                           const SizedBox(height: 16),
                           Text(
                             'No elective groups yet',
-                            style: TextStyle(color: Colors.grey.withOpacity(0.8), fontSize: 16),
+                            style: TextStyle(color: Colors.grey.withValues(alpha: 0.8), fontSize: 16),
                           ),
                           const SizedBox(height: 24),
                           if (widget.canManage)

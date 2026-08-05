@@ -480,7 +480,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                         Colors.black,
                       ],
                       stops: const [0.0, 0.08],
@@ -707,7 +707,7 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: subjects.length,
-                              separatorBuilder: (_, __) =>
+                              separatorBuilder: (_, _) =>
                                   const SizedBox(height: 8),
                               itemBuilder: (context, index) {
                                 final subject = subjects[index];

@@ -166,7 +166,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(1.0 - fadeIntensity),
+                      Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                       Colors.black,
                     ],
                     stops: const [0.0, 0.08],
@@ -202,7 +202,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: CupertinoColors.black.withOpacity(0.5),
+                                      color: CupertinoColors.black.withValues(alpha: 0.5),
                                       shape: BoxShape.circle,
                                       border: Border.all(color: Colors.white24, width: 1),
                                     ),
@@ -427,7 +427,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 24,
-                                      backgroundColor: roleColor.withOpacity(0.2),
+                                      backgroundColor: roleColor.withValues(alpha: 0.2),
                                       child: Text(
                                         initials.isEmpty ? '?' : initials,
                                         style: TextStyle(
@@ -469,7 +469,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: roleColor.withOpacity(0.15),
+                                        color: roleColor.withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(

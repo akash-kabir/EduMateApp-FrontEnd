@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:ui';
 import 'package:app/shared/config.dart';
 import 'package:app/theme/theme.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
@@ -209,7 +208,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(1.0 - fadeIntensity),
+                    Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                     Colors.black,
                   ],
                   stops: const [0.0, 0.08],
@@ -319,7 +318,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: const Color(0xFF141110),
-            border: Border.all(color: accentColor.withOpacity(0.5), width: 2),
+            border: Border.all(color: accentColor.withValues(alpha: 0.5), width: 2),
           ),
           child: Center(
             child: Text(
@@ -366,7 +365,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           profileData?['email'] ?? '',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.white.withOpacity(0.6),
+            color: Colors.white.withValues(alpha: 0.6),
           ),
         ),
       ],

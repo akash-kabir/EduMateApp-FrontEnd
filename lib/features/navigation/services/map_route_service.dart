@@ -56,7 +56,7 @@ class MapRouteService {
         LineLayer(
           id: _routeLayerId,
           sourceId: _routeSourceId,
-          lineColor: routeColor.value,
+          lineColor: routeColor.toARGB32(),
           lineWidth: lineWidth,
           lineCap: LineCap.ROUND,
           lineJoin: LineJoin.ROUND,

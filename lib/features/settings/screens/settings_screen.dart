@@ -499,7 +499,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       if (val) {
                                         final creds = await _sapAuthService.getCredentials();
                                         if (creds != null && creds['username'] != null && creds['username']!.isNotEmpty) {
-                                          if (mounted) {
+                                          if (context.mounted) {
                                             EduMateToast.showCompact(
                                               context,
                                               message: 'Please disconnect SAPSync first to hide it.',

@@ -80,8 +80,8 @@ class MapSearchBar extends StatelessWidget {
             if (isFullScreenSearch)
               CupertinoButton(
                 padding: const EdgeInsets.only(right: 16),
-                child: Icon(CupertinoIcons.clear_thick_circled, color: Colors.grey[400], size: 20),
                 onPressed: onClear,
+                child: Icon(CupertinoIcons.clear_thick_circled, color: Colors.grey[400], size: 20),
               )
           ],
         ),

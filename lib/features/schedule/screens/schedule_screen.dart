@@ -215,11 +215,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       if (decoded == null) {
         final cacheKey = 'cached_electives_v2_$semester';
         String? cachedStr = await SharedPreferencesService.getString(cacheKey);
-        if (cachedStr == null) {
-          cachedStr = await SharedPreferencesService.getString(
+        cachedStr ??= await SharedPreferencesService.getString(
             'cached_electives_$semester',
           );
-        }
         if (cachedStr != null) {
           decoded = jsonDecode(cachedStr);
           await ScheduleDatabaseHelper.instance.cacheElectiveData(

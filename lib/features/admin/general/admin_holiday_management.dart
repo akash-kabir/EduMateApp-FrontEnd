@@ -352,7 +352,7 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
                                       shrinkWrap: true,
                                       physics: const NeverScrollableScrollPhysics(),
                                       itemCount: _holidays.length,
-                                      separatorBuilder: (_, __) => Divider(
+                                      separatorBuilder: (_, _) => Divider(
                                         height: 1,
                                         color: Colors.white10,
                                       ),

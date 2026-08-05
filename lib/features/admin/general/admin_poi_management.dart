@@ -188,7 +188,7 @@ class _AdminPoiManagementScreenState extends State<AdminPoiManagementScreen> {
                               : ListView.separated(
                                   padding: const EdgeInsets.all(16),
                                   itemCount: filtered.length,
-                                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                                  separatorBuilder: (_, _) => const SizedBox(height: 14),
                                   itemBuilder: (context, index) {
                                     return _buildPoiCard(filtered[index]);
                                   },

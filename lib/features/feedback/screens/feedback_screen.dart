@@ -132,7 +132,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                         Colors.black,
                       ],
                       stops: const [0.0, 0.08],
@@ -218,7 +218,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                     "Send us your thoughts below. (Limit: 1 feedback per 24 hours).",
                                     style: TextStyle(
                                       fontSize: 15,
-                                      color: Colors.white.withOpacity(0.8),
+                                      color: Colors.white.withValues(alpha: 0.8),
                                       height: 1.5,
                                     ),
                                   ),
@@ -232,9 +232,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               padding: const EdgeInsets.all(16),
                               margin: const EdgeInsets.only(bottom: 24),
                               decoration: BoxDecoration(
-                                color: Colors.orangeAccent.withOpacity(0.1),
+                                color: Colors.orangeAccent.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.orangeAccent.withOpacity(0.3)),
+                                border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.3)),
                               ),
                               child: Row(
                                 children: [
@@ -258,10 +258,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                 style: const TextStyle(color: Colors.white),
                                 decoration: InputDecoration(
                                   hintText: "Write your feedback here...",
-                                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                                   border: InputBorder.none,
                                   contentPadding: const EdgeInsets.all(16),
-                                  counterStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                  counterStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                                 ),
                               ),
                             ),

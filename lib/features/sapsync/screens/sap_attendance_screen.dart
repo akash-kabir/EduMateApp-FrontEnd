@@ -48,7 +48,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(1.0 - fadeIntensity),
+                      Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                       Colors.black,
                     ],
                     stops: const [0.0, 0.08], // Fades top 8% of the scroll view
@@ -132,9 +132,9 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent.withOpacity(0.15),
+                        color: Colors.redAccent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
                       ),
                       child: Text(
                         sapProvider.errorMessage,

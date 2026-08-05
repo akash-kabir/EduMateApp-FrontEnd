@@ -130,9 +130,7 @@ class HomeScheduleService {
         try {
           final cacheKeyElectives = 'cached_electives_v2_$semester';
           String? cachedElectivesStr = await SharedPreferencesService.getString(cacheKeyElectives);
-          if (cachedElectivesStr == null) {
-            cachedElectivesStr = await SharedPreferencesService.getString('cached_electives_$semester');
-          }
+          cachedElectivesStr ??= await SharedPreferencesService.getString('cached_electives_$semester');
           if (cachedElectivesStr != null) {
             decoded = jsonDecode(cachedElectivesStr);
             // Auto-migrate to SQLite for next time

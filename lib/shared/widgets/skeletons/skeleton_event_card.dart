@@ -62,7 +62,7 @@ class _SkeletonEventCard extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
             width: 0.5,
           ),
         ),
@@ -135,7 +135,7 @@ class _SkeletonEventCard extends StatelessWidget {
           Container(
             width: double.infinity,
             height: 200,
-            color: baseColor.withOpacity(0.5),
+            color: baseColor.withValues(alpha: 0.5),
           ),
           
           const SizedBox(height: 12),

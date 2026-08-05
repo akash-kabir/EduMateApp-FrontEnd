@@ -162,7 +162,7 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(1.0 - fadeIntensity),
+                      Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                       Colors.black,
                     ],
                     stops: const [0.0, 0.08],
@@ -198,7 +198,7 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: CupertinoColors.black.withOpacity(0.5),
+                                      color: CupertinoColors.black.withValues(alpha: 0.5),
                                       shape: BoxShape.circle,
                                       border: Border.all(color: Colors.white24, width: 1),
                                     ),
@@ -390,8 +390,8 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: isEvent 
-                                            ? Colors.orange.withOpacity(0.2) 
-                                            : Colors.blue.withOpacity(0.2),
+                                            ? Colors.orange.withValues(alpha: 0.2) 
+                                            : Colors.blue.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
@@ -409,7 +409,7 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                                         child: Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: CupertinoColors.destructiveRed.withOpacity(0.1),
+                                            color: CupertinoColors.destructiveRed.withValues(alpha: 0.1),
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(CupertinoIcons.trash, color: CupertinoColors.destructiveRed, size: 18),

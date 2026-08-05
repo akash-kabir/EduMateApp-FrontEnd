@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
 class SkeletonLoadingList extends StatefulWidget {
-  const SkeletonLoadingList({Key? key}) : super(key: key);
+  const SkeletonLoadingList({super.key});
 
   @override
   State<SkeletonLoadingList> createState() => _SkeletonLoadingListState();
@@ -53,7 +53,7 @@ class _SkeletonLoadingListState extends State<SkeletonLoadingList>
 }
 
 class _SkeletonCard extends StatelessWidget {
-  const _SkeletonCard({Key? key}) : super(key: key);
+  const _SkeletonCard();
 
   @override
   Widget build(BuildContext context) {

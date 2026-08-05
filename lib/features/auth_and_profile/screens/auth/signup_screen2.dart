@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui' show ImageFilter;
 import 'dart:ui';
 import 'package:app/features/auth_and_profile/screens/auth/login_screen.dart';
 import 'package:flutter/gestures.dart';

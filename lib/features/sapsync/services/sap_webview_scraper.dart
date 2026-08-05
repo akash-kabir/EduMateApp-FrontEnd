@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:collection';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -320,7 +319,7 @@ class SapWebViewScraper {
             return out.join("\\n");
           })();
         ''');
-        print('SAP_DEBUG [Provider]: FRAME DUMP:\\n' + dump.toString());
+        print('SAP_DEBUG [Provider]: FRAME DUMP:\\n$dump');
         print('SAP_DEBUG [Provider]: Could not find sap.client.SsrClient.form.');
         return false;
       }

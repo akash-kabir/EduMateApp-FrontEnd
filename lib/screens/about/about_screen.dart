@@ -70,7 +70,7 @@ class _AboutScreenState extends State<AboutScreen> {
             "Built with Flutter for a seamless, modern experience.",
             style: TextStyle(
               fontSize: 15,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               height: 1.5,
             ),
           ),
@@ -88,13 +88,13 @@ class _AboutScreenState extends State<AboutScreen> {
             iconUrl: "https://img.icons8.com/color/48/linkedin.png",
             onTap: () => _launchUrl("https://www.linkedin.com/in/mirza-akash-kabir/"),
           ),
-          Divider(color: Colors.white.withOpacity(0.1), height: 1, indent: 60),
+          Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 60),
           _buildLinkButton(
             title: "GitHub",
             iconUrl: "https://img.icons8.com/fluency/48/github.png",
             onTap: () => _launchUrl("https://github.com/akash-kabir"),
           ),
-          Divider(color: Colors.white.withOpacity(0.1), height: 1, indent: 60),
+          Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 60),
           _buildLinkButton(
             title: "Instagram",
             iconUrl: "https://img.icons8.com/fluency/48/instagram-new.png",
@@ -115,7 +115,7 @@ class _AboutScreenState extends State<AboutScreen> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           shape: BoxShape.circle,
         ),
         child: Image.network(
@@ -165,7 +165,7 @@ class _AboutScreenState extends State<AboutScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(1.0 - fadeIntensity),
+                        Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                         Colors.black,
                       ],
                       stops: const [0.0, 0.08],

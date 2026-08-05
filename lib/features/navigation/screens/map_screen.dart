@@ -59,7 +59,7 @@ class _MapScreenState extends State<MapScreen> {
 
   final NavigationManager _navigationManager = NavigationManager();
 
-  Map<String, PoiModel> _annotationIdToPoi = {};
+  final Map<String, PoiModel> _annotationIdToPoi = {};
   PoiAnnotationClickListener? _poiClickListener;
 
   bool _isServiceAvailable = true;
@@ -393,8 +393,8 @@ class _MapScreenState extends State<MapScreen> {
         textField: _selectedPoi!.name,
         textAnchor: mapbox.TextAnchor.TOP,
         textSize: 14,
-        textColor: Colors.white.value,
-        textHaloColor: Colors.black.value,
+        textColor: Colors.white.toARGB32(),
+        textHaloColor: Colors.black.toARGB32(),
         textHaloWidth: 1.5,
         textOffset: [0, 0.8],
       ));

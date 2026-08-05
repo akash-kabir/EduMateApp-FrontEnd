@@ -219,7 +219,7 @@ class _AppNavigatorState extends State<AppNavigator> {
             alignment: Alignment.center,
             children: <Widget>[
               ...previousChildren,
-              if (currentChild != null) currentChild,
+              ?currentChild,
             ],
           );
         },

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:app/app_navigation/app_navigator.dart';
 
 import 'dart:async';
-import 'dart:ui';
 import 'dart:convert';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/features/auth_and_profile/services/token_refresh_service.dart';

@@ -37,12 +37,12 @@ class SleekAttendanceCard extends StatelessWidget {
           color: const Color(0xFF141110),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isSelected ? accentColor.withOpacity(0.6) : Colors.white.withOpacity(0.06),
+            color: isSelected ? accentColor.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.06),
             width: isSelected ? 1.8 : 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.35),
+              color: Colors.black.withValues(alpha: 0.35),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -100,7 +100,7 @@ class SleekAttendanceCard extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: accentColor.withOpacity(0.35),
+                                      color: accentColor.withValues(alpha: 0.35),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -122,7 +122,7 @@ class SleekAttendanceCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(2),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.amberAccent.withOpacity(0.8),
+                                    color: Colors.amberAccent.withValues(alpha: 0.8),
                                     blurRadius: 4,
                                   ),
                                 ],
@@ -192,7 +192,7 @@ class SleekAttendanceCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.black,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withOpacity(0.08)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                       ),
                       child: Row(
                         children: [
@@ -258,7 +258,7 @@ class SleekAttendanceCard extends StatelessWidget {
                           Container(
                             height: 34,
                             width: 1,
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                           ),
                           const SizedBox(width: 14),
 

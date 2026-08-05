@@ -141,13 +141,13 @@ class _SuccessCardWidgetState extends State<SuccessCardWidget>
                       boxShadow: [
                         BoxShadow(
                           color: _showGlow 
-                              ? const Color(0xFF10B981).withOpacity(0.08) 
+                              ? const Color(0xFF10B981).withValues(alpha: 0.08) 
                               : Colors.transparent,
                           blurRadius: 40.0,
                           spreadRadius: 10.0,
                         ),
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           blurRadius: 30.0,
                           offset: const Offset(0, 15),
                         ),
@@ -165,7 +165,7 @@ class _SuccessCardWidgetState extends State<SuccessCardWidget>
                               horizontal: 24.0,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0F0F11).withOpacity(0.45), // Premium high translucency (45% opacity)
+                              color: const Color(0xFF0F0F11).withValues(alpha: 0.45), // Premium high translucency (45% opacity)
                               borderRadius: BorderRadius.circular(24.0),
                             ),
                             child: Column(
@@ -184,9 +184,9 @@ class _SuccessCardWidgetState extends State<SuccessCardWidget>
                                           height: 72.0,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: const Color(0xFF10B981).withOpacity(0.12),
+                                            color: const Color(0xFF10B981).withValues(alpha: 0.12),
                                             border: Border.all(
-                                              color: const Color(0xFF10B981).withOpacity(0.3),
+                                              color: const Color(0xFF10B981).withValues(alpha: 0.3),
                                               width: 1.5,
                                             ),
                                           ),
