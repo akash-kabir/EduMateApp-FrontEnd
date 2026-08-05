@@ -68,7 +68,7 @@ class ScheduleClassCard extends StatelessWidget {
       );
     } else {
       cardDecoration = BoxDecoration(
-        color: const Color(0xFF000000).withValues(alpha: 0.40),
+        color: const Color(0xFF141110),
         borderRadius: BorderRadius.circular(16),
         border: Border(left: BorderSide(color: accentColor, width: 4)),
         boxShadow: [
@@ -84,7 +84,11 @@ class ScheduleClassCard extends StatelessWidget {
     return Opacity(
       opacity: cardOpacity,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.only(
+          bottom: 12, 
+          left: effectivelyOngoing ? 0 : 10, 
+          right: effectivelyOngoing ? 0 : 10,
+        ),
         child: AnimatedScale(
           scale: effectivelyOngoing ? 1.04 : 1.0,
           duration: const Duration(milliseconds: 300),

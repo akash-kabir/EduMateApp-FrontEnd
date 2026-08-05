@@ -9,6 +9,9 @@ import 'package:app/shared/widgets/dialogs/toast_manager.dart';
 import 'package:app/shared/config.dart';
 import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
 import 'package:app/features/auth_and_profile/services/token_refresh_service.dart';
+import 'package:app/features/home/screens/post_management_screen.dart';
+import 'package:app/features/admin/admin_main_app.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -21,6 +24,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late ScrollController _scrollController;
 
   bool _startUpToTimeSheetEnabled = false;
+  String _userRole = '';
+  bool _hideSapSync = false;
 
   @override
   void initState() {
@@ -37,10 +42,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadPreferences() async {
     final startUpBool = await SharedPreferencesService.getBool('openToTimesheet');
+    final role = await SharedPreferencesService.getUserRole() ?? '';
+    final hideSap = await SharedPreferencesService.getBool('hideSapSync');
     
     if (mounted) {
       setState(() {
         _startUpToTimeSheetEnabled = startUpBool;
+        _userRole = role;
+        _hideSapSync = hideSap;
       });
     }
   }
@@ -339,6 +348,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool canManagePosts = _userRole.toLowerCase() == 'admin' || _userRole.toLowerCase() == 'society';
+    final bool isAdminOrContributor = _userRole.toLowerCase() == 'admin' || _userRole.toLowerCase() == 'contributor';
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -462,19 +474,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           _buildGlassCard(
-                            child: _buildListTile(
-                              title: 'Starts up to TimeSheet',
-                              subtitle: 'Open timetable automatically on launch',
-                              trailing: CupertinoSwitch(
-                                activeTrackColor: AuthPalette.coral,
-                                value: _startUpToTimeSheetEnabled,
-                                onChanged: (val) {
-                                  setState(() => _startUpToTimeSheetEnabled = val);
-                                  SharedPreferencesService.setBool('openToTimesheet', val);
-                                },
-                              ),
+                            child: Column(
+                              children: [
+                                _buildListTile(
+                                  title: 'Starts up to TimeSheet',
+                                  subtitle: 'Open timetable automatically on launch',
+                                  trailing: CupertinoSwitch(
+                                    activeTrackColor: AuthPalette.coral,
+                                    value: _startUpToTimeSheetEnabled,
+                                    onChanged: (val) {
+                                      setState(() => _startUpToTimeSheetEnabled = val);
+                                      SharedPreferencesService.setBool('openToTimesheet', val);
+                                    },
+                                  ),
+                                ),
+                                Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 20),
+                                _buildListTile(
+                                  title: 'Hide SAPSync',
+                                  subtitle: 'Hide the SAP card from the home screen',
+                                  trailing: CupertinoSwitch(
+                                    activeTrackColor: AuthPalette.coral,
+                                    value: _hideSapSync,
+                                    onChanged: (val) async {
+                                      if (val) {
+                                        final creds = await _sapAuthService.getCredentials();
+                                        if (creds != null && creds['username'] != null && creds['username']!.isNotEmpty) {
+                                          if (mounted) {
+                                            EduMateToast.showCompact(
+                                              context,
+                                              message: 'Please disconnect SAPSync first to hide it.',
+                                              isSuccess: false,
+                                            );
+                                          }
+                                          return;
+                                        }
+                                      }
+                                      setState(() => _hideSapSync = val);
+                                      SharedPreferencesService.setBool('hideSapSync', val);
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
+
+                          if (canManagePosts || isAdminOrContributor) ...[
+                            const SizedBox(height: 20),
+                            const Padding(
+                              padding: EdgeInsets.only(left: 8, bottom: 8),
+                              child: Text(
+                                'Admin Tools',
+                                style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ),
+                            _buildGlassCard(
+                              child: Column(
+                                children: [
+                                  if (canManagePosts) ...[
+                                    _buildListTile(
+                                      title: 'Manage Posts',
+                                      subtitle: 'View and moderate community posts',
+                                      trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.white54, size: 20),
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          CupertinoPageRoute(builder: (_) => const PostManagementScreen()),
+                                        );
+                                      },
+                                    ),
+                                    if (isAdminOrContributor)
+                                      Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 20),
+                                  ],
+                                  if (isAdminOrContributor)
+                                    _buildListTile(
+                                      title: 'Admin Dashboard',
+                                      subtitle: 'Manage users, settings, and more',
+                                      trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.white54, size: 20),
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          CupertinoPageRoute(builder: (_) => const AdminMainApp(fromStudentView: true)),
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
 
                           const SizedBox(height: 20),
 

@@ -47,7 +47,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(1.0 - fadeIntensity),
+                    Colors.black.withValues(alpha: 1.0 - fadeIntensity),
                     Colors.black,
                   ],
                   stops: const [0.0, 0.08],
@@ -234,14 +234,12 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
 
 class _DataManagementCard extends StatelessWidget {
   final String title;
-  final String? subtitle;
   final Color iconColor;
   final IconData icon;
   final VoidCallback onTap;
 
   const _DataManagementCard({
     required this.title,
-    this.subtitle,
     required this.iconColor,
     required this.icon,
     required this.onTap,
@@ -257,7 +255,7 @@ class _DataManagementCard extends StatelessWidget {
           color: const Color(0xFF141110),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -268,7 +266,7 @@ class _DataManagementCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.12),
+                color: iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -293,16 +291,7 @@ class _DataManagementCard extends StatelessWidget {
                       color: Colors.white,
                     ),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white60,
-                      ),
-                    ),
-                  ],
+
                 ],
               ),
             ),

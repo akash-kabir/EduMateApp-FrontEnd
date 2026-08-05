@@ -270,6 +270,19 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                                 isGradient: false,
                                 onPressed: _loadingGuest ? () {} : _guestLogin,
                               ),
+                              const SizedBox(height: 8),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                                child: Text(
+                                  'Guest access is valid for 3 days with limited features.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white70,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ),
                               const SizedBox(height: 16),
                               // Sign In Button with Glass Effect
                               GlassButton(
