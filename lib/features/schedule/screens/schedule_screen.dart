@@ -28,7 +28,7 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen>
     with WidgetsBindingObserver, ScheduleLogicMixin {
   
-  final ValueNotifier<double> dragOffsetNotifier = ValueNotifier(0.0);
+  late PageController _pageController;
   Map<String, dynamic>? _cachedSectionData;
   String? _cachedSectionQuery;
   int? _cachedScheduleHash;
@@ -37,12 +37,20 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     initializeScheduleState();
+    final weekDatesLocal = getWeekDates();
+    final initialIndex = weekDatesLocal.indexWhere(
+      (date) => date.year == selectedDate.year && date.month == selectedDate.month && date.day == selectedDate.day,
+    );
+    // initialIndex 0 is Sunday. We only want Mon-Sat (indices 1-6) mapping to page indices 0-5.
+    final pageIndex = initialIndex > 0 ? (initialIndex - 1).clamp(0, 5) : 0;
+    _pageController = PageController(initialPage: pageIndex);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     disposeScheduleState();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -615,407 +623,346 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   Widget build(BuildContext context) {
     final weekDates = getWeekDates();
     final now = DateTime.now();
-    final classes = _getClassesForDay(selectedDate.weekday);
-    final mergedClasses = mergeConsecutiveClasses(classes);
 
-    return GestureDetector(
-      onHorizontalDragStart: (_) {
-        dragOffsetNotifier.value = 0.0;
-      },
-      onHorizontalDragUpdate: (details) {
-        dragOffsetNotifier.value += details.delta.dx;
-      },
-      onHorizontalDragEnd: (details) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final swipeThreshold = screenWidth * 0.25;
-        final velocityThreshold = 200.0;
-        final velocity = details.primaryVelocity ?? 0;
-        final weekDatesLocal = getWeekDates();
-        final currentIndex = weekDatesLocal.indexWhere(
-          (date) =>
-              date.year == selectedDate.year &&
-              date.month == selectedDate.month &&
-              date.day == selectedDate.day,
-        );
-        bool didSwipe = false;
+    return CupertinoPageScaffold(
+        child: Stack(
+          children: [
+            // BOTTOM LAYER: PageView where each page handles its own vertical scrolling
+            Positioned.fill(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: 6,
+                onPageChanged: (index) {
+                  setState(() {
+                    selectedDate = weekDates[index + 1];
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final dateForPage = weekDates[index + 1];
+                  final classes = _getClassesForDay(dateForPage.weekday);
+                  final mergedClasses = mergeConsecutiveClasses(classes);
+                  
+                  // Check if it's a holiday
+                  Map<String, dynamic>? holidayForPage;
+                  if (currentYearHolidays.isNotEmpty) {
+                    final date = DateTime(dateForPage.year, dateForPage.month, dateForPage.day);
+                    for (var holiday in currentYearHolidays) {
+                      if (holiday['startDate'] == null || holiday['endDate'] == null) continue;
+                      final startDate = DateTime.parse(holiday['startDate']);
+                      final start = DateTime(startDate.year, startDate.month, startDate.day);
+                      final endDate = DateTime.parse(holiday['endDate']);
+                      final end = DateTime(endDate.year, endDate.month, endDate.day);
+                      
+                      if (date.isAtSameMomentAs(start) || date.isAtSameMomentAs(end) || (date.isAfter(start) && date.isBefore(end))) {
+                        holidayForPage = holiday;
+                        break;
+                      }
+                    }
+                  }
 
-        final currentOffset = dragOffsetNotifier.value;
-
-        if (currentOffset < -swipeThreshold || velocity < -velocityThreshold) {
-          if (currentIndex < 6) {
-            final nextIndex = currentIndex + 1 <= 6
-                ? currentIndex + 1
-                : currentIndex;
-            setState(() {
-              slideFromRight = true;
-              dragOffsetNotifier.value = 0.0;
-              selectedDate = weekDatesLocal[nextIndex];
-            });
-            didSwipe = true;
-          }
-        } else if (currentOffset > swipeThreshold ||
-            velocity > velocityThreshold) {
-          if (currentIndex > 1) {
-            final prevIndex = currentIndex - 1 >= 1
-                ? currentIndex - 1
-                : currentIndex;
-            setState(() {
-              slideFromRight = false;
-              dragOffsetNotifier.value = 0.0;
-              selectedDate = weekDatesLocal[prevIndex];
-            });
-            didSwipe = true;
-          }
-        }
-        if (!didSwipe) {
-          dragOffsetNotifier.value = 0.0;
-        }
-      },
-      child: CupertinoPageScaffold(
-        navigationBar: CupertinoNavigationBar(
-          automaticallyImplyLeading: false,
-          middle: const Text(
-            'Timesheet',
-            style: TextStyle(fontFamily: 'Salena', fontWeight: FontWeight.bold),
-          ),
-          backgroundColor: CupertinoColors.black.withValues(alpha: 0.6),
-          trailing: CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: _showSettingsBottomSheet,
-            child: const Icon(
-              Icons.settings,
-              color: AuthPalette.coral,
-              size: 22,
-            ),
-          ),
-        ),
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _DaySelectorHeaderDelegate(
-                topPadding: MediaQuery.of(context).padding.top + 44.0,
-                height: 118.0,
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                    child: Container(
-                      color: CupertinoColors.black.withValues(alpha: 0.6),
-                      height: 118.0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          WeekCalendarGrid(
-                            weekDates: weekDates,
-                            selectedDate: selectedDate,
-                            now: now,
-                            onDateSelected: (date, slideRight) {
-                              setState(() {
-                                slideFromRight = slideRight;
-                                selectedDate = date;
-                              });
-                            },
+                  return MediaQuery.removePadding(
+                    context: context,
+                    removeTop: true,
+                    child: CustomScrollView(
+                      physics: const ClampingScrollPhysics(), // Reduced bounce physics
+                      slivers: [
+                        // Empty space to push content below the fixed header
+                        SliverToBoxAdapter(
+                          child: SizedBox(
+                            height: MediaQuery.of(context).padding.top + 44.0 + 106.0,
                           ),
-                          if (selectedBranch.isNotEmpty &&
-                              selectedSemester.toString().isNotEmpty) ...[
-                            const SizedBox(height: 16),
-                            RichText(
-                              text: TextSpan(
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[400],
+                        ),
+                      
+                      if (holidayForPage != null)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 24,
+                                horizontal: 24,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFFF3366), // Vibrant Pink-Red
+                                    Color(0xFFFF7733), // Vibrant Orange
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                                children: [
-                                  TextSpan(
-                                    text:
-                                        'Showing for Semester $selectedSemester ',
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFF3366).withValues(alpha: 0.25),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
                                   ),
-                                  TextSpan(
-                                    text:
-                                        '(${selectedSection.isNotEmpty ? selectedSection : selectedBranch})',
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'OFFICIAL HOLIDAY',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    holidayForPage['event'] ?? 'No Classes Today',
                                     style: const TextStyle(
-                                      color: Color(0xFF10B981),
-                                      fontWeight: FontWeight.w700,
+                                      fontFamily: 'Salena',
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.2,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ] else ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'No Section Selected',
+                          ),
+                        ),
+
+                      if (isLoading)
+                        const SliverFillRemaining(
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 16.0),
+                            child: SkeletonLoadingList(),
+                          ),
+                        )
+                      else if (scheduleData == null)
+                        SliverFillRemaining(
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  CupertinoIcons.exclamationmark_circle,
+                                  size: 40,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No schedule data available for $selectedSemester',
+                                  style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else ...[
+                        if (availableElectives.isNotEmpty && selectedElectives.length < availableElectives.length)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                              child: GestureDetector(
+                                onTap: _showSettingsBottomSheet,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(30),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.05),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        CupertinoIcons.exclamationmark_circle_fill,
+                                        color: Colors.red,
+                                        size: 24,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Expanded(
+                                        child: Text(
+                                          'Set Electives',
+                                          style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            fontFamily: 'Poppins',
+                                          ),
+                                        ),
+                                      ),
+                                      const Text(
+                                        'Tap to configure',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        CupertinoIcons.chevron_right,
+                                        color: Colors.red,
+                                        size: 14,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                          sliver: SliverToBoxAdapter(
+                            child: ScheduleTimeline(
+                              mergedClasses: mergedClasses,
+                              isOngoing: (c) {
+                                if (dateForPage.year != now.year || dateForPage.month != now.month || dateForPage.day != now.day) return false;
+                                return isClassOngoing(c['startTime'] as String, c['endTime'] as String);
+                              },
+                              isPassed: (endTimeStr) {
+                                if (dateForPage.year != now.year || dateForPage.month != now.month || dateForPage.day != now.day) return false;
+                                
+                                final parts = endTimeStr.split(':');
+                                if (parts.length != 2) return false;
+                                final hour = int.tryParse(parts[0]);
+                                final min = int.tryParse(parts[1]);
+                                if (hour == null || min == null) return false;
+                                
+                                final classEndTime = DateTime(now.year, now.month, now.day, hour, min);
+                                return now.isAfter(classEndTime);
+                              },
+                              isHoliday: holidayForPage != null,
+                              emptyMessage:
+                                  (dateForPage.weekday == 6 ||
+                                      dateForPage.weekday == 7)
+                                  ? 'No classes scheduled for this day.\nEnjoy your day!'
+                                  : 'No classes scheduled for this day',
+                            ),
+                          ),
+                        ),
+                      ],
+          ]),
+                  );
+                },
+              ),
+            ),
+            
+            // TOP LAYER: Pinned Header overlay to provide blur effect
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CupertinoNavigationBar(
+                    automaticallyImplyLeading: false,
+                    middle: const Text(
+                      'Timesheet',
+                      style: TextStyle(fontFamily: 'Salena', fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: CupertinoColors.black.withValues(alpha: 0.6),
+                    trailing: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: _showSettingsBottomSheet,
+                      child: const Icon(
+                        Icons.settings,
+                        color: AuthPalette.coral,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  ClipRect(
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    color: CupertinoColors.black.withValues(alpha: 0.6),
+                    height: 106.0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        WeekCalendarGrid(
+                          weekDates: weekDates,
+                          selectedDate: selectedDate,
+                          now: now,
+                          onDateSelected: (date, slideRight) {
+                            final newIndex = weekDates.indexWhere(
+                              (d) => d.year == date.year && d.month == date.month && d.day == date.day,
+                            );
+                            if (newIndex > 0) {
+                              _pageController.animateToPage(
+                                newIndex - 1,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOutCubic,
+                              );
+                            }
+                          },
+                        ),
+                        if (selectedBranch.isNotEmpty &&
+                            selectedSemester.toString().isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          RichText(
+                            text: TextSpan(
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
+                                color: Colors.grey[400],
                               ),
+                              children: [
+                                TextSpan(
+                                  text:
+                                      'Showing for Semester $selectedSemester ',
+                                ),
+                                TextSpan(
+                                  text:
+                                      '(${selectedSection.isNotEmpty ? selectedSection : selectedBranch})',
+                                  style: const TextStyle(
+                                    color: Color(0xFF10B981),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (getHolidayForSelectedDate() != null)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 24,
-                      horizontal: 24,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFFF3366), // Vibrant Pink-Red
-                          Color(0xFFFF7733), // Vibrant Orange
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(
-                        16,
-                      ), // Softer, more standard border radius
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(
-                            0xFFFF3366,
-                          ).withValues(alpha: 0.25), // Subtle, elegant shadow
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'OFFICIAL HOLIDAY',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 2,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          getHolidayForSelectedDate()!['event'] ??
-                              'No Classes Today',
-                          style: const TextStyle(
-                            fontFamily: 'Salena',
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
+                        ] else ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'No Section Selected',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
                 ),
               ),
-            if (isLoading)
-              SliverFillRemaining(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 16.0),
-                  child: SkeletonLoadingList(),
-                ),
-              )
-            else if (scheduleData == null)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        CupertinoIcons.exclamationmark_circle,
-                        size: 40,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No schedule data available for $selectedSemester.toString()',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else ...[
-              if (availableElectives.isNotEmpty &&
-                  selectedElectives.length < availableElectives.length)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: GestureDetector(
-                      onTap: _showSettingsBottomSheet,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              CupertinoIcons.exclamationmark_circle_fill,
-                              color: Colors.red,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Set Electives',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                            ),
-                            const Text(
-                              'Tap to configure',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              CupertinoIcons.chevron_right,
-                              color: Colors.red,
-                              size: 14,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                sliver: SliverFillRemaining(
-                  hasScrollBody: false,
-                  fillOverscroll: true,
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: ValueListenableBuilder<double>(
-                      valueListenable: dragOffsetNotifier,
-                      builder: (context, currentDragOffset, child) {
-                        return Opacity(
-                          opacity: (1.0 - (currentDragOffset.abs() / 400.0)).clamp(
-                            0.4,
-                            1.0,
-                          ),
-                          child: RepaintBoundary(
-                            child: AnimatedContainer(
-                              duration: currentDragOffset == 0.0
-                                  ? const Duration(milliseconds: 200)
-                                  : Duration.zero,
-                              curve: Curves.easeOut,
-                              transform: Matrix4.translationValues(
-                                currentDragOffset.clamp(-200.0, 200.0),
-                                0,
-                                0,
-                              ),
-                              child: child,
-                            ),
-                          ),
-                        );
-                      },
-                      child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            switchInCurve: Curves.easeOut,
-                            switchOutCurve: Curves.easeIn,
-                            layoutBuilder:
-                                (
-                                  Widget? currentChild,
-                                  List<Widget> previousChildren,
-                                ) {
-                                  return Stack(
-                                    alignment: Alignment.topCenter,
-                                    children: <Widget>[
-                                      ...previousChildren,
-                                      ?currentChild,
-                                    ],
-                                  );
-                                },
-                            transitionBuilder: (child, animation) {
-                              final isIncoming =
-                                  child.key == ValueKey(selectedDate);
-                              final Offset offsetBegin;
-                              if (isIncoming) {
-                                offsetBegin = slideFromRight
-                                    ? const Offset(1.0, 0.0)
-                                    : const Offset(-1.0, 0.0);
-                              } else {
-                                offsetBegin = slideFromRight
-                                    ? const Offset(-1.0, 0.0)
-                                    : const Offset(1.0, 0.0);
-                              }
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: offsetBegin,
-                                    end: Offset.zero,
-                                  ).animate(animation),
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: KeyedSubtree(
-                              key: ValueKey(selectedDate),
-                              child: ScheduleTimeline(
-                                mergedClasses: mergedClasses,
-                                isOngoing: (c) => isClassOngoing(
-                                  c['startTime'] as String,
-                                  c['endTime'] as String,
-                                ),
-                                isPassed: isClassPassed,
-                                isHoliday: getHolidayForSelectedDate() != null,
-                                emptyMessage:
-                                    (selectedDate.weekday == 6 ||
-                                        selectedDate.weekday == 7)
-                                    ? 'No classes scheduled for this day.\nEnjoy your day!'
-                                    : 'No classes scheduled for this day',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ),
-        )],
-              ]),
-            ),
-          );
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
   }
 }
 

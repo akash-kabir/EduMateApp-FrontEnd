@@ -86,8 +86,8 @@ class ScheduleClassCard extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.only(
           bottom: 12, 
-          left: effectivelyOngoing ? 0 : 10, 
-          right: effectivelyOngoing ? 0 : 10,
+          left: effectivelyOngoing ? 0 : 6, 
+          right: effectivelyOngoing ? 0 : 6,
         ),
         child: AnimatedScale(
           scale: effectivelyOngoing ? 1.04 : 1.0,
