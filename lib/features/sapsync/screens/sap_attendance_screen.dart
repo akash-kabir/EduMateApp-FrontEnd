@@ -7,6 +7,7 @@ import 'package:app/features/sapsync/widgets/sap_hero_visualization.dart';
 import 'package:app/features/sapsync/widgets/sap_skeleton_loader.dart';
 import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
 import 'package:app/shared/physics/capped_bouncing_scroll_physics.dart';
+import 'package:app/shared/widgets/spotify_refresh_indicator.dart';
 
 class SapAttendanceScreen extends StatefulWidget {
   const SapAttendanceScreen({super.key});
@@ -18,6 +19,8 @@ class SapAttendanceScreen extends StatefulWidget {
 class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
   int? _selectedIndex;
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey<SpotifyRefreshIndicatorState> _refreshIndicatorKey = GlobalKey<SpotifyRefreshIndicatorState>();
+  bool _isFlashing = false;
 
   @override
   void initState() {
@@ -32,9 +35,25 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
 
   Future<void> _handleRefresh() async {
     final sapProvider = Provider.of<SapProvider>(context, listen: false);
-    if (sapProvider.isLoading) return;
+    if (sapProvider.isLoading || _isFlashing) return;
     
+    // Fetch data silently
     await sapProvider.fetchAttendance();
+
+    // After fetch is complete, briefly flash the skeletons
+    if (mounted) {
+      setState(() {
+        _isFlashing = true;
+      });
+    }
+
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (mounted) {
+      setState(() {
+        _isFlashing = false;
+      });
+    }
   }
 
 
@@ -69,11 +88,10 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
               );
             },
             child: RepaintBoundary(
-              child: RefreshIndicator(
+              child: SpotifyRefreshIndicator(
+                key: _refreshIndicatorKey,
                 onRefresh: _handleRefresh,
                 color: const Color(0xFF4CD97B), // Neon green for attendance
-                backgroundColor: const Color(0xFF1E1E1E), // Premium dark grey
-                displacement: 40.0,
                 child: CustomScrollView(
                   controller: _scrollController,
                   physics: const ClampingScrollPhysics(),
@@ -156,7 +174,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                   ),
 
                 // 3. Main Content
-                if (sapProvider.isLoading && records.isEmpty)
+                if (_isFlashing || (sapProvider.isLoading && records.isEmpty))
                   const SliverFillRemaining(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -295,8 +313,8 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
               // 1. Sync Attendance Button
               ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pop(context);
-                  _handleRefresh();
+                  Navigator.pop(context); // Close the settings modal
+                  _refreshIndicatorKey.currentState?.show();
                 },
                 icon: const Icon(Icons.refresh, color: Colors.black),
                 label: const Text(

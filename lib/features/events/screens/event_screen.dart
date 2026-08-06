@@ -12,6 +12,7 @@ import 'package:app/shared/widgets/skeletons/skeleton_event_card.dart';
 import 'package:app/features/events/screens/create_post_screen.dart';
 
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
+import 'package:app/shared/widgets/spotify_refresh_indicator.dart';
 
 class EventScreen extends StatefulWidget {
   const EventScreen({super.key});
@@ -85,7 +86,24 @@ class _EventScreenState extends State<EventScreen> {
 
   Future<void> _handleRefresh() async {
     if (isLoading) return;
+    
+    // Fetch data in the background without wiping the screen yet
     await _fetchPosts(showSkeleton: false);
+    
+    // Once data is loaded, briefly show the skeleton for a smooth visual transition
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+      });
+    }
+    
+    await Future.delayed(const Duration(milliseconds: 800));
+    
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
 
@@ -219,12 +237,10 @@ class _EventScreenState extends State<EventScreen> {
           ],
         ),
       ),
-      child: RefreshIndicator(
+      child: SpotifyRefreshIndicator(
         onRefresh: _handleRefresh,
         color: const Color(0xFFFF9B7A),
-        backgroundColor: const Color(0xFF1E1E1E), // Dark premium background
-        edgeOffset: 100.0, // Clear the CupertinoNavigationBar
-        displacement: 40.0,
+        edgeOffset: 100.0,
         child: CustomScrollView(
           physics: const ClampingScrollPhysics(),
           slivers: [
