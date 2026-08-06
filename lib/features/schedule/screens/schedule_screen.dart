@@ -15,6 +15,7 @@ import 'package:app/shared/widgets/skeletons/skeleton_loading_card.dart';
 import 'package:app/features/schedule/screens/schedule_settings_modal.dart';
 import 'package:app/features/schedule/widgets/schedule_timeline.dart';
 import 'package:app/features/schedule/widgets/week_calendar_grid.dart';
+import 'package:app/features/schedule/widgets/weekly_gantt_chart.dart';
 import 'package:app/features/schedule/screens/schedule_logic_mixin.dart';
 import 'package:app/features/schedule/services/schedule_database_helper.dart';
 
@@ -32,6 +33,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   Map<String, dynamic>? _cachedSectionData;
   String? _cachedSectionQuery;
   int? _cachedScheduleHash;
+  bool _isWeeklyView = false;
   @override
   void initState() {
     super.initState();
@@ -629,15 +631,21 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           children: [
             // BOTTOM LAYER: PageView where each page handles its own vertical scrolling
             Positioned.fill(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: 6,
-                onPageChanged: (index) {
-                  setState(() {
-                    selectedDate = weekDates[index + 1];
-                  });
-                },
-                itemBuilder: (context, index) {
+              child: _isWeeklyView
+                  ? WeeklyGanttChart(
+                      getClassesForDay: _getClassesForDay,
+                      now: now,
+                      selectedElectives: selectedElectives.values.toList(),
+                    )
+                  : PageView.builder(
+                      controller: _pageController,
+                      itemCount: 6,
+                      onPageChanged: (index) {
+                        setState(() {
+                          selectedDate = weekDates[index + 1];
+                        });
+                      },
+                      itemBuilder: (context, index) {
                   final dateForPage = weekDates[index + 1];
                   final classes = _getClassesForDay(dateForPage.weekday);
                   final mergedClasses = mergeConsecutiveClasses(classes);
@@ -868,6 +876,19 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 children: [
                   CupertinoNavigationBar(
                     automaticallyImplyLeading: false,
+                    leading: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: () {
+                        setState(() {
+                          _isWeeklyView = !_isWeeklyView;
+                        });
+                      },
+                      child: Icon(
+                        _isWeeklyView ? Icons.view_agenda_rounded : Icons.view_week_rounded,
+                        color: AuthPalette.coral,
+                        size: 24,
+                      ),
+                    ),
                     middle: const Text(
                       'Timesheet',
                       style: TextStyle(fontFamily: 'Salena', fontWeight: FontWeight.bold),
@@ -883,7 +904,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       ),
                     ),
                   ),
-                  ClipRect(
+                  if (!_isWeeklyView) ClipRect(
                 child: BackdropFilter(
                   filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                   child: Container(
