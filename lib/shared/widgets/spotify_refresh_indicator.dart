@@ -166,6 +166,7 @@ class SpotifyRefreshIndicatorState extends State<SpotifyRefreshIndicator> {
         children: [
           ScrollConfiguration(
             behavior: ScrollConfiguration.of(context).copyWith(
+              overscroll: false, // Prevents Android stretch effect, making cards rigid
               physics: SpotifyRefreshPhysics(
                 _refreshState,
                 parent: const ClampingScrollPhysics(),
@@ -184,13 +185,11 @@ class SpotifyRefreshIndicatorState extends State<SpotifyRefreshIndicator> {
               
               final percentage = (offset / threshold).clamp(0.0, 1.0);
               
-              // Map the drag offset to screen position.
-              // Max drag is 140, so max visual offset is 140 * 0.8 = 112
-              final double topPosition;
+              // Math is continuous to prevent visual snapping when drag starts
+              final topPosition = widget.edgeOffset - 110.0 + (offset * 1.2);
+
               if (offset == 0.0 && !isRefreshing && !isRetracting) {
-                topPosition = widget.edgeOffset - 100.0; // Hidden completely off-screen
-              } else {
-                topPosition = widget.edgeOffset + (offset * 0.8) - 40.0;
+                return const SizedBox.shrink(); // Hide from tree when strictly 0
               }
 
               // Visual feedback when threshold is met

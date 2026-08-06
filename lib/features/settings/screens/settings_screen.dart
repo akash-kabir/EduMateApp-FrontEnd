@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
+import 'package:app/features/sapsync/provider/sap_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:app/features/sapsync/services/sap_auth_service.dart';
 import 'package:app/features/schedule/services/schedule_database_helper.dart';
 import 'package:app/features/splash/screens/splash_screen.dart';
@@ -498,15 +500,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     onChanged: (val) async {
                                       if (val) {
                                         final creds = await _sapAuthService.getCredentials();
-                                        if (creds != null && creds['username'] != null && creds['username']!.isNotEmpty) {
-                                          if (context.mounted) {
-                                            EduMateToast.showCompact(
-                                              context,
-                                              message: 'Please disconnect SAPSync first to hide it.',
-                                              isSuccess: false,
-                                            );
+                                        if (creds != null && creds['userId'] != null && creds['userId']!.isNotEmpty) {
+                                          if (!context.mounted) return;
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              backgroundColor: const Color(0xFF1C1C1E),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                              title: const Text('Disconnect SapSync?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                              content: const Text(
+                                                'To hide SapSync, you must disconnect it first. This will remove your stored SAP credentials and local data. Proceed?',
+                                                style: TextStyle(color: Colors.white70),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, false),
+                                                  child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, true),
+                                                  child: const Text('Disconnect', style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold)),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+
+                                          if (confirm == true) {
+                                            if (context.mounted) {
+                                              final sapProvider = Provider.of<SapProvider>(context, listen: false);
+                                              await sapProvider.logout();
+                                            }
+                                          } else {
+                                            return; // User cancelled
                                           }
-                                          return;
                                         }
                                       }
                                       setState(() => _hideSapSync = val);

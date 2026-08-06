@@ -519,8 +519,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               transitionDuration: const Duration(milliseconds: 400),
                               reverseTransitionDuration: const Duration(milliseconds: 400),
                               pageBuilder: (context, animation, secondaryAnimation) {
-                                return FullScreenDrawer(animation: animation, userFullName: userFullName);
-                              },
+                  return FullScreenDrawer(
+                    animation: animation,
+                    userFullName: userFullName,
+                    onSettingsClosed: () {
+                      _loadUserData();
+                    },
+                  );
+                },
                             ),
                           );
                         },
@@ -545,7 +551,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             // Today's Schedule Card
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
                 child: TodaysScheduleCard(key: _scheduleCardKey),
               ),
             ),
@@ -653,12 +659,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 class FullScreenDrawer extends StatefulWidget {
   final Animation<double> animation;
   final String userFullName;
+  final VoidCallback onSettingsClosed;
 
   const FullScreenDrawer({
     super.key,
     
     required this.animation,
     required this.userFullName,
+    required this.onSettingsClosed,
   });
 
   @override
@@ -761,9 +769,9 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                 _buildDrawerItem(
                                   icon: Icons.settings, 
                                   title: 'Settings', 
-                                  onTap: () {
+                                  onTap: () async {
                                     Navigator.pop(context);
-                                    Navigator.of(context).push(
+                                    await Navigator.of(context).push(
                                       PageRouteBuilder(
                                         pageBuilder: (context, animation, secondaryAnimation) => const SettingsScreen(),
                                         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -775,6 +783,7 @@ class _FullScreenDrawerState extends State<FullScreenDrawer> {
                                         },
                                       ),
                                     );
+                                    widget.onSettingsClosed();
                                   }
                                 ),
                                 _buildDrawerItem(
