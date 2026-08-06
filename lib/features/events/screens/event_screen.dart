@@ -5,10 +5,13 @@ import 'package:app/features/auth_and_profile/services/token_refresh_service.dar
 import 'dart:convert';
 import 'package:app/shared/config.dart';
 import 'package:app/features/events/widgets/event_card.dart';
+
+import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
+import 'package:app/shared/physics/capped_bouncing_scroll_physics.dart';
+import 'package:app/shared/widgets/skeletons/skeleton_event_card.dart';
 import 'package:app/features/events/screens/create_post_screen.dart';
 
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
-import 'package:app/shared/widgets/skeletons/skeleton_event_card.dart';
 
 class EventScreen extends StatefulWidget {
   const EventScreen({super.key});
@@ -22,11 +25,6 @@ class _EventScreenState extends State<EventScreen> {
   bool isLoading = true;
   String selectedFilter = 'all';
   String? userRole;
-
-  double _dragOffset = 0.0;
-  bool _isRefreshing = false;
-  bool _isFlashing = false;
-  final double _refreshThreshold = 80.0;
 
   @override
   void initState() {
@@ -86,57 +84,11 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   Future<void> _handleRefresh() async {
-    if (_isRefreshing || isLoading) return;
-
-    setState(() {
-      _isRefreshing = true;
-      _dragOffset = _refreshThreshold;
-    });
-
+    if (isLoading) return;
     await _fetchPosts(showSkeleton: false);
-
-    if (mounted) {
-      setState(() {
-        _isFlashing = true;
-        _isRefreshing = false;
-        _dragOffset = 0.0;
-      });
-    }
-
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      setState(() {
-        _isFlashing = false;
-      });
-    }
   }
 
-  bool _onScroll(ScrollNotification notification) {
-    if (_isRefreshing || isLoading || _isFlashing) return false;
 
-    if (notification is OverscrollNotification && notification.overscroll < 0) {
-      setState(() {
-        _dragOffset += notification.overscroll.abs();
-      });
-    } else if (notification is ScrollUpdateNotification) {
-      if (notification.metrics.pixels <= 0 && notification.scrollDelta != null && notification.scrollDelta! < 0) {
-        setState(() {
-          _dragOffset += notification.scrollDelta!.abs();
-        });
-      } else if (notification.metrics.pixels > 0 && _dragOffset > 0) {
-        setState(() {
-          _dragOffset = 0.0;
-        });
-      }
-    } else if (notification is ScrollEndNotification) {
-      if (_dragOffset >= _refreshThreshold) {
-        _handleRefresh();
-      } else {
-        setState(() { _dragOffset = 0.0; });
-      }
-    }
-    return false;
-  }
 
   void _showFilterDialog() {
     showCupertinoModalPopup(
@@ -267,14 +219,16 @@ class _EventScreenState extends State<EventScreen> {
           ],
         ),
       ),
-      child: NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
-        child: Stack(
-          children: [
-            CustomScrollView(
-              physics: const ClampingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              slivers: [
-              if (_isFlashing || isLoading)
+      child: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: const Color(0xFFFF9B7A),
+        backgroundColor: const Color(0xFF1E1E1E), // Dark premium background
+        edgeOffset: 100.0, // Clear the CupertinoNavigationBar
+        displacement: 40.0,
+        child: CustomScrollView(
+          physics: const ClampingScrollPhysics(),
+          slivers: [
+              if (isLoading)
             SliverPadding(
               padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60.0),
               sliver: const SliverFillRemaining(
@@ -311,30 +265,6 @@ class _EventScreenState extends State<EventScreen> {
             ),
         ],
       ),
-      if (_dragOffset > 0 || _isRefreshing || _isFlashing)
-        Positioned(
-          top: MediaQuery.of(context).padding.top + 44.0,
-          left: 0,
-          right: 0,
-          child: _isRefreshing || _isFlashing
-              ? const LinearProgressIndicator(
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF9B7A)),
-                  minHeight: 3,
-                )
-              : Container(
-                  height: 3,
-                  alignment: Alignment.center,
-                  child: FractionallySizedBox(
-                    widthFactor: (_dragOffset / _refreshThreshold).clamp(0.0, 1.0),
-                    child: Container(
-                      color: const Color(0xFFFF9B7A),
-                    ),
-                  ),
-                ),
-        ),
-      ],
-    ),
       ),
     );
   }

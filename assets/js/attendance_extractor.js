@@ -162,7 +162,10 @@ async function extractAttendance(year, session) {
     if (["totalpercentage", "percentage"].includes(key)) colMap.percentage = idx;
     if (["totalnoofdays", "totaldays"].includes(key)) colMap.totalDays = idx;
     if (["noofexcuses", "excuses"].includes(key)) colMap.excuses = idx;
-    if (["facultyname", "faculty"].includes(key)) colMap.facultyName = idx;
+    if (key.includes("faculty")) {
+      colMap.facultyCols = colMap.facultyCols || [];
+      colMap.facultyCols.push(idx);
+    }
   });
   
   const rows = targetDoc.querySelectorAll('tr[rt="1"]');
@@ -177,13 +180,26 @@ async function extractAttendance(year, session) {
     
     const subject = getCell(colMap.subject);
     if (subject) {
+      // Smartly pick the best faculty name (prefer letters over just numbers)
+      let bestFacultyName = "";
+      if (colMap.facultyCols) {
+        for (let fIdx of colMap.facultyCols) {
+          let val = getCell(fIdx);
+          if (/[a-zA-Z]/.test(val)) {
+            bestFacultyName = val; // Found actual name
+            break;
+          }
+          if (!bestFacultyName) bestFacultyName = val; // Fallback to number if no name found
+        }
+      }
+
       results.push({
         subject: subject,
         present: getCell(colMap.present),
         totalDays: getCell(colMap.totalDays),
         absent: getCell(colMap.absent),
         percentage: getCell(colMap.percentage),
-        facultyName: getCell(colMap.facultyName),
+        facultyName: bestFacultyName,
         excuses: getCell(colMap.excuses),
       });
     }

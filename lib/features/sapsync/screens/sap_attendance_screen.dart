@@ -6,6 +6,7 @@ import 'package:app/features/sapsync/widgets/sleek_attendance_card.dart';
 import 'package:app/features/sapsync/widgets/sap_hero_visualization.dart';
 import 'package:app/features/sapsync/widgets/sap_skeleton_loader.dart';
 import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
+import 'package:app/shared/physics/capped_bouncing_scroll_physics.dart';
 
 class SapAttendanceScreen extends StatefulWidget {
   const SapAttendanceScreen({super.key});
@@ -18,11 +19,6 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
   int? _selectedIndex;
   final ScrollController _scrollController = ScrollController();
 
-  bool _isFlashing = false;
-  double _dragOffset = 0.0;
-  bool _isRefreshing = false;
-  final double _refreshThreshold = 80.0;
-
   @override
   void initState() {
     super.initState();
@@ -34,54 +30,13 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
     super.dispose();
   }
 
-  Future<void> _handleRefresh(SapProvider sapProvider) async {
-    if (_isRefreshing || sapProvider.isLoading) return;
+  Future<void> _handleRefresh() async {
+    final sapProvider = Provider.of<SapProvider>(context, listen: false);
+    if (sapProvider.isLoading) return;
     
-    setState(() {
-      _isRefreshing = true;
-      _dragOffset = _refreshThreshold;
-    });
-
     await sapProvider.fetchAttendance();
-    
-    setState(() { 
-      _isFlashing = true; 
-      _isRefreshing = false;
-      _dragOffset = 0.0; 
-    });
-    
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      setState(() { _isFlashing = false; });
-    }
   }
 
-  bool _onScroll(ScrollNotification notification, SapProvider sapProvider) {
-    if (_isRefreshing || sapProvider.isLoading || _isFlashing) return false;
-
-    if (notification is OverscrollNotification && notification.overscroll < 0) {
-      setState(() {
-        _dragOffset += notification.overscroll.abs();
-      });
-    } else if (notification is ScrollUpdateNotification) {
-      if (notification.metrics.pixels <= 0 && notification.scrollDelta != null && notification.scrollDelta! < 0) {
-        setState(() {
-          _dragOffset += notification.scrollDelta!.abs();
-        });
-      } else if (notification.metrics.pixels > 0 && _dragOffset > 0) {
-        setState(() {
-          _dragOffset = 0.0;
-        });
-      }
-    } else if (notification is ScrollEndNotification) {
-      if (_dragOffset >= _refreshThreshold) {
-        _handleRefresh(sapProvider);
-      } else {
-        setState(() { _dragOffset = 0.0; });
-      }
-    }
-    return false;
-  }
 
 
   @override
@@ -114,14 +69,15 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
               );
             },
             child: RepaintBoundary(
-              child: NotificationListener<ScrollNotification>(
-                onNotification: (notification) => _onScroll(notification, sapProvider),
-                child: Stack(
-                  children: [
-                    CustomScrollView(
-                      controller: _scrollController,
-                      physics: const ClampingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                      slivers: [
+              child: RefreshIndicator(
+                onRefresh: _handleRefresh,
+                color: const Color(0xFF4CD97B), // Neon green for attendance
+                backgroundColor: const Color(0xFF1E1E1E), // Premium dark grey
+                displacement: 40.0,
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: const ClampingScrollPhysics(),
+                  slivers: [
                 // 1. The Header (Scrolls away)
                 SliverToBoxAdapter(
                   child: Padding(
@@ -200,7 +156,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                   ),
 
                 // 3. Main Content
-                if (_isFlashing || (sapProvider.isLoading && records.isEmpty))
+                if (sapProvider.isLoading && records.isEmpty)
                   const SliverFillRemaining(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -278,35 +234,11 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
                   ),
               ],
             ),
-            if (_dragOffset > 0 || _isRefreshing || _isFlashing || sapProvider.isLoading)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: (_isRefreshing || _isFlashing || sapProvider.isLoading)
-                    ? const LinearProgressIndicator(
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD97B)),
-                        minHeight: 3,
-                      )
-                    : Container(
-                        height: 3,
-                        alignment: Alignment.center,
-                        child: FractionallySizedBox(
-                          widthFactor: (_dragOffset / _refreshThreshold).clamp(0.0, 1.0),
-                          child: Container(
-                            color: const Color(0xFF4CD97B),
-                          ),
-                        ),
-                      ),
-              ),
-          ],
+            ),
+          ),
         ),
       ),
-    ),
-  ),
-),
-);
+    );
   }
   List<Map<String, String>> _getTermOptions(String userId) {
     int studentStartYear = 2024;
@@ -364,7 +296,7 @@ class _SapAttendanceScreenState extends State<SapAttendanceScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
-                  _handleRefresh(sapProvider);
+                  _handleRefresh();
                 },
                 icon: const Icon(Icons.refresh, color: Colors.black),
                 label: const Text(
