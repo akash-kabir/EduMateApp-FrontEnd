@@ -275,11 +275,8 @@ class _FriendsSettingsScreenState extends State<FriendsSettingsScreen> {
                                     child: child,
                                   );
                                 },
-                                onReorder: (oldIndex, newIndex) async {
+                                onReorderItem: (oldIndex, newIndex) async {
                                   setState(() {
-                                    if (newIndex > oldIndex) {
-                                      newIndex -= 1;
-                                    }
                                     final friend = _friends.removeAt(oldIndex);
                                     _friends.insert(newIndex, friend);
                                   });

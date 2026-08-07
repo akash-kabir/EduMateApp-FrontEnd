@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 class Config {
   static const String BASE_URL = "https://edu-mate-app-back-end.vercel.app";
 

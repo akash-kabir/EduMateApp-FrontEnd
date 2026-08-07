@@ -49,7 +49,7 @@ class SharedPreferencesService {
 
   // Secure storage instance
   static const _secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(),
   );
 
   // ==================== Token Management ====================

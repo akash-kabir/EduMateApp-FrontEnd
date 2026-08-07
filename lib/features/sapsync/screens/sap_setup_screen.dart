@@ -290,7 +290,7 @@ class SapSetupScreenState extends State<SapSetupScreen> {
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);
                   } else {
-                    if (mounted) {
+                    if (context.mounted) {
                       EduMateToast.showCompact(context, message: 'Could not open link', isSuccess: false);
                     }
                   }

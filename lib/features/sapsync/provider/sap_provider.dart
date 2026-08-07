@@ -114,16 +114,16 @@ class SapProvider with ChangeNotifier {
     try {
       final credentials = await _authService.getCredentials();
       if (credentials == null) {
-        print('SAP_DEBUG [Provider]: No credentials found.');
+        debugPrint('SAP_DEBUG [Provider]: No credentials found.');
         _errorMessage = 'No credentials found.';
         _isLoading = false;
         notifyListeners();
         return;
       }
 
-      print('SAP_DEBUG [Provider]: Logging in as ${credentials['userId']}...');
+      debugPrint('SAP_DEBUG [Provider]: Logging in as ${credentials['userId']}...');
       final loginSuccess = await _scraper.login(credentials['userId']!, credentials['password']!);
-      print('SAP_DEBUG [Provider]: Login result: $loginSuccess');
+      debugPrint('SAP_DEBUG [Provider]: Login result: $loginSuccess');
 
       if (!loginSuccess) {
          _errorMessage = 'Login failed. Showing offline data.';
@@ -131,7 +131,7 @@ class SapProvider with ChangeNotifier {
          return;
       }
 
-      print('SAP_DEBUG [Provider]: Navigating to attendance...');
+      debugPrint('SAP_DEBUG [Provider]: Navigating to attendance...');
       final navSuccess = await _scraper.navigateToAttendance();
       if (!navSuccess) {
          _errorMessage = 'Portal offline. Showing offline data.';
@@ -142,7 +142,7 @@ class SapProvider with ChangeNotifier {
       _currentSemester = SemesterOption(id: '$_termYear-$_sessionKey', title: '$_termYear Session $_sessionKey');
       _availableSemesters = [_currentSemester!];
 
-      print('SAP_DEBUG [Provider]: Extracting attendance via JS...');
+      debugPrint('SAP_DEBUG [Provider]: Extracting attendance via JS...');
       final result = await _scraper.extractAttendance(_termYear, _sessionKey);
       
       if (result != null && result['success'] == true && result['data'] != null) {
@@ -160,7 +160,7 @@ class SapProvider with ChangeNotifier {
           ));
         }
 
-        print('SAP_DEBUG [Provider]: Extracted ${records.length} records.');
+        debugPrint('SAP_DEBUG [Provider]: Extracted ${records.length} records.');
         
         // Deduplicate records to avoid doubling up subjects
         final uniqueRecordsMap = <String, AttendanceRecord>{};
@@ -172,13 +172,13 @@ class SapProvider with ChangeNotifier {
         await SapDatabaseHelper.instance.replaceAttendanceForSemester(_currentSemester!.id, uniqueRecords);
       } else {
         final err = result != null ? result['error'] : 'Unknown error';
-        print('SAP_DEBUG [Provider]: Extraction failed: $err');
+        debugPrint('SAP_DEBUG [Provider]: Extraction failed: $err');
         _errorMessage = 'Sync failed. Showing offline data.';
       }
       
       await _loadFromCache();
     } catch (e) {
-      print('SAP_DEBUG [Provider]: EXCEPTION in fetchAttendance: $e');
+      debugPrint('SAP_DEBUG [Provider]: EXCEPTION in fetchAttendance: $e');
       _errorMessage = 'Sync failed. Showing offline data.';
       await _loadFromCache();
     } finally {
@@ -193,7 +193,7 @@ class SapProvider with ChangeNotifier {
   Future<void> _loadFromCache() async {
     if (_currentSemester != null) {
       _attendanceRecords = await SapDatabaseHelper.instance.getAttendanceForSemester(_currentSemester!.id);
-      print('SAP_DEBUG [Provider]: Loaded ${_attendanceRecords.length} records from DB');
+      debugPrint('SAP_DEBUG [Provider]: Loaded ${_attendanceRecords.length} records from DB');
     }
   }
 

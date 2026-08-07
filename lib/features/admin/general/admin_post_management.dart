@@ -78,6 +78,8 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         EduMateToast.showCompact(context, message: 'Post deleted successfully', isSuccess: true);
         _fetchPosts();
@@ -85,6 +87,7 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
         EduMateToast.showCompact(context, message: 'Failed to delete post', isSuccess: false);
       }
     } catch (e) {
+      if (!mounted) return;
       EduMateToast.showCompact(context, message: 'Error deleting post', isSuccess: false);
     }
   }

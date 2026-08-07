@@ -443,7 +443,9 @@ class _SignupScreen2State extends State<SignupScreen2>
                                 setModalState(() => isSubmitting = false);
 
                                 if (result['success'] ?? false) {
-                                  Navigator.pop(bottomSheetContext);
+                                  if (bottomSheetContext.mounted) {
+                                    Navigator.pop(bottomSheetContext);
+                                  }
 
                                   final data = result['data'];
                                   final token = data['token'];

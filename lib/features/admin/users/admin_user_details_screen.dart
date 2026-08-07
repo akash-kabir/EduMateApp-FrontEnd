@@ -92,6 +92,8 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         body: jsonEncode({'role': newRole}),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         EduMateToast.showCompact(
           context,
@@ -109,6 +111,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       EduMateToast.showCompact(
         context,
         message: 'Error updating role',
@@ -301,15 +304,15 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
-        if (mounted) {
-          EduMateToast.showCompact(
-            context,
-            message: 'User deleted successfully',
-            isSuccess: true,
-          );
-          Navigator.pop(context, true); // Pop and signal a deletion
-        }
+        EduMateToast.showCompact(
+          context,
+          message: 'User deleted successfully',
+          isSuccess: true,
+        );
+        Navigator.pop(context, true); // Pop and signal a deletion
       } else {
         EduMateToast.showCompact(
           context,
@@ -318,6 +321,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       EduMateToast.showCompact(
         context,
         message: 'Error deleting user',

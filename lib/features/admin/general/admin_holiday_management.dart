@@ -190,18 +190,18 @@ class _AdminHolidayManagementScreenState extends State<AdminHolidayManagementScr
               body: payload,
             );
             if (response.statusCode == 200) {
-              if (mounted) {
+              if (context.mounted) {
                 EduMateToast.showCompact(context, message: 'Holiday added!', isSuccess: true);
               }
               _isExpanded = true;
               _fetchHolidays();
             } else {
-              if (mounted) {
+              if (context.mounted) {
                 EduMateToast.showCompact(context, message: 'Failed to add holiday', isSuccess: false);
               }
             }
           } catch (e) {
-            if (mounted) {
+            if (context.mounted) {
               EduMateToast.showCompact(context, message: 'Error: $e', isSuccess: false);
             }
           }

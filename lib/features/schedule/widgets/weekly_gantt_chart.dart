@@ -244,9 +244,6 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
     final timelineWidth = (totalMinutes * _pixelsPerMinute) + _yAxisWidth + 8;
 
     final nowMinutes = (widget.now.hour * 60 + widget.now.minute).toDouble();
-    final hasCurrentTime = nowMinutes >= _minMinutes && nowMinutes <= _maxMinutes;
-    final currentTimeX = ((nowMinutes - _minMinutes) * _pixelsPerMinute) + _yAxisWidth;
-
     return Container(
       color: Colors.transparent, // Background handled by parent
       child: Padding(
@@ -398,12 +395,6 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
           final room = p['room']?.toString();
           final upperSubject = subject.toUpperCase();
 
-          final isElective = p['isElective'] == true ||
-              p['type'] == 'elective' ||
-              upperSubject.contains('ELECTIVE') ||
-              upperSubject.startsWith('PE') ||
-              upperSubject.startsWith('OE') ||
-              upperSubject.contains('KEXPLORE');
 
           final isGap = upperSubject.contains('GAP') || upperSubject.contains('FREE');
           final isOngoing = isToday && nowMinutes >= start && nowMinutes < end;

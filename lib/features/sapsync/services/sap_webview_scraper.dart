@@ -101,7 +101,9 @@ class SapWebViewScraper {
           await Future.delayed(const Duration(milliseconds: 500));
           return true;
         }
-      } catch (e) {}
+      } catch (e) {
+        debugPrint('SAP_DEBUG [Scraper]: JS eval error waiting for page load: $e');
+      }
       await Future.delayed(const Duration(milliseconds: 100));
     }
     return false;
@@ -120,7 +122,7 @@ class SapWebViewScraper {
           currentTitle.contains('Overview') &&
           currentUrl != null &&
           currentUrl.toString().contains('kiitportal.kiituniversity.net')) {
-        print('SAP_DEBUG [Scraper]: Already logged into portal (Overview active). Skipping re-login.');
+        debugPrint('SAP_DEBUG [Scraper]: Already logged into portal (Overview active). Skipping re-login.');
         return true;
       }
     } catch (e) {
@@ -139,7 +141,7 @@ class SapWebViewScraper {
     // 3. Check if we reached Overview directly via an existing active session
     final loadedTitle = await _controller?.evaluateJavascript(source: 'document.title');
     if (loadedTitle is String && loadedTitle.contains('Overview')) {
-      print('SAP_DEBUG [Scraper]: Session active, reached Overview directly.');
+      debugPrint('SAP_DEBUG [Scraper]: Session active, reached Overview directly.');
       return true;
     }
 
@@ -157,11 +159,11 @@ class SapWebViewScraper {
     }
 
     if (!loginFieldReady) {
-      print('SAP_DEBUG [Scraper]: Login field not found and session not active.');
+      debugPrint('SAP_DEBUG [Scraper]: Login field not found and session not active.');
       return false;
     }
 
-    print('SAP_DEBUG [Scraper]: Entering credentials for user $username...');
+    debugPrint('SAP_DEBUG [Scraper]: Entering credentials for user $username...');
     isPageLoaded.value = false;
     await _controller?.evaluateJavascript(source: """
       (function() {
@@ -184,7 +186,7 @@ class SapWebViewScraper {
     for (int i = 0; i < 20; i++) {
       final title = await _controller?.evaluateJavascript(source: 'document.title');
       if (title is String && title.contains('Overview')) {
-        print('SAP_DEBUG [Scraper]: Successfully authenticated and reached Overview page.');
+        debugPrint('SAP_DEBUG [Scraper]: Successfully authenticated and reached Overview page.');
         return true;
       }
       
@@ -197,7 +199,7 @@ class SapWebViewScraper {
         })();
       ''');
       if (hasError == true) {
-        print('SAP_DEBUG [Scraper]: SAP reported authentication failure for $username.');
+        debugPrint('SAP_DEBUG [Scraper]: SAP reported authentication failure for $username.');
         return false;
       }
       
@@ -214,7 +216,7 @@ class SapWebViewScraper {
 
   Future<bool> navigateToAttendance() async {
     try {
-      print('SAP_DEBUG [Provider]: Navigating to attendance via portal Navigate event...');
+      debugPrint('SAP_DEBUG [Provider]: Navigating to attendance via portal Navigate event...');
 
       // This NavigationTarget hash identifies the "Attendance" iview in the
       // portal's role/content configuration (PCD). It is a STATIC content ID,
@@ -259,11 +261,11 @@ class SapWebViewScraper {
       // carrying a real, freshly-issued sap-ext-sid to WDPRD.
       final loaded = await waitForPageLoad(timeout: const Duration(seconds: 15));
       if (!loaded) {
-        print('SAP_DEBUG [Provider]: Navigate POST did not complete in time');
+        debugPrint('SAP_DEBUG [Provider]: Navigate POST did not complete in time');
         return false;
       }
       
-      print('SAP_DEBUG [Provider]: Successfully initiated Navigate POST');
+      debugPrint('SAP_DEBUG [Provider]: Successfully initiated Navigate POST');
       
       // Wait for the inner iframes to finish loading (portal uses ajax/iframes)
       await Future.delayed(const Duration(milliseconds: 2500));
@@ -319,15 +321,15 @@ class SapWebViewScraper {
             return out.join("\\n");
           })();
         ''');
-        print('SAP_DEBUG [Provider]: FRAME DUMP:\\n$dump');
-        print('SAP_DEBUG [Provider]: Could not find sap.client.SsrClient.form.');
+        debugPrint('SAP_DEBUG [Provider]: FRAME DUMP:\\n$dump');
+        debugPrint('SAP_DEBUG [Provider]: Could not find sap.client.SsrClient.form.');
         return false;
       }
 
-      print('SAP_DEBUG [Provider]: Found WebDynpro app in frames. Ready for extraction.');
+      debugPrint('SAP_DEBUG [Provider]: Found WebDynpro app in frames. Ready for extraction.');
       return true;
     } catch (e) {
-      print('SAP_DEBUG [Provider]: Error during Navigate: $e');
+      debugPrint('SAP_DEBUG [Provider]: Error during Navigate: $e');
       return false;
     }
   }
@@ -351,7 +353,7 @@ class SapWebViewScraper {
         return JSON.stringify(out);
       })();
     ''');
-    print('SAP_DEBUG [NavDump]: $dump');
+    debugPrint('SAP_DEBUG [NavDump]: $dump');
   }
 
   Future<Map<String, dynamic>?> extractAttendance(String year, String session) async {
@@ -400,10 +402,10 @@ class SapWebViewScraper {
       final cookieManager = CookieManager.instance();
       await cookieManager.deleteAllCookies();
       if (_controller != null) {
-        await _controller?.clearCache();
+        await InAppWebViewController.clearAllCache();
       }
     } catch (e) {
-      print('SAP_DEBUG [Scraper]: Error clearing session cookies & cache: $e');
+      debugPrint('SAP_DEBUG [Scraper]: Error clearing session cookies & cache: $e');
     }
   }
 

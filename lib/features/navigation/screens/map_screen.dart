@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -300,7 +301,9 @@ class _MapScreenState extends State<MapScreen> with AutomaticKeepAliveClientMixi
       if (mapboxMap != null) {
         _startLocationTracking();
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Error getting current location: $e');
+    }
   }
 
   void _startLocationTracking() {
@@ -341,7 +344,9 @@ class _MapScreenState extends State<MapScreen> with AutomaticKeepAliveClientMixi
         ),
         mapbox.MapAnimationOptions(duration: 500),
       );
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Error recentering map: $e');
+    }
   }
 
   List<PoiModel> _pois = [];
@@ -441,8 +446,6 @@ class _MapScreenState extends State<MapScreen> with AutomaticKeepAliveClientMixi
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final size = MediaQuery.of(context).size;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return CupertinoPageScaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.black,
@@ -1071,7 +1074,7 @@ class _MapScreenState extends State<MapScreen> with AutomaticKeepAliveClientMixi
                                   });
                                 } catch (e) {
                                   _navigationManager.stopNavigation(mapboxMap!);
-                                  if (context.mounted) {
+                                  if (mounted) {
                                     final rawMsg = e.toString().replaceAll('Exception: ', '').replaceAll('Error getting directions: ', '');
                                     EduMateToast.showCompact(
                                       context,

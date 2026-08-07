@@ -6,7 +6,6 @@ import 'package:app/features/sapsync/widgets/sleek_attendance_card.dart';
 import 'package:app/features/sapsync/widgets/sap_hero_visualization.dart';
 import 'package:app/features/sapsync/widgets/sap_skeleton_loader.dart';
 import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
-import 'package:app/shared/physics/capped_bouncing_scroll_physics.dart';
 import 'package:app/shared/widgets/spotify_refresh_indicator.dart';
 
 class SapAttendanceScreen extends StatefulWidget {

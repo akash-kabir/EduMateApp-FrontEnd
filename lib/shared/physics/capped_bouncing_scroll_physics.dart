@@ -5,8 +5,8 @@ class CappedBouncingScrollPhysics extends BouncingScrollPhysics {
 
   const CappedBouncingScrollPhysics({
     this.maxOverscroll = 120.0,
-    ScrollPhysics? parent,
-  }) : super(parent: parent);
+    super.parent,
+  });
 
   @override
   CappedBouncingScrollPhysics applyTo(ScrollPhysics? ancestor) {

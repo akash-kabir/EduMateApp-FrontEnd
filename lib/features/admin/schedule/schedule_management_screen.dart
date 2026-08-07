@@ -78,7 +78,6 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
       FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
-        allowMultiple: false,
       );
 
       if (result == null) return;

@@ -53,7 +53,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   Future<void> _loadViewModePreference() async {
-    final defaultGantt = await SharedPreferencesService.getBool('defaultToGanttChart') ?? false;
+    final defaultGantt = await SharedPreferencesService.getBool('defaultToGanttChart');
     if (mounted && defaultGantt) {
       setState(() {
         _isWeeklyView = true;
@@ -1013,38 +1013,4 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     ),
   );
   }
-}
-
-class _DaySelectorHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-  final double height;
-  final double topPadding;
-
-  _DaySelectorHeaderDelegate({
-    required this.child,
-    required this.height,
-    this.topPadding = 0.0,
-  });
-
-  @override
-  double get minExtent => height + topPadding;
-
-  @override
-  double get maxExtent => height + topPadding;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Padding(
-      padding: EdgeInsets.only(top: topPadding),
-      child: child,
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _DaySelectorHeaderDelegate oldDelegate) =>
-      oldDelegate.height != height || oldDelegate.child != child;
 }

@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
-import 'package:flutter/cupertino.dart';
-import 'dart:math' as math;
 
 class SpotifyRefreshState extends ChangeNotifier {
   double dragOffset = 0.0;
@@ -83,8 +80,7 @@ class SpotifyRefreshState extends ChangeNotifier {
 class SpotifyRefreshPhysics extends ScrollPhysics {
   final SpotifyRefreshState refreshState;
 
-  const SpotifyRefreshPhysics(this.refreshState, {ScrollPhysics? parent})
-      : super(parent: parent);
+  const SpotifyRefreshPhysics(this.refreshState, {super.parent});
 
   @override
   SpotifyRefreshPhysics applyTo(ScrollPhysics? ancestor) {

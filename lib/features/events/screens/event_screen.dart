@@ -5,9 +5,6 @@ import 'package:app/features/auth_and_profile/services/token_refresh_service.dar
 import 'dart:convert';
 import 'package:app/shared/config.dart';
 import 'package:app/features/events/widgets/event_card.dart';
-
-import 'package:app/shared/widgets/dialogs/custom_glass_dialog.dart';
-import 'package:app/shared/physics/capped_bouncing_scroll_physics.dart';
 import 'package:app/shared/widgets/skeletons/skeleton_event_card.dart';
 import 'package:app/features/events/screens/create_post_screen.dart';
 
