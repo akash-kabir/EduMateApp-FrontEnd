@@ -44,6 +44,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   String userFullName = '';
   String? userId;
   String? token;
@@ -54,9 +56,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   
   SyncState _syncState = SyncState.idle;
   late AnimationController _syncAnimationController;
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void initState() {

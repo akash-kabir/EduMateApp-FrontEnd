@@ -38,7 +38,10 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   mapbox.MapboxMap? mapboxMap;
   mapbox.PointAnnotationManager? pointAnnotationManager;
   mapbox.PointAnnotation? campusMarkerAnnotation;
@@ -437,6 +440,9 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+    final size = MediaQuery.of(context).size;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return CupertinoPageScaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.black,

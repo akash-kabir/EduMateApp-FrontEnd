@@ -21,7 +21,10 @@ class EventScreen extends StatefulWidget {
   State<EventScreen> createState() => _EventScreenState();
 }
 
-class _EventScreenState extends State<EventScreen> {
+class _EventScreenState extends State<EventScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   List<dynamic> posts = [];
   bool isLoading = true;
   String selectedFilter = 'all';
@@ -183,6 +186,7 @@ class _EventScreenState extends State<EventScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final canPost =
         userRole != null &&
         [

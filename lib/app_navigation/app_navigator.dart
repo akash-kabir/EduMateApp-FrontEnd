@@ -19,15 +19,16 @@ class AppNavigator extends StatefulWidget {
 
 class _AppNavigatorState extends State<AppNavigator> {
   int _selectedIndex = 0;
-  bool _slideFromRight = true;
   bool _isMapNavBarVisible = true;
   String _userRole = '';
+  late final PageController _pageController;
 
   late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
     _loadInitialPage();
     MapNavigationStore.instance.tabChangeNotifier.addListener(_onTabChangeRequested);
     _pages = [
@@ -54,6 +55,7 @@ class _AppNavigatorState extends State<AppNavigator> {
   @override
   void dispose() {
     MapNavigationStore.instance.tabChangeNotifier.removeListener(_onTabChangeRequested);
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -67,9 +69,14 @@ class _AppNavigatorState extends State<AppNavigator> {
     }
 
     setState(() {
-      _slideFromRight = index > _selectedIndex;
       _selectedIndex = index;
     });
+    
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _showGuestRestrictionDialog() {
@@ -169,6 +176,7 @@ class _AppNavigatorState extends State<AppNavigator> {
       setState(() {
         _selectedIndex = 1;
       });
+      _pageController.jumpToPage(1);
     }
   }
 
@@ -177,56 +185,10 @@ class _AppNavigatorState extends State<AppNavigator> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       extendBody: true,
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        transitionBuilder: (child, animation) {
-          final isIncoming = child.key == ValueKey<int>(_selectedIndex);
-          
-          if (isIncoming) {
-            final offsetBegin = _slideFromRight
-                ? const Offset(1.0, 0.0)
-                : const Offset(-1.0, 0.0);
-            final offsetAnimation = Tween<Offset>(
-              begin: offsetBegin,
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            ));
-            
-            return SlideTransition(
-              position: offsetAnimation,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 15,
-                      spreadRadius: -2,
-                    ),
-                  ],
-                ),
-                child: child,
-              ),
-            );
-          } else {
-            // Outgoing screen remains stationary and fully visible underneath
-            return child;
-          }
-        },
-        layoutBuilder: (currentChild, previousChildren) {
-          return Stack(
-            alignment: Alignment.center,
-            children: <Widget>[
-              ...previousChildren,
-              ?currentChild,
-            ],
-          );
-        },
-        child: KeyedSubtree(
-          key: ValueKey<int>(_selectedIndex),
-          child: _pages[_selectedIndex],
-        ),
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: _pages,
       ),
       bottomNavigationBar: (_selectedIndex == 3 && !_isMapNavBarVisible) 
           ? const SizedBox.shrink()

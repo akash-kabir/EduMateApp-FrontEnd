@@ -27,7 +27,10 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen>
-    with WidgetsBindingObserver, ScheduleLogicMixin {
+    with WidgetsBindingObserver, ScheduleLogicMixin, AutomaticKeepAliveClientMixin {
+  
+  @override
+  bool get wantKeepAlive => true;
   
   late PageController _pageController;
   Map<String, dynamic>? _cachedSectionData;
@@ -633,6 +636,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final weekDates = getWeekDates();
     final now = DateTime.now();
 
