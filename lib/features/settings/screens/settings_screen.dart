@@ -26,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late ScrollController _scrollController;
 
   bool _startUpToTimeSheetEnabled = false;
+  bool _defaultToGanttChart = false;
   String _userRole = '';
   bool _hideSapSync = false;
 
@@ -44,12 +45,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadPreferences() async {
     final startUpBool = await SharedPreferencesService.getBool('openToTimesheet');
+    final ganttBool = await SharedPreferencesService.getBool('defaultToGanttChart');
     final role = await SharedPreferencesService.getUserRole() ?? '';
     final hideSap = await SharedPreferencesService.getBool('hideSapSync');
     
     if (mounted) {
       setState(() {
         _startUpToTimeSheetEnabled = startUpBool;
+        _defaultToGanttChart = ganttBool;
         _userRole = role;
         _hideSapSync = hideSap;
       });
@@ -329,7 +332,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildListTile({
     required String title,
-    required String subtitle,
+    String? subtitle,
+    Widget? subtitleWidget,
     required Widget trailing,
     VoidCallback? onTap,
   }) {
@@ -339,10 +343,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title,
         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
       ),
-      subtitle: Text(
+      subtitle: subtitleWidget ?? (subtitle != null ? Text(
         subtitle,
         style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
-      ),
+      ) : null),
       trailing: trailing,
       onTap: onTap,
     );
@@ -467,11 +471,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
 
-                          // Accessibility Section
+                          // Timesheet Section
                           const Padding(
                             padding: EdgeInsets.only(left: 8, bottom: 8),
                             child: Text(
-                              'Accessibility',
+                              'Timesheet',
                               style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                           ),
@@ -491,6 +495,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 ),
                                 Divider(color: Colors.white.withValues(alpha: 0.1), height: 1, indent: 20),
+                                _buildListTile(
+                                  title: 'View Mode',
+                                  subtitleWidget: RichText(
+                                    text: TextSpan(
+                                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12, fontFamily: 'Poppins'),
+                                      children: [
+                                        const TextSpan(text: 'Current mode: '),
+                                        TextSpan(
+                                          text: _defaultToGanttChart ? 'Gantt Chart' : 'List View',
+                                          style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  trailing: CupertinoSwitch(
+                                    activeTrackColor: AuthPalette.coral,
+                                    value: _defaultToGanttChart,
+                                    onChanged: (val) {
+                                      setState(() => _defaultToGanttChart = val);
+                                      SharedPreferencesService.setBool('defaultToGanttChart', val);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Accessibility Section
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8, bottom: 8),
+                            child: Text(
+                              'Accessibility',
+                              style: TextStyle(color: AuthPalette.coral, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                          _buildGlassCard(
+                            child: Column(
+                              children: [
                                 _buildListTile(
                                   title: 'Hide SAPSync',
                                   subtitle: 'Hide the SAP card from the home screen',

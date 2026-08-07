@@ -64,6 +64,28 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
       }
       _isSyncingScroll = false;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final nowMinutes = (DateTime.now().hour * 60 + DateTime.now().minute).toDouble();
+      if (nowMinutes >= _minMinutes && nowMinutes <= _maxMinutes) {
+        final currentTimeX = ((nowMinutes - _minMinutes) * _pixelsPerMinute) + _yAxisWidth;
+        final screenWidth = MediaQuery.of(context).size.width;
+        // Calculate offset to center the current time marker
+        final targetOffset = (currentTimeX - (screenWidth / 2)).clamp(
+          0.0, 
+          _horizontalScrollController.position.maxScrollExtent
+        );
+        
+        if (_horizontalScrollController.hasClients) {
+          _horizontalScrollController.animateTo(
+            targetOffset,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      }
+    });
   }
 
   @override

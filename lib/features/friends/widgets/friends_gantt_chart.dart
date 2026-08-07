@@ -66,6 +66,31 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
       }
       _isSyncingScroll = false;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final now = DateTime.now();
+      final bool isToday = _isSameDay(now.weekday, widget.currentDayName);
+      if (isToday) {
+        final nowMinutes = (now.hour * 60 + now.minute).toDouble();
+        if (nowMinutes >= _minMinutes && nowMinutes <= _maxMinutes) {
+          final currentTimeX = ((nowMinutes - _minMinutes) * _pixelsPerMinute) + _yAxisWidth;
+          final screenWidth = MediaQuery.of(context).size.width;
+          final targetOffset = (currentTimeX - (screenWidth / 2)).clamp(
+            0.0, 
+            _horizontalScrollController.position.maxScrollExtent
+          );
+          
+          if (_horizontalScrollController.hasClients) {
+            _horizontalScrollController.animateTo(
+              targetOffset,
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOutCubic,
+            );
+          }
+        }
+      }
+    });
   }
 
   @override

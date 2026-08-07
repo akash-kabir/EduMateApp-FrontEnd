@@ -46,6 +46,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     // initialIndex 0 is Sunday. We only want Mon-Sat (indices 1-6) mapping to page indices 0-5.
     final pageIndex = initialIndex > 0 ? (initialIndex - 1).clamp(0, 5) : 0;
     _pageController = PageController(initialPage: pageIndex);
+    _loadViewModePreference();
+  }
+
+  Future<void> _loadViewModePreference() async {
+    final defaultGantt = await SharedPreferencesService.getBool('defaultToGanttChart') ?? false;
+    if (mounted && defaultGantt) {
+      setState(() {
+        _isWeeklyView = true;
+      });
+    }
   }
 
   @override
@@ -881,6 +891,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       onPressed: () {
                         setState(() {
                           _isWeeklyView = !_isWeeklyView;
+                          if (!_isWeeklyView) {
+                            final weekDates = getWeekDates();
+                            final newIndex = weekDates.indexWhere(
+                              (d) => d.year == selectedDate.year && d.month == selectedDate.month && d.day == selectedDate.day,
+                            );
+                            _pageController.dispose();
+                            _pageController = PageController(initialPage: newIndex > 0 ? newIndex - 1 : 0);
+                          }
                         });
                       },
                       child: Icon(
