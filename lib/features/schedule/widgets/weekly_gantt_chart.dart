@@ -25,7 +25,7 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
   final ScrollController _verticalScrollController = ScrollController();
 
   static const double _pixelsPerMinute = 2.4;
-  static const double _yAxisWidth = 90.0;
+  static const double _yAxisWidth = 60.0;
   static const double _headerHeight = 36.0;
 
   double _minMinutes = 480; // Default 8:00 AM
@@ -192,7 +192,7 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
       maxM = 1020;
     } else {
       minM = (minM - 5).clamp(0, 24 * 60);
-      maxM = (maxM + 30).clamp(0, 24 * 60);
+      maxM = (maxM + 10).clamp(0, 24 * 60);
     }
 
     _minMinutes = minM;
@@ -219,7 +219,7 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
   @override
   Widget build(BuildContext context) {
     final totalMinutes = _maxMinutes - _minMinutes;
-    final timelineWidth = (totalMinutes * _pixelsPerMinute) + _yAxisWidth + 24;
+    final timelineWidth = (totalMinutes * _pixelsPerMinute) + _yAxisWidth + 8;
 
     final nowMinutes = (widget.now.hour * 60 + widget.now.minute).toDouble();
     final hasCurrentTime = nowMinutes >= _minMinutes && nowMinutes <= _maxMinutes;
@@ -229,44 +229,24 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
       color: Colors.transparent, // Background handled by parent
       child: Padding(
         padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 44.0,
+          top: MediaQuery.of(context).padding.top + 44.0 + 56.0,
           bottom: MediaQuery.of(context).padding.bottom,
         ),
-        child: Column(
+        child: Stack(
           children: [
-          SizedBox(
-            height: _headerHeight,
-            child: Stack(
-              children: [
-                SingleChildScrollView(
-                  controller: _horizontalScrollController,
-                  scrollDirection: Axis.horizontal,
-                  physics: const ClampingScrollPhysics(),
-                  child: SizedBox(
-                    width: timelineWidth,
-                    height: _headerHeight,
-                    child: Stack(
-                      children: [
-                        ..._buildTimeTicks(timelineWidth),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Expanded(
+          Positioned.fill(
             child: LayoutBuilder(
               builder: (context, constraints) {
                 // Determine the row height dynamically so it fills the screen perfectly
-                final double dynamicRowHeight = constraints.maxHeight / _weekdayIndices.length;
+                final double dynamicRowHeight = (constraints.maxHeight - _headerHeight) / _weekdayIndices.length;
                 final double rowHeight = dynamicRowHeight < 78.0 ? 78.0 : dynamicRowHeight;
 
                 return SingleChildScrollView(
                   controller: _verticalScrollController,
                   physics: const BouncingScrollPhysics(),
-                  child: Stack(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: _headerHeight),
+                    child: Stack(
                     children: [
                   SingleChildScrollView(
                     controller: _gridHorizontalScrollController,
@@ -282,32 +262,14 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
                               return _buildTimelineRow(widget.getClassesForDay(day), dayOfWeek: day, nowMinutes: nowMinutes, rowHeight: rowHeight);
                             }).toList(),
                           ),
-                          if (hasCurrentTime && _weekdayIndices.contains(widget.now.weekday))
-                            Positioned(
-                              left: currentTimeX,
-                              top: 0,
-                              bottom: 0,
-                              child: Container(
-                                width: 2,
-                                decoration: BoxDecoration(
-                                  color: Colors.greenAccent,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.greenAccent.withValues(alpha: 0.6),
-                                      blurRadius: 6,
-                                      spreadRadius: 1,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+
                         ],
                       ),
                     ),
                   ),
                   
                   Positioned(
-                    left: 8,
+                    left: 4,
                     top: 0,
                     bottom: 0,
                     child: IgnorePointer(
@@ -320,8 +282,29 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
                   ),
                 ],
               ),
-            );
+            ));
           }),
+          ),
+          
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: _headerHeight,
+            child: SingleChildScrollView(
+              controller: _horizontalScrollController,
+              scrollDirection: Axis.horizontal,
+              physics: const ClampingScrollPhysics(),
+              child: SizedBox(
+                width: timelineWidth,
+                height: _headerHeight,
+                child: Stack(
+                  children: [
+                    ..._buildTimeTicks(timelineWidth),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -331,7 +314,7 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
 
   Widget _buildYAxisCell(String label, {bool isToday = false, required double rowHeight}) {
     return SizedBox(
-      width: _yAxisWidth - 16,
+      width: _yAxisWidth - 4,
       height: rowHeight,
       child: Center(
         child: ClipRRect(
@@ -345,7 +328,7 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
                   color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isToday ? Colors.greenAccent.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.1),
+                    color: isToday ? Colors.greenAccent.withValues(alpha: 0.8) : AuthPalette.coral.withValues(alpha: 0.5),
                     width: isToday ? 1.5 : 1.0,
                   ),
                   boxShadow: [
@@ -362,16 +345,15 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: isToday ? Colors.greenAccent : Colors.white70,
+                    color: isToday ? Colors.greenAccent : AuthPalette.coral,
                     fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
-                    fontSize: 11,
+                    fontSize: 12,
                   ),
                 ),
-              ),
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildTimelineRow(List<dynamic> rawPeriods, {required int dayOfWeek, required double nowMinutes, required double rowHeight}) {
@@ -403,49 +385,61 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
 
           final isGap = upperSubject.contains('GAP') || upperSubject.contains('FREE');
           final isOngoing = isToday && nowMinutes >= start && nowMinutes < end;
+          final isPassed = isToday && nowMinutes >= end;
           
-          final Color cardColor;
-          final Color borderColor;
+          BoxDecoration cardDecoration;
           final Color textColor;
 
           if (isGap) {
-            cardColor = Colors.teal.withValues(alpha: 0.08);
             textColor = Colors.tealAccent.withValues(alpha: 0.7);
-          } else {
-            cardColor = const Color(0xFF1A1A1A);
+            cardDecoration = BoxDecoration(
+              color: Colors.teal.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+            );
+          } else if (isOngoing) {
             textColor = Colors.white;
+            cardDecoration = BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0F3E28), Color(0xFF1B6A45)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                  blurRadius: 12.0,
+                  spreadRadius: 1.0,
+                ),
+              ],
+            );
+          } else {
+            textColor = Colors.white;
+            cardDecoration = BoxDecoration(
+              color: const Color(0xFF141110),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 8.0,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            );
           }
 
-          return Positioned(
-            left: left + 4,
-            width: (width - 8).clamp(16.0, double.infinity),
-            top: 8,
-            bottom: 8,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    if (isOngoing)
-                      Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.greenAccent,
-                        ),
-                      ),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+          Widget cardWidget = ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: cardDecoration,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                           Text(
                             subject,
                             maxLines: 1,
@@ -463,18 +457,32 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.75),
+                                color: isOngoing ? Colors.greenAccent.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.75),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                        ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+          );
+
+          if (isPassed) {
+            cardWidget = Opacity(
+              opacity: 0.4,
+              child: cardWidget,
+            );
+          }
+
+          return Positioned(
+            left: left + 4,
+            width: (width - 8).clamp(16.0, double.infinity),
+            top: 8,
+            bottom: 8,
+            child: cardWidget,
           );
         }).toList(),
       ),
@@ -493,25 +501,44 @@ class _WeeklyGanttChartState extends State<WeeklyGanttChart> {
         final displayHour = h % 12 == 0 ? 12 : h % 12;
         final amPm = h >= 12 ? 'PM' : 'AM';
 
+        final nowHour = widget.now.hour;
+        final bool isCurrent = (h == nowHour);
+        final bool isPast = (h < nowHour);
+
+        Color textColor;
+        FontWeight fontWeight;
+        Color bgColor;
+        if (isCurrent) {
+          textColor = Colors.white;
+          fontWeight = FontWeight.bold;
+          bgColor = AuthPalette.coral;
+        } else if (isPast) {
+          textColor = Colors.white.withValues(alpha: 0.3);
+          fontWeight = FontWeight.w500;
+          bgColor = Colors.white.withValues(alpha: 0.05);
+        } else {
+          textColor = Colors.white.withValues(alpha: 0.8);
+          fontWeight = FontWeight.w600;
+          bgColor = const Color(0xFF2A2A2A);
+        }
+
         ticks.add(
           Positioned(
             left: x,
-            bottom: 6,
+            bottom: 4,
             child: FractionalTranslation(
               translation: const Offset(-0.5, 0),
-              child: Column(
-                children: [
-                  Text(
-                    '$displayHour $amPm',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 2),
-                  Container(
-                    width: 1.5,
-                    height: 6,
-                    color: Colors.white.withValues(alpha: 0.3),
-                  ),
-                ],
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: isCurrent ? Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1) : null,
+                ),
+                child: Text(
+                  '$displayHour $amPm',
+                  style: TextStyle(color: textColor, fontSize: 11, fontWeight: fontWeight),
+                ),
               ),
             ),
           ),

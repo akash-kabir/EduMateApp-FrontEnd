@@ -274,8 +274,10 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
     final timelineWidth = (totalMinutes * _pixelsPerMinute) + _yAxisWidth + 24; // Added extra padding at the end
 
     final now = DateTime.now();
+    final bool isToday = _isSameDay(now.weekday, widget.currentDayName);
+        
     final currentMinutes = (now.hour * 60 + now.minute).toDouble();
-    final hasCurrentTime = currentMinutes >= _minMinutes && currentMinutes <= _maxMinutes;
+    final hasCurrentTime = isToday && currentMinutes >= _minMinutes && currentMinutes <= _maxMinutes;
     final currentTimeX = ((currentMinutes - _minMinutes) * _pixelsPerMinute) + _yAxisWidth;
 
     bool intersectsClass = false;
@@ -346,9 +348,9 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
                           ..._buildGridLines(timelineWidth),
                           Column(
                             children: [
-                              _buildTimelineRow(widget.userSchedule, isUser: true, nowMinutes: currentMinutes),
+                              _buildTimelineRow(widget.userSchedule, isUser: true, nowMinutes: currentMinutes, isToday: isToday),
                               ...widget.friends.map(
-                                (f) => _buildTimelineRow(_getFriendTodayPeriods(f.rollNo), nowMinutes: currentMinutes),
+                                (f) => _buildTimelineRow(_getFriendTodayPeriods(f.rollNo), nowMinutes: currentMinutes, isToday: isToday),
                               ),
                             ],
                           ),
@@ -440,7 +442,12 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
     );
   }
 
-  Widget _buildTimelineRow(List<dynamic> rawPeriods, {bool isUser = false, required double nowMinutes}) {
+  Widget _buildTimelineRow(
+    List<dynamic> rawPeriods, {
+    bool isUser = false,
+    required double nowMinutes,
+    required bool isToday,
+  }) {
     final mergedPeriods = _mergeAdjacentPeriods(rawPeriods);
     
     return SizedBox(
@@ -467,7 +474,7 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
               upperSubject.contains('KEXPLORE');
 
           final isGap = upperSubject.contains('GAP') || upperSubject.contains('FREE');
-          final isOngoing = nowMinutes >= start && nowMinutes <= end;
+          final isOngoing = isToday && nowMinutes >= start && nowMinutes < end;
 
           // Distinctive Dark Colors per Category
           final Color cardColor;
@@ -513,16 +520,6 @@ class _FriendsGanttChartState extends State<FriendsGanttChart> {
                 ),
                 child: Row(
                   children: [
-                    if (isOngoing)
-                      Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.greenAccent,
-                        ),
-                      ),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

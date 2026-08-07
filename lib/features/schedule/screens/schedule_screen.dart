@@ -894,6 +894,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       style: TextStyle(fontFamily: 'Salena', fontWeight: FontWeight.bold),
                     ),
                     backgroundColor: CupertinoColors.black.withValues(alpha: 0.6),
+                    border: null,
                     trailing: CupertinoButton(
                       padding: EdgeInsets.zero,
                       onPressed: _showSettingsBottomSheet,
@@ -904,39 +905,44 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       ),
                     ),
                   ),
-                  if (!_isWeeklyView) ClipRect(
+                  ClipRect(
                 child: BackdropFilter(
                   filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                   child: Container(
+                    width: double.infinity,
                     color: CupertinoColors.black.withValues(alpha: 0.6),
-                    height: 106.0,
-                    padding: const EdgeInsets.symmetric(
+                    height: _isWeeklyView ? 56.0 : 106.0,
+                    alignment: Alignment.center,
+                    padding: EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 10,
+                      vertical: _isWeeklyView ? 0 : 10,
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        WeekCalendarGrid(
-                          weekDates: weekDates,
-                          selectedDate: selectedDate,
-                          now: now,
-                          onDateSelected: (date, slideRight) {
-                            final newIndex = weekDates.indexWhere(
-                              (d) => d.year == date.year && d.month == date.month && d.day == date.day,
-                            );
-                            if (newIndex > 0) {
-                              _pageController.animateToPage(
-                                newIndex - 1,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeOutCubic,
+                        if (!_isWeeklyView) ...[
+                          WeekCalendarGrid(
+                            weekDates: weekDates,
+                            selectedDate: selectedDate,
+                            now: now,
+                            onDateSelected: (date, slideRight) {
+                              final newIndex = weekDates.indexWhere(
+                                (d) => d.year == date.year && d.month == date.month && d.day == date.day,
                               );
-                            }
-                          },
-                        ),
+                              if (newIndex > 0) {
+                                _pageController.animateToPage(
+                                  newIndex - 1,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOutCubic,
+                                );
+                              }
+                            },
+                          ),
+                          if (selectedBranch.isNotEmpty && selectedSemester.toString().isNotEmpty)
+                            const SizedBox(height: 16),
+                        ],
                         if (selectedBranch.isNotEmpty &&
                             selectedSemester.toString().isNotEmpty) ...[
-                          const SizedBox(height: 16),
                           RichText(
                             text: TextSpan(
                               style: TextStyle(
