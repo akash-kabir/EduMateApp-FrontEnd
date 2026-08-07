@@ -1,4 +1,5 @@
 // ignore_for_file: deprecated_member_use
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -920,7 +921,18 @@ class _MapScreenState extends State<MapScreen> with AutomaticKeepAliveClientMixi
                         fit: StackFit.expand,
                         children: [
                           poi.imageUrl.isNotEmpty
-                              ? Image.network(poi.imageUrl, fit: BoxFit.cover)
+                              ? CachedNetworkImage(
+                                  imageUrl: poi.imageUrl, 
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    color: Colors.black26,
+                                    child: const Center(child: CupertinoActivityIndicator()),
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
+                                    color: Colors.black26,
+                                    child: const Icon(CupertinoIcons.photo, size: 40, color: CupertinoColors.systemGrey),
+                                  ),
+                                )
                               : Container(
                                   color: Colors.black26,
                                   child: const Icon(CupertinoIcons.photo, size: 40, color: CupertinoColors.systemGrey),

@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'dart:io';
 import 'dart:ui';
 
@@ -96,7 +96,7 @@ class _CurriculumManagementScreenState
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = await parseJsonInBackground(response.body);
         final List<dynamic> curriculums = data['data'] ?? [];
 
         List<String> uniqueBranches = [];
@@ -392,7 +392,7 @@ class _CurriculumManagementScreenState
 
         final file = File(result.files.single.path!);
         final contents = await file.readAsString();
-        final jsonData = jsonDecode(contents);
+        final jsonData = await parseJsonInBackground(contents);
 
         List<dynamic> semestersData = [];
 

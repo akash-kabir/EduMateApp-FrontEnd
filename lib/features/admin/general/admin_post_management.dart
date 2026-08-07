@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:app/shared/config.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
@@ -56,7 +57,7 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = await parseJsonInBackground(response.body);
         setState(() {
           _posts = data['posts'] ?? [];
           _isLoading = false;
@@ -425,12 +426,13 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                                 if (imageUrl != null && imageUrl.isNotEmpty) ...[
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(
-                                      imageUrl,
+                                    child: CachedNetworkImage(
+                                      imageUrl: imageUrl,
                                       height: 120,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => const SizedBox(),
+                                      placeholder: (context, url) => const Center(child: CupertinoActivityIndicator()),
+                                      errorWidget: (context, url, error) => const SizedBox(),
                                     ),
                                   ),
                                   const SizedBox(height: 12),

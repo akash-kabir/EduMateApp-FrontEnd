@@ -33,11 +33,8 @@ class _SapSkeletonLoaderState extends State<SapSkeletonLoader>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
+    return FadeTransition(
+      opacity: _animation,
           child: SingleChildScrollView(
             physics: const NeverScrollableScrollPhysics(),
             child: Column(
@@ -148,8 +145,6 @@ class _SapSkeletonLoaderState extends State<SapSkeletonLoader>
             ),
           ),
         );
-      },
-    );
   }
 
   Widget _buildCardSkeleton() {

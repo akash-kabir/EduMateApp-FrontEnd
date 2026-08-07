@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/shared/services/holiday_service.dart';
 import 'package:app/features/schedule/services/schedule_database_helper.dart';
@@ -82,7 +83,7 @@ class HomeScheduleService {
         final cacheKey = 'schedule_$semester';
         final cachedDataStr = await SharedPreferencesService.getString(cacheKey);
         if (cachedDataStr != null) {
-          scheduleData = jsonDecode(cachedDataStr);
+          scheduleData = await parseJsonInBackground(cachedDataStr);
         }
       }
       
@@ -132,7 +133,7 @@ class HomeScheduleService {
           String? cachedElectivesStr = await SharedPreferencesService.getString(cacheKeyElectives);
           cachedElectivesStr ??= await SharedPreferencesService.getString('cached_electives_$semester');
           if (cachedElectivesStr != null) {
-            decoded = jsonDecode(cachedElectivesStr);
+            decoded = await parseJsonInBackground(cachedElectivesStr);
             // Auto-migrate to SQLite for next time
             await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), decoded);
           }

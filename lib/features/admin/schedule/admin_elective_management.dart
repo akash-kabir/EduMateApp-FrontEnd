@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'dart:io';
 import 'dart:ui';
 
@@ -63,7 +63,7 @@ class _AdminElectiveManagementScreenState
       final response = await TokenRefreshService.authenticatedGet(uri.toString());
 
       if (response.statusCode == 200) {
-        final resData = jsonDecode(response.body);
+        final resData = await parseJsonInBackground(response.body);
         if (resData['success'] == true && resData['data'] != null) {
           final List<dynamic> data = resData['data'];
           final Map<int, Map<String, List<dynamic>>> grouped = {};
@@ -332,7 +332,7 @@ class _SemesterElectiveDetailScreenState
       final response = await TokenRefreshService.authenticatedGet(uri.toString());
 
       if (response.statusCode == 200) {
-        final resData = jsonDecode(response.body);
+        final resData = await parseJsonInBackground(response.body);
         if (resData['success'] == true && resData['data'] != null) {
           final electivesList = resData['data']['electives'] as List? ?? [];
           final Map<String, List<dynamic>> grouped = {};
@@ -471,7 +471,7 @@ class _SemesterElectiveDetailScreenState
 
         final file = File(result.files.single.path!);
         final contents = await file.readAsString();
-        final jsonData = jsonDecode(contents);
+        final jsonData = await parseJsonInBackground(contents);
 
         List<dynamic> electivesToUpload = [];
 

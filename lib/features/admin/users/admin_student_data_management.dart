@@ -165,20 +165,25 @@ class _AdminStudentDataManagementScreenState
               child: Column(
                 children: [
                   Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.only(
-                          top: 65, bottom: 24, left: 20, right: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 10),
-                          if (_isLoading)
-                            const Center(
-                                child: CupertinoActivityIndicator(radius: 14))
-                          else
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
+                    child: CustomScrollView(
+                      slivers: [
+                        SliverPadding(
+                          padding: const EdgeInsets.only(
+                              top: 65, bottom: 24, left: 20, right: 20),
+                          sliver: SliverList(
+                            delegate: SliverChildListDelegate([
+                              const SizedBox(height: 10),
+                              if (_isLoading)
+                                const Center(
+                                    child: CupertinoActivityIndicator(radius: 14)),
+                            ]),
+                          ),
+                        ),
+                        if (!_isLoading)
+                          SliverPadding(
+                            padding: const EdgeInsets.only(
+                                bottom: 24, left: 20, right: 20),
+                            sliver: SliverList.separated(
                               itemCount: _years.length,
                               separatorBuilder: (_, _) =>
                                   const SizedBox(height: 16),
@@ -293,8 +298,8 @@ class _AdminStudentDataManagementScreenState
                                 );
                               },
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   ),
                 ],

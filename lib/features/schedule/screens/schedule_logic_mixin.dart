@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -139,7 +139,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
     try {
       final response = await http.get(Uri.parse('${Config.holidayBaseEndpoint}/$year'));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = await parseJsonInBackground(response.body);
         if (data['success'] == true) {
           final holidaysList = data['data'] as List<dynamic>;
           provider.setHolidays(year, holidaysList);
@@ -276,7 +276,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
         String? cachedStr = await SharedPreferencesService.getString(cacheKey);
         cachedStr ??= await SharedPreferencesService.getString('cached_electives_$semester');
         if (cachedStr != null) {
-          decoded = jsonDecode(cachedStr);
+          decoded = await parseJsonInBackground(cachedStr);
           await ScheduleDatabaseHelper.instance.cacheElectiveData(semester.toString(), decoded);
         }
       }
@@ -313,7 +313,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       final metaResponse = await TokenRefreshService.authenticatedGet(metaUrl).timeout(const Duration(seconds: 5));
 
       if (metaResponse.statusCode == 200) {
-        final metaData = jsonDecode(metaResponse.body);
+        final metaData = await parseJsonInBackground(metaResponse.body);
         final serverUpdatedAt = metaData['updatedAt'];
 
         if (hasCache && serverUpdatedAt != null) {
@@ -333,7 +333,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       final response = await TokenRefreshService.authenticatedGet(url).timeout(const Duration(seconds: 7));
       
       if (response.statusCode == 200) {
-        final resData = jsonDecode(response.body);
+        final resData = await parseJsonInBackground(response.body);
         if (resData['success'] == true && resData['data'] != null) {
           final electivesList = resData['data']['electives'] as List;
           final serverUpdatedAt = resData['data']['updatedAt'] as String?;
@@ -528,7 +528,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       final metaResponse = await TokenRefreshService.authenticatedGet(metaUrl).timeout(const Duration(seconds: 5));
 
       if (metaResponse.statusCode == 200) {
-        final metaData = jsonDecode(metaResponse.body);
+        final metaData = await parseJsonInBackground(metaResponse.body);
         serverUpdatedAt = metaData['updatedAt'];
 
         if (hasCache && serverUpdatedAt != null) {
@@ -555,7 +555,7 @@ mixin ScheduleLogicMixin on State<ScheduleScreen> {
       if (currentRequestId != lastRequestId) return; 
 
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
+        final responseData = await parseJsonInBackground(response.body);
 
         if (responseData is Map && responseData.containsKey('data')) {
           final classData = responseData['data'];

@@ -151,8 +151,8 @@ class _CompactToastWidgetState extends State<CompactToastWidget>
           top: MediaQuery.of(context).padding.top + 16.0 + _slideAnimation.value,
           left: 0,
           right: 0,
-          child: Opacity(
-            opacity: _fadeAnimation.value,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
             child: Center(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),

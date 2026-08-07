@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:app/shared/config.dart';
+import 'package:app/shared/utils/isolate_utils.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   final bool fromStudentView;
@@ -44,7 +44,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     try {
       final response = await http.get(Uri.parse(Config.adminStatsEndpoint));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = await parseJsonInBackground(response.body);
         if (data['success'] == true) {
           setState(() {
             _stats = data['data'];

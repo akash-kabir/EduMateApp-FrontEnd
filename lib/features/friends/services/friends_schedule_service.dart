@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:app/shared/config.dart';
 import 'package:app/features/friends/models/friend_model.dart';
@@ -53,7 +53,7 @@ class FriendsScheduleService {
         final cacheKey = 'cached_electives_v2_$semesterNum';
         final cachedElectivesStr = await SharedPreferencesService.getString(cacheKey);
         if (cachedElectivesStr != null) {
-          decoded = jsonDecode(cachedElectivesStr);
+          decoded = await parseJsonInBackground(cachedElectivesStr);
         }
       }
       
@@ -70,7 +70,7 @@ class FriendsScheduleService {
         final url = '${Config.electiveBaseEndpoint}/$semesterNum';
         final response = await TokenRefreshService.authenticatedGet(url).timeout(const Duration(seconds: 5));
         if (response.statusCode == 200) {
-          final resData = jsonDecode(response.body);
+          final resData = await parseJsonInBackground(response.body);
           if (resData['success'] == true && resData['data'] != null) {
             rawElectiveData = resData['data']['electives'] as List? ?? [];
             
@@ -241,7 +241,7 @@ class FriendsScheduleService {
           final url = Uri.parse('${Config.scheduleBaseEndpoint}/$semNum?t=${DateTime.now().millisecondsSinceEpoch}');
           final response = await http.get(url);
           if (response.statusCode == 200) {
-            final resData = jsonDecode(response.body);
+            final resData = await parseJsonInBackground(response.body);
             if (resData['data'] != null) {
               semData = resData['data'];
               await ScheduleDatabaseHelper.instance.cacheScheduleData(semNum, semData);

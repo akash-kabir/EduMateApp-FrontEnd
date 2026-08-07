@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'package:app/shared/config.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/shared/widgets/dialogs/toast_manager.dart';
@@ -145,7 +146,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         String errorMsg =
             'Failed to get upload signature (${sigResponse.statusCode})';
         try {
-          final body = jsonDecode(sigResponse.body);
+          final body = await parseJsonInBackground(sigResponse.body);
           errorMsg = body['message'] ?? errorMsg;
         } catch (_) {}
         if (mounted) {
@@ -158,7 +159,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         return null;
       }
 
-      final sigData = jsonDecode(sigResponse.body);
+      final sigData = await parseJsonInBackground(sigResponse.body);
       final cloudName = sigData['cloudName'];
       final apiKey = sigData['apiKey'];
       final signature = sigData['signature'];
@@ -185,12 +186,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = await parseJsonInBackground(response.body);
         return data['secure_url'];
       } else {
         String errorMsg = 'Upload failed (${response.statusCode})';
         try {
-          final body = jsonDecode(response.body);
+          final body = await parseJsonInBackground(response.body);
           errorMsg = body['error']?['message'] ?? errorMsg;
         } catch (_) {}
         if (mounted) {
@@ -632,7 +633,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       } else {
         String errorMsg = 'Failed to create post (${response.statusCode})';
         try {
-          final decoded = jsonDecode(response.body);
+          final decoded = await parseJsonInBackground(response.body);
           if (decoded is Map<String, dynamic> && decoded.containsKey('message')) {
             errorMsg = decoded['message'];
           } else if (decoded is String) {

@@ -690,22 +690,25 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                         const SizedBox(height: 24),
 
                       // Subjects and Grades
-                      if (subjects.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Enter Grades',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                            ),
-                            const SizedBox(height: 12),
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
+                      if (subjects.isNotEmpty) ...[
+                        Text(
+                          'Enter Grades',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (subjects.isNotEmpty)
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        sliver: SliverList.separated(
                               itemCount: subjects.length,
                               separatorBuilder: (_, _) =>
                                   const SizedBox(height: 8),
@@ -767,9 +770,14 @@ class _CGPACalculatorScreenState extends State<CGPACalculatorScreen> {
                                 );
                               },
                             ),
-                          ],
-                        ),
-                      const SizedBox(height: 12),
+                      ),
+                    SliverPadding(
+                      padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
+                      sliver: SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 12),
 
                       // Action Buttons
                       if (subjects.isNotEmpty)

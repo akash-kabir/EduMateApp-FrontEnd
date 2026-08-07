@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
 import 'package:app/features/auth_and_profile/services/token_refresh_service.dart';
-import 'dart:convert';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'package:app/shared/config.dart';
 import 'package:app/features/events/widgets/event_card.dart';
 import 'package:app/shared/widgets/skeletons/skeleton_event_card.dart';
@@ -55,7 +55,7 @@ class _EventScreenState extends State<EventScreen> with AutomaticKeepAliveClient
       final response = await TokenRefreshService.authenticatedGet(url);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = await parseJsonInBackground(response.body);
         if (mounted) {
           setState(() {
             posts = data['posts'] ?? [];

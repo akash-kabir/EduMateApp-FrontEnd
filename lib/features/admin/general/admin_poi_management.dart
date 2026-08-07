@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'package:flutter/cupertino.dart';
@@ -660,7 +661,13 @@ class _PoiFormDialogState extends State<_PoiFormDialog> {
                         : (_imageUrl.isNotEmpty
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: Image.network(_imageUrl, fit: BoxFit.cover, width: double.infinity),
+                                child: CachedNetworkImage(
+                                  imageUrl: _imageUrl, 
+                                  fit: BoxFit.cover, 
+                                  width: double.infinity,
+                                  placeholder: (context, url) => const Center(child: CupertinoActivityIndicator()),
+                                  errorWidget: (context, url, error) => const Center(child: Icon(Icons.error)),
+                                ),
                               )
                             : const Column(
                                 mainAxisAlignment: MainAxisAlignment.center,

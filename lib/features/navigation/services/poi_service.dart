@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:app/features/navigation/models/poi_model.dart';
 import 'package:app/shared/config.dart';
@@ -28,7 +29,7 @@ class PoiService {
     final response = await http.get(Uri.parse('${Config.BASE_URL}/api/poi'));
 
     if (response.statusCode == 200) {
-      final jsonResponse = jsonDecode(response.body);
+      final jsonResponse = await parseJsonInBackground(response.body);
       if (jsonResponse['success']) {
         final List data = jsonResponse['data'];
         final pois = data.map((json) => PoiModel.fromJson(json)).toList();
@@ -54,7 +55,7 @@ class PoiService {
     );
 
     if (response.statusCode == 201 || response.statusCode == 200) {
-      final jsonResponse = jsonDecode(response.body);
+      final jsonResponse = await parseJsonInBackground(response.body);
       if (jsonResponse['success']) {
         _bustCache(); // invalidate cache so next getPOIs() fetches fresh data
         return PoiModel.fromJson(jsonResponse['data']);
@@ -75,7 +76,7 @@ class PoiService {
     );
 
     if (response.statusCode == 200) {
-      final jsonResponse = jsonDecode(response.body);
+      final jsonResponse = await parseJsonInBackground(response.body);
       if (jsonResponse['success']) {
         _bustCache(); // invalidate cache so next getPOIs() fetches fresh data
         return PoiModel.fromJson(jsonResponse['data']);

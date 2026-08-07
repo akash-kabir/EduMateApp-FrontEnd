@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:app/theme/theme.dart';
@@ -118,11 +119,12 @@ class _AboutScreenState extends State<AboutScreen> {
           color: Colors.white.withValues(alpha: 0.05),
           shape: BoxShape.circle,
         ),
-        child: Image.network(
-          iconUrl,
+        child: CachedNetworkImage(
+          imageUrl: iconUrl,
           width: 28,
           height: 28,
-          errorBuilder: (context, error, stackTrace) => const Icon(
+          placeholder: (context, url) => const Center(child: CupertinoActivityIndicator(radius: 10)),
+          errorWidget: (context, url, error) => const Icon(
             CupertinoIcons.globe, 
             color: Colors.white54, 
             size: 24

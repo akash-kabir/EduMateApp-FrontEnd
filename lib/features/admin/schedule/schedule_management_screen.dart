@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'dart:io';
 import 'dart:ui';
 
@@ -43,7 +44,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = await parseJsonInBackground(response.body);
         final items = data['data'] as List;
 
         final Map<int, dynamic> parsed = {};
@@ -93,7 +94,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
         jsonString = String.fromCharCodes(bytes);
       }
 
-      final jsonData = jsonDecode(jsonString);
+      final jsonData = await parseJsonInBackground(jsonString);
 
       if (!jsonData.containsKey('classes') || jsonData['classes'] is! List) {
         throw Exception('Invalid JSON format: missing classes array');
@@ -134,7 +135,7 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
         }
         _fetchSchedules();
       } else {
-        final err = jsonDecode(response.body);
+        final err = await parseJsonInBackground(response.body);
         throw Exception(err['message'] ?? 'Failed to upload schedule');
       }
     } catch (e) {

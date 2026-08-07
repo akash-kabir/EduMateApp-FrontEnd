@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:app/theme/theme.dart';
@@ -245,11 +246,12 @@ class PostDetailScreen extends StatelessWidget {
               background: Hero(
                 tag: 'image_$postId',
                 child: hasImage
-                    ? Image.network(
-                        imageUrl,
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl,
                         fit: BoxFit.cover,
                         alignment: Alignment.topCenter,
-                        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+                        placeholder: (context, url) => _buildPlaceholder(),
+                        errorWidget: (context, url, error) => _buildPlaceholder(),
                       )
                     : _buildPlaceholder(),
               ),

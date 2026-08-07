@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:app/theme/theme.dart';
 import 'package:app/features/events/screens/post_detail_screen.dart';
@@ -136,11 +137,12 @@ class EventCard extends StatelessWidget {
                   child: AspectRatio(
                     aspectRatio: 4 / 5,
                     child: hasImage
-                        ? Image.network(
-                            imageUrl,
+                        ? CachedNetworkImage(
+                            imageUrl: imageUrl,
                             fit: BoxFit.cover,
                             alignment: Alignment.topCenter,
-                            errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+                            placeholder: (context, url) => _buildPlaceholder(),
+                            errorWidget: (context, url, error) => _buildPlaceholder(),
                           )
                         : _buildPlaceholder(),
                   ),

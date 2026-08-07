@@ -511,11 +511,14 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
           : Stack(
               children: [
                 Positioned.fill(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.only(top: 110, bottom: 120),
-                    child: Column(
-                      children: [
-                        Padding(
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.only(top: 110, bottom: 8),
+                        sliver: SliverToBoxAdapter(
+                          child: Column(
+                            children: [
+                              Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                           child: Row(
                             children: [
@@ -631,19 +634,26 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                               ),
                             ),
                           ),
-                          _scheduleData[_selectedDay]!.isEmpty
-                              ? Container(
-                                  height: 200,
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    'No classes scheduled for ${_days[_selectedDay - 1]}.',
-                                    style: const TextStyle(color: Colors.grey),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.all(16),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                if (_selectedSection != null)
+                  _scheduleData[_selectedDay]!.isEmpty
+                      ? SliverToBoxAdapter(
+                          child: Container(
+                            height: 200,
+                            alignment: Alignment.center,
+                            child: Text(
+                              'No classes scheduled for ${_days[_selectedDay - 1]}.',
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        )
+                      : SliverPadding(
+                          padding: const EdgeInsets.all(16).copyWith(bottom: 120),
+                          sliver: SliverList.builder(
                                   itemCount: _scheduleData[_selectedDay]!.length,
                                   itemBuilder: (context, index) {
                                     final period = _scheduleData[_selectedDay]![index];
@@ -657,21 +667,22 @@ class _ScheduleEditorScreenState extends State<ScheduleEditorScreen> {
                                     );
                                   },
                                 ),
-                        ] else ...[
-                          Container(
-                            height: 200,
-                            alignment: Alignment.center,
-                            child: Text(
-                              'Please add a section to start editing schedules.',
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ),
-                        ],
-                      ],
+                        ),
+                if (_selectedSection == null)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      height: 200,
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Please add a section to start editing schedules.',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                     ),
                   ),
-                ),
-                Positioned(
+              ],
+            ),
+          ),
+        Positioned(
                   top: 0,
                   left: 0,
                   right: 0,

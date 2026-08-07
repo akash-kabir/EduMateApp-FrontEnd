@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
+import 'package:app/shared/utils/isolate_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:app/shared/config.dart';
 import 'package:app/shared/services/shared_preferences_service.dart';
@@ -95,7 +95,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = await parseJsonInBackground(response.body);
         if (data['success'] == true) {
           setState(() {
             _users = data['data'];
